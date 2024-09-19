@@ -1,17 +1,19 @@
 # SSECR Diversity Stability Group
 
 Investigators:
-- Julianna Renzi - Email: [renzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
-- Kathrine Hulting - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu)
+- Julianna Renzi - Email: [jrenzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
+- Katherine Hulting (2,3) - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu) LTER: Kellogg Biological Station
 - Noam Altman-Kurosaki - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com)
 - Pooja Panwar - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu)
-- James Sturges - Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu)
+- James Sturges (1) - Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
 - Dr. Kelsey Solomon - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu)
 - Dr. Junna Wang - Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu)
   
 ## Affiliations
 
 1. Department of Earth and Environment, Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
+2. W.K. Kellogg Biological Station, Michigan State University, 3700 Gull Lake Dr, Hickory Corners 49060
+3. Department of Integrative Biology and Ecology, Evolution, and Behavior, Michigan State University, 288 Farm Ln, East Lansing, MI 48824
 
 ## Script Explanations
 
