@@ -36,7 +36,7 @@ We will gather long-term (>10 year) time series of primary producer communities 
 
 - **Community stability:** The extent to which structural community composition is constant through time. We will calculate community stability as a function of the vector length in multivariate space between consecutive biological community matrices.
 
-<img src=”images/ssecr_proposal-dummyfigure.png.png” alt=”Descriptive figure of the concept” width=”100%” />
+<img src=”ssecr_proposal-dummyfigure.png.png” alt=”Descriptive figure of the concept” width=”100%” />
    
 ## Scripts 
 
