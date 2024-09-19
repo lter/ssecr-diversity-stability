@@ -1,7 +1,13 @@
-# GROUP NAME HERE
+# Diversity Stability
 
 Investigators:
-- YOUR NAME HERE
+- Julianna Renzi
+- Kathrine Hulting
+- Noam Altman-Kurosaki
+- Pooja Panwar
+- James Sturges
+- Dr. Kelsey Solomon
+- Dr. Junna Wang
 
 ## Script Explanations
 
