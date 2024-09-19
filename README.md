@@ -44,12 +44,11 @@ We will gather long-term (>10 year) time series of primary producer communities 
 
 ## Supplementary Resources
 
-LTER Scientific Computing Team [website](https://lter.github.io/scicomp/) & NCEAS' [Resources for Working Groups](https://www.nceas.ucsb.edu/working-group-resources)
+- LTER Scientific Computing Team: [website](https://lter.github.io/scicomp/)
+- NCEAS' [Resources for Working Groups](https://www.nceas.ucsb.edu/working-group-resources)
 ---
 
-## Gif
+## Essence GIF
 
-Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted
-
-![Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted](community.gif)
+![](images/community.gif)
 
