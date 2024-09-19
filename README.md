@@ -1,29 +1,17 @@
 # SSECR Diversity Stability Group
 
 Investigators:
-- Julianna Renzi
-- Kathrine Hulting
-- Noam Altman-Kurosaki
-- Pooja Panwar
-- James Sturges
-- Dr. Kelsey Solomon
-- Dr. Junna Wang
+- Julianna Renzi - Email: [renzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
+- Kathrine Hulting - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu)
+- Noam Altman-Kurosaki - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com)
+- Pooja Panwar - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu)
+- James Sturges - Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu)
+- Dr. Kelsey Solomon - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu)
+- Dr. Junna Wang - Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu)
   
 ## Affiliations
 
 1. Department of Earth and Environment, Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
-
-
-## Contact
-
-- Email: [renzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
-- Email: [hultingk@msu.edu](mailto:hultingk@msu.edu)
-- Email: [naltmank@gmail.com](mailto:naltmank@gmail.com)
-- Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu)
-- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu)
-- Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu)
-- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu)
-
 
 ## Script Explanations
 
