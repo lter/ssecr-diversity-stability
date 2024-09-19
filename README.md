@@ -5,7 +5,7 @@ Investigators:
 - Katherine Hulting<sup>2,3</sup> - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu) LTER: Kellogg Biological Station
 - Pooja Panwar<sup>4</sup> - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu) LTER: Hubbard Brook Research Forest
 - Julianna Renzi<sup>5</sup> - Email: [jrenzi@ucsb.edu](mailto:jrenzi@ucsb.edu) LTER: Moorea Coral Reef
-- Dr. Kelsey Solomon<sup>6</sup> - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu) LTER: Floria Coastal Everglades, Coweeta
+- Dr. Kelsey Solomon<sup>6</sup> - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu) LTER: Florida Coastal Everglades, Coweeta
 - James Sturges<sup>7</sup>- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
 - Dr. Junna Wang<sup>8</sup>- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu) LTER: Harvard Forest
   
