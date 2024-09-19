@@ -1,20 +1,25 @@
 # SSECR Diversity Stability Group
 
 Investigators:
-- Julianna Renzi - Email: [jrenzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
-- Katherine Hulting (2,3) - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu) LTER: Kellogg Biological Station
-- Noam Altman-Kurosaki - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com)
-- Pooja Panwar - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu)
-- James Sturges (1) - Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
-- Dr. Kelsey Solomon - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu)
-- Dr. Junna Wang - Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu)
+- Noam Altman-Kurosaki<sup>1</sup> - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com) LTER: Moorea Coral Reef
+- Katherine Hulting<sup>2,3</sup> - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu) LTER: Kellogg Biological Station
+- Pooja Panwar<sup>4</sup> - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu) LTER: Hubbard Brook Research Forest
+- Julianna Renzi<sup>5</sup> - Email: [jrenzi@ucsb.edu](mailto:jrenzi@ucsb.edu) LTER: Moorea Coral Reef
+- Dr. Kelsey Solomon<sup>6</sup> - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu) LTER: Floria Coastal Everglades, Coweeta
+- James Sturges<sup>7</sup>- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
+- Dr. Junna Wang<sup>8</sup>- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu) LTER: Harvard Forest
   
 ## Affiliations
 
-1. Department of Earth and Environment, Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
+1. School of Biological Sciences, Georgia Institute of Technology, 311 Ferst Drive, Atlanta, GA 30332
 2. W.K. Kellogg Biological Station, Michigan State University, 3700 Gull Lake Dr, Hickory Corners 49060
 3. Department of Integrative Biology and Ecology, Evolution, and Behavior, Michigan State University, 288 Farm Ln, East Lansing, MI 48824
-
+4. Ecology, Evolution, Environment, and Society, Dartmouth College, 78 College St, Hanover, NH 03755
+5. Department of Ecology, Evolution, and Marine Biology, University of California Santa Barbara, UCEN Road Building 535, Goleta, CA 93117 
+6. Institute of Environment and Department of Biology, Florida International University, 11200 SW 8th Street Miami, FL 33199
+7. Department of Earth and Environment and Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
+8. School of the Environment, Yale University, 195 Prospect St, New Haven, CT 06511
+   
 ## Script Explanations
 
 Briefly describe the purpose of each script (or folder of scripts) here as you create them!
