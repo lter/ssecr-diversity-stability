@@ -1,4 +1,4 @@
-# SSECR Diversity Stability Group
+# Diversity-stability relationships
 
 ## Investigators:
 - Noam Altman-Kurosaki<sup>1</sup> - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com) LTER: Moorea Coral Reef
