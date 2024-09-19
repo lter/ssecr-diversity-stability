@@ -1,6 +1,6 @@
 # SSECR Diversity Stability Group
 
-Investigators:
+## Investigators:
 - Noam Altman-Kurosaki<sup>1</sup> - Email: [naltmank@gmail.com](mailto:naltmank@gmail.com) LTER: Moorea Coral Reef
 - Katherine Hulting<sup>2,3</sup> - Email: [hultingk@msu.edu](mailto:hultingk@msu.edu) LTER: Kellogg Biological Station
 - Pooja Panwar<sup>4</sup> - Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu) LTER: Hubbard Brook Research Forest
@@ -9,7 +9,7 @@ Investigators:
 - James Sturges<sup>7</sup>- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
 - Dr. Junna Wang<sup>8</sup>- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu) LTER: Harvard Forest
   
-## Affiliations
+### Affiliations
 
 1. School of Biological Sciences, Georgia Institute of Technology, 311 Ferst Drive, Atlanta, GA 30332
 2. W.K. Kellogg Biological Station, Michigan State University, 3700 Gull Lake Dr, Hickory Corners 49060
@@ -19,14 +19,28 @@ Investigators:
 6. Institute of Environment and Department of Biology, Florida International University, 11200 SW 8th Street Miami, FL 33199
 7. Department of Earth and Environment and Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
 8. School of the Environment, Yale University, 195 Prospect St, New Haven, CT 06511
+
+## Project summary
+
+**Question:** 
+How does the strength and direction of diversity-stability relationships vary (1) among ecosystems and (2) between ecosystem-level and community-level stability?
+
+**Motivation:**
+Diversity-stability relationships are a foundation of community ecology but are controversial and highly debated. Historically, studies have focused on the stability of land-plant communities, focusing on how species richness promotes the stability of primary production or above-ground biomass (hereafter “ecosystem stability”). However, these studies may neglect underlying changes in community composition (hereafter “community stability”). As the biodiversity crisis worsens, understanding the strength and direction of biodiversity-stability relationships across multiple ecosystems and multiple facets of stability will be critical in predicting implications of biodiversity change. Additionally, the strength and direction of diversity-stability relationships may differ with the degree of abiotic variability in a system, but less research has compared diversity-stability relationships in multiple ecosystems. 
+
+**Approach:**
+We will gather long-term (>10 year) time series of primary producer communities across ecosystem types (e.g., grassland, forest, lake, kelp forest, coral reef) from the LTER network. Using this harmonized dataset, we will compare the diversity (i.e., taxonomic richness, functional richness, evenness) of the producer communities at sites within each LTER with the ecosystem-level and community-level stability (see key definitions) of those sites. We will then compare the direction and slopes of these relationships among LTER sites to explore (1) how these relationships vary among environments and (2) how diversity differentially influences ecosystem-level versus community-level stability. 
+ 
+**Key definitions:**
+*Ecosystem stability:* The extent to which production is constant through time.
+- We will calculate ecosystem stability as the inverse of the coefficient of variation of producer abundance (e.g., biomass, cover) throughout the time series. 
+
+**Community stability:** The extent to which structural community composition is constant through time. 
+- We will calculate community stability as a function of the vector length in multivariate space between consecutive biological community matrices.
    
-## Script Explanations
+## Scripts 
 
-Briefly describe the purpose of each script (or folder of scripts) here as you create them!
-
-## Contributing Guidelines & Style Guide
-
-When you have a group of people collaborating on a shared project (particularly a code-heavy one), it can be nice to create some guidelines to make sure everyone is contributing in consistent ways. Similarly if your group reaches consensus on a 'style' of file names and/or code it can be good to formalize those rules as well. The standard convention in GitHub is to create a file called "CONTRIBUTING.md" that contains all of this information. If you want some inspiration check out the LTER Scientific Computing team's [CONTRIBUTING.md](https://github.com/lter/scicomp/blob/main/CONTRIBUTING.md) document!
+- Briefly describe the purpose of each script (or folder of scripts) here as you create them!
 
 ## Supplementary Resources
 
