@@ -36,7 +36,7 @@ We will gather long-term (>10 year) time series of primary producer communities 
 
 - **Community stability:** The extent to which structural community composition is constant through time. We will calculate community stability as a function of the vector length in multivariate space between consecutive biological community matrices.
 
-![](images/ssecr_proposal-dummyfigure.png)
+<img src="images/ssecr_proposal-dummyfigure.png" alt="Conceptual two panel figure showing our two different approaches for looking at diversity-stability relationships. In panel A we show a potentially negative relationship between species richness and the coefficient of variation of producer communities, with different colored lines indicating different potential LTER sites. In panel B we show a community trajectory analysis, which we will use to estimate community stability, which is composed of a series of vectors moving around a PCoA ordination" width="100%" />
    
 ## Scripts 
 
