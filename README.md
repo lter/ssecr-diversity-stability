@@ -42,4 +42,5 @@ LTER Scientific Computing Team [website](https://lter.github.io/scicomp/) & NCEA
 
 Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted
 
-![Does anyone check these? Email us the gif so I know! I claim no rights to the gif file posted](community.gif)
+![Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted](community.gif)
+
