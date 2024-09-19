@@ -40,7 +40,7 @@ We will gather long-term (>10 year) time series of primary producer communities 
    
 ## Scripts 
 
-- Briefly describe the purpose of each script (or folder of scripts) here as you create them!
+- We will briefly describe the purpose of each of our scripts here as we create them--stay tuned!
 
 ## Contributing guidelines & style guide
 
