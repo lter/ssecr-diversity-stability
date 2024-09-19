@@ -6,7 +6,7 @@ This document is meant to focus primarily on our _internal_ processes for contri
 
 Be descriptive and consise in your commit messages. Consider using the style of "[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)" in your commit messages. See [here](https://njlyon0.github.io/tips/commits.html) for a nice summary of the highlights of that approach.
 
-For independant work/experimentation, work in your "junk" script (junk_firstname). Once changes are ready to be incorporated into the shared scripts, see below: 
+For independent work/experimentation, work in your "junk" script (junk_firstname). Once changes are ready to be incorporated into the shared scripts, see below: 
 
 For **minor changes**, (1) communicate with the team to avoid merge conflicts and (2) make commits directly to `main`. Most changes, including code/analysis additions will be minor.
 
@@ -28,3 +28,7 @@ When we write code--for ourselves or for working groups--we use **operating syst
 In R, this means using the `here::here()` function (from base R) to stitch together elements (e.g., `here::here("data", "raw_2024.csv")`). In Python it means using the `join` function from the `path` module of the `os` library (e.g., `os.path.join("data", "raw_2024.csv")`).
 
 If you plan on re-using a file path, assign it to an object/variable (R/Python) to avoid typos/errors when re-using the file path.
+
+### Acknowledgements
+
+These contributing guidelines are heavily based on the ones outlined by Nick Lyon and Angel Chen in the github.com/lter/ssecr
