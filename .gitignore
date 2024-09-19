@@ -76,10 +76,10 @@ vignettes/*.pdf
 
 # Data file types
 ## Delete the hashtag (on the left in the following lines) if you _would_ like to ignore this file type
-# *.csv 
-# *.xlsx 
-# *.xls 
-# *.txt
+*.csv 
+*.xlsx 
+*.xls 
+*.txt
 
 # Folders to ignore
 ## Add any folders you’d like to ignore below (with or without the trailing slash)
