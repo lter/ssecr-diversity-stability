@@ -8,7 +8,7 @@ Investigators:
 - James Sturges
 - Dr. Kelsey Solomon
 - Dr. Junna Wang
-- 
+  
 ## Affiliations
 
 1. Department of Earth and Environment, Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
@@ -38,7 +38,7 @@ When you have a group of people collaborating on a shared project (particularly 
 LTER Scientific Computing Team [website](https://lter.github.io/scicomp/) & NCEAS' [Resources for Working Groups](https://www.nceas.ucsb.edu/working-group-resources)
 ---
 
-## Gif Section
+## Gif
 
 Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted
 
