@@ -8,6 +8,22 @@ Investigators:
 - James Sturges
 - Dr. Kelsey Solomon
 - Dr. Junna Wang
+- 
+## Affiliations
+
+1. Department of Earth and Environment, Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
+
+
+## Contact
+
+- Email: [renzi@ucsb.edu](mailto:jrenzi@ucsb.edu)
+- Email: [hultingk@msu.edu](mailto:hultingk@msu.edu)
+- Email: [naltmank@gmail.com](mailto:naltmank@gmail.com)
+- Email: [Pooja.Panwar.GR@dartmouth.edu](mailto:Pooja.Panwar.GR@dartmouth.edu)
+- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu)
+- Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu)
+- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu)
+
 
 ## Script Explanations
 
@@ -20,3 +36,10 @@ When you have a group of people collaborating on a shared project (particularly 
 ## Supplementary Resources
 
 LTER Scientific Computing Team [website](https://lter.github.io/scicomp/) & NCEAS' [Resources for Working Groups](https://www.nceas.ucsb.edu/working-group-resources)
+---
+
+## Gif Section
+
+Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted
+
+![Does anyone check these? Email me the gif so I know! I claim no rights to the gif file posted](food-chain-ocean.gif)
