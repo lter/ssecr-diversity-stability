@@ -1,4 +1,4 @@
-# Diversity Stability
+# SSECR Diversity Stability Group
 
 Investigators:
 - Julianna Renzi
