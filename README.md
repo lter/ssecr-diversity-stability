@@ -8,6 +8,10 @@
 - Dr. Kelsey Solomon<sup>6</sup> - Email: [ksolomon@fiu.edu](mailto:ksolomon@fiu.edu) LTER: Florida Coastal Everglades, Coweeta
 - James Sturges<sup>7</sup>- Email: [jstur015@fiu.edu](mailto:jstur015@fiu.edu) LTER: Florida Coastal Everglades
 - Dr. Junna Wang<sup>8</sup>- Email: [junna.wang@yale.edu](mailto:junna.wang@yale.edu) LTER: Harvard Forest
+
+- ## Project mentors:
+- Dr. Laura Dee<sup>9</sup>- Email: [Laura.Dee@Colorado.edu](mailto:Laura.Dee@Colorado.edu)
+- Dr. Forest Isbell<sup>10</sup>- Email: [isbell@umn.edu](mailto:isbell@umn.edu) 
   
 ### Affiliations
 
@@ -19,6 +23,9 @@
 6. Institute of Environment and Department of Biology, Florida International University, 11200 SW 8th Street Miami, FL 33199
 7. Department of Earth and Environment and Institute of Environment, Florida International University, 11200 SW 8th Street Miami, FL 33199
 8. School of the Environment, Yale University, 195 Prospect St, New Haven, CT 06511
+9. Department of Ecology and Evolutionary Biology, University of Colorado, Boulder, CO, USA.
+10. Department of Ecology, Evolution and Behavior, University of Minnesota, St Paul, Minnesota, 55108, USA
+
 
 ## Project summary
 
