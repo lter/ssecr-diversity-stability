@@ -147,9 +147,23 @@ comm_best_sites = comm_best_sites %>%
 
 custom_palette <- c("#9966ff", "#3399ff", "#003300", "#990000", "#ff7f0e") 
 
+# Generate the PCoA results manually
+pcoa_result <- vegan::metaMDS(D, eig = TRUE, k = 2)  # k = 2 for 2D
+
+# Get the site coordinates for plotting
+site_coords <- as.data.frame(pcoa_result$points)
+
+# Add drainage, site, and year for labeling
+site_coords$label <- rownames(comm_best_sites)  # Use rownames as labels (drainage, site, year)
+
 # Generate the plot using trajectoryPCoA
-trajectoryPCoA(D, sites = comm_best_sites$site, surveys = comm_best_sites$year, traj.colors = custom_palette, lwd = 2) 
-legend("topright", bty="n", legend=c("RB 8", "RB 9", "RB 10", "RB 11", "RB 13"),  col = c("#9966ff", "#3399ff", "#003300", "#990000", "#ff7f0e"), lwd=2)
+trajectoryPCoA(D, sites = comm_best_sites$site, surveys = comm_best_sites$year, 
+               traj.colors = custom_palette, lwd = 2)
+
+# Add the labels to the plot at the PCoA coordinates
+text(site_coords$MDS1, site_coords$MDS2, labels = site_coords$label, pos = 3, cex = 0.8)
+
+
 
 # Capture the plot output
 trajectory_plot_1 <- recordPlot()
