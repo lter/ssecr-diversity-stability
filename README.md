@@ -30,7 +30,9 @@
 ## Project summary
 
 ### Question
-How does the strength and direction of diversity-stability relationships vary (1) among ecosystems and (2) between ecosystem-level and community-level stability?
+1) How does the biodiversity of one trophic level affect the stability of its own and other trophic levels within an ecosystem and among different ecosystems? 
+2) How does community stability differ from ecosystem stability in different ecosystems?
+3) How does community/compositional stability affect functional/ecosystem stability?
 
 ### Motivation
 Diversity-stability relationships are a foundation of community ecology but are controversial and highly debated. Historically, studies have focused on the stability of land-plant communities, focusing on how species richness promotes the stability of primary production or above-ground biomass (hereafter “ecosystem stability”). However, these studies may neglect underlying changes in community composition (hereafter “community stability”). As the biodiversity crisis worsens, understanding the strength and direction of biodiversity-stability relationships across multiple ecosystems and multiple facets of stability will be critical in predicting implications of biodiversity change. Additionally, the strength and direction of diversity-stability relationships may differ with the degree of abiotic variability in a system, but less research has compared diversity-stability relationships in multiple ecosystems. 
