@@ -19,7 +19,7 @@
 ##Couldn't find quadrat size, need to look into methods because it was not in the metadata
 
 # Define URL as an object
-dt_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pie.25.11&entityid=bedfe532c6e5d98caf9f54c44ff609c5"
+dt_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pie.175.9&entityid=226e8eb36e07d85824c82c72a2f0c84d"
 
 # Read it into R
 pie_producer_long <- read.csv(file = dt_url)
