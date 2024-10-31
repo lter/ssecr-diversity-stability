@@ -16,7 +16,7 @@
 ##McH and EPH likely need to be taken out because they were hayed until 2002
 ##PUH and CC are reference sites and are fine
 ##RM and RR are likely fine too.. originally set up to track invasion by Phragmites austrails
-##Couldn't find quadrat size, need to look into methods because it was not in the metadata
+##Couldn't find quadrat size, need to look into methods because it was not in the metadata. I guessed that it was 1m2
 
 # Define URL as an object
 dt_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pie.25.11&entityid=bedfe532c6e5d98caf9f54c44ff609c5"
