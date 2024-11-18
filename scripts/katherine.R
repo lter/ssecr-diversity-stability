@@ -43,11 +43,12 @@ kbs_consumer <- kbs_consumer_raw %>%
                   "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
+kbs_consumer <- kbs_consumer %>%
+  filter(species != "Other") # removing unidentified individuals n=45
 
-# SPECIES NAMES NOTES 
-### 1. should we remove "other" from analysis - "other" is other insects on traps that were not IDed to species
-### 2. this dataset contains counts of 14 species of Coccinellidae, 1 species of Chrysopidae, and 1 species of Lampyridae - do we want to remove others as they were not the focus? 
-
+# GROUPING NOTES: traps are sampled weekly throughout the growing season -- it may make the most sense to sum rather than average?
+  
+  
 
 # PRODUCER
 kbs_produce_url <- "https://lter.kbs.msu.edu/datatables/291.csv"
@@ -89,19 +90,34 @@ kbs_producer <- kbs_producer %>% # removing unknown - still have some IDed to ge
  # mutate(species = paste(genus, species), genus = NULL) # recombining genus and species, getting rid of genus column
 
 
-## SUMMARIZING AND JOINING
-kbs_consumer_summarized <- kbs_consumer %>%
-  filter(year >= 1991) %>%
-  group_by(unique_ID, year) %>%
-  summarise(abundance_consumer = sum(abundance), diversity_consumer = n_distinct(unique(species)))
 
-kbs_producer_summarized <- kbs_producer %>%
-  filter(year <= 2019) %>%
-  group_by(unique_ID, year) %>%
-  summarise(abundance_producer = sum(abundance), diversity_producer = n_distinct(unique(species)))
+###### KNZ LTER harmonization ######
+knz_produce_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.69.23&entityid=63768b48f41e790a40e7fa4f9267c3a2"
+knz_producer_raw <- read.csv(file = knz_produce_url)
 
-kbs_summarized <- kbs_consumer_summarized %>%
-  left_join(kbs_producer_summarized, by = c("unique_ID" = "unique_ID",
-                                            "year" = "year"))
+
+knz_producer <- knz_producer_raw %>%
+  mutate(site = "KNZ", # adding general LTER/dataset info to each row
+         taxa_type = "producer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "plant", 
+         unit_abundance = "cover class", 
+         scale_abundance = "10 m2") %>%
+  mutate(plot = paste(WaterShed, SoilType, sep = "_"), subplot = Transect, sub_subplot = Plot, 
+         abundance = Cover, species = paste(AB_genus, AB_species, sep = " "), year = RecYear,
+         month = RecMonth, day = RecDay) %>% # renaming columns
+  mutate(unique_ID = paste(site, plot, subplot, sub_subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "sub_subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+knz_producer <- knz_producer %>%
+  filter(!species %in% c("annual forb", "carex spp.", "cyperu spp.", "euphor spp.", "symphy spp."))
+
+
+
 
 
