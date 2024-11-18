@@ -6,11 +6,11 @@
 ## ------------------------------------------ ##
 
 #### Author(s): Katherine Hulting
-#### Last Updated: November 4th, 2024
+#### Last Updated: November 18th, 2024
 # Load `librarian` package
 library(librarian)
 # Install missing packages and load needed libraries
-shelf(tidyverse)
+shelf(tidyverse, summarytools)
 
 
 
@@ -92,11 +92,13 @@ kbs_producer <- kbs_producer %>% # removing unknown - still have some IDed to ge
 
 
 ###### KNZ LTER harmonization ######
+# producer
 knz_produce_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.69.23&entityid=63768b48f41e790a40e7fa4f9267c3a2"
 knz_producer_raw <- read.csv(file = knz_produce_url)
 
 
 knz_producer <- knz_producer_raw %>%
+  filter(SoilType == "f") %>% # only keeping upland (florance) soil types to match consumer
   mutate(site = "KNZ", # adding general LTER/dataset info to each row
          taxa_type = "producer",
          ecosystem = "terrestrial",
@@ -106,7 +108,7 @@ knz_producer <- knz_producer_raw %>%
          guild = "plant", 
          unit_abundance = "cover class", 
          scale_abundance = "10 m2") %>%
-  mutate(plot = paste(WaterShed, SoilType, sep = "_"), subplot = Transect, sub_subplot = Plot, 
+  mutate(plot = WaterShed, subplot = Transect, sub_subplot = Plot, 
          abundance = Cover, species = paste(AB_genus, AB_species, sep = " "), year = RecYear,
          month = RecMonth, day = RecDay) %>% # renaming columns
   mutate(unique_ID = paste(site, plot, subplot, sub_subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
@@ -114,10 +116,47 @@ knz_producer <- knz_producer_raw %>%
                   "plot", "subplot", "sub_subplot", "year", "month", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-knz_producer <- knz_producer %>%
+# changing cover classes to midpoint of cover class - according to Konza sampling manual https://lter.konza.ksu.edu/sites/default/files/MM_0.pdf
+knz_producer$abundance <- as.factor(knz_producer$abundance)
+knz_producer$abundance <- fct_recode(knz_producer$abundance, "0.5" = "1", "3.0" = "2", "15.0" = "3",
+                                     "37.5" = "4", "62.5" = "5", "85.0" = "6", "97.5" = "7")
+knz_producer$abundance <- as.numeric(as.character(knz_producer$abundance))
+
+# species names
+knz_producer <- knz_producer %>% # do we want to filter all of these??
   filter(!species %in% c("annual forb", "carex spp.", "cyperu spp.", "euphor spp.", "symphy spp."))
 
 
 
 
+# consumer
+knz_consume_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.29.22&entityid=3fb352e2478f776517f7e880fe31b808"
+knz_consumer_raw <- read.csv(file = knz_consume_url)
+
+
+knz_consumer <- knz_consumer_raw %>%
+  filter(SOILTYPE == "fl") %>% # only keeping upland (florance) soil types - others were not sampled long term
+  mutate(site = "KNZ", # adding general LTER/dataset info to each row
+         taxa_type = "consumer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "insect", 
+         unit_abundance = "count", 
+         scale_abundance = "200 sweeps") %>%
+  mutate(plot = WATERSHED, subplot = REPSITE, 
+       abundance = TOTAL, species = SPCODE, year = RECYEAR,
+       month = RECMONTH, day = RECDAY) %>% # renaming columns
+  mutate(unique_ID = paste(site, plot, subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
+knz_consumer <- knz_consumer %>%
+  filter(!is.na(species)) %>% # removing NAs for species
+  filter(!abundance %in% c("", "0")) %>% # removing 0 and NA for abundance
+  mutate(species = as.character(species)) %>% # converting species codes to character
+  mutate(abundance = as.numeric(abundance)) # converting abundance to numeric
 
