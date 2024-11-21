@@ -166,6 +166,10 @@ abundance_z_ranges <- sim_diversity_z %>%
   ungroup()
 
 ## Visualize how z-standardizing affects abundance across measurement types
+ggplot(data = sim_diversity_z, aes(abundance_z)) +
+  geom_histogram() +
+  facet_grid(measurement ~ trophic_level)
+
 ggplot(data = abundance_z_ranges, aes(range_abundance_z)) +
   geom_histogram() +
   facet_grid(measurement ~ trophic_level)
