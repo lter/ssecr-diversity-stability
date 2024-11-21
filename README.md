@@ -30,20 +30,20 @@
 ## Project summary
 
 ### Question
-1) How does the biodiversity of one trophic level affect the stability of its own and other trophic levels within an ecosystem and among different ecosystems? 
-2) How does community stability differ from ecosystem stability in different ecosystems?
-3) How does community/compositional stability affect functional/ecosystem stability?
+1) Do producer and consumer diversity promote multi-trophic aggregate stability? Do they promote multi-trophic compositional stability?
+2) How are compositional and aggregate stability related?
+3) Do general trends arise across terrestrial and aquatic ecosystems?
 
 ### Motivation
-Diversity-stability relationships are a foundation of community ecology but are controversial and highly debated. Historically, studies have focused on the stability of land-plant communities, focusing on how species richness promotes the stability of primary production or above-ground biomass (hereafter “ecosystem stability”). However, these studies may neglect underlying changes in community composition (hereafter “community stability”). As the biodiversity crisis worsens, understanding the strength and direction of biodiversity-stability relationships across multiple ecosystems and multiple facets of stability will be critical in predicting implications of biodiversity change. Additionally, the strength and direction of diversity-stability relationships may differ with the degree of abiotic variability in a system, but less research has compared diversity-stability relationships in multiple ecosystems. 
+Diversity-stability relationships are a foundation of community ecology but are controversial and highly debated. Historically, studies have focused on the stability of land-plant communities, focusing on how species richness promotes the stability of primary production or above-ground biomass (hereafter “aggregate stability”). However, these studies may neglect underlying changes in community composition (hereafter “compositional stability”). As the biodiversity crisis worsens, understanding the strength and direction of biodiversity-stability relationships across multiple ecosystems and multiple facets of stability will be critical in predicting implications of biodiversity change. Additionally, the strength and direction of diversity-stability relationships may differ with the degree of abiotic variability in a system, but less research has compared diversity-stability relationships in multiple ecosystems. 
 
 ### Approach
-We will gather long-term (>10 year) time series of primary producer communities across ecosystem types (e.g., grassland, forest, lake, kelp forest, coral reef) from the LTER network. Using this harmonized dataset, we will compare the diversity (i.e., taxonomic richness, functional richness, evenness) of the producer communities at sites within each LTER with the ecosystem-level and community-level stability (see key definitions) of those sites. We will then compare the direction and slopes of these relationships among LTER sites to explore (1) how these relationships vary among environments and (2) how diversity differentially influences ecosystem-level versus community-level stability. 
+We will gather long-term (>10 year) time series of primary producer communities across ecosystem types (e.g., grassland, forest, lake, kelp forest, coral reef) from the LTER network. Using this harmonized dataset, we will compare the diversity (i.e., taxonomic richness, functional richness, evenness) of the producer communities at sites within each LTER with the ecosystem-level and community-level stability (see key definitions) of those sites. We will then compare the direction and slopes of these relationships among LTER sites to explore (1) how these relationships vary among environments and (2) how diversity differentially influences aggregate versus compositional stability. 
  
 ### Key definitions
-- **Ecosystem stability:** The extent to which production is constant through time. We will calculate ecosystem stability as the inverse of the coefficient of variation of producer abundance (e.g., biomass, cover) throughout the time series. 
+- **Aggregate stability:** The extent to which production is constant through time. We will calculate ecosystem stability as the inverse of the coefficient of variation of producer abundance (e.g., biomass, cover) throughout the time series. 
 
-- **Community stability:** The extent to which structural community composition is constant through time. We will calculate community stability as a function of the vector length in multivariate space between consecutive biological community matrices.
+- **Compositional stability:** The extent to which structural community composition is constant through time. We will calculate community stability as a function of the vector length in multivariate space between consecutive biological community matrices.
 
 <img src="images/ssecr_proposal-dummyfigure.png" alt="Conceptual two panel figure showing our two different approaches for looking at diversity-stability relationships. In panel A we show a potentially negative relationship between species richness and the coefficient of variation of producer communities, with different colored lines indicating different potential LTER sites. In panel B we show a community trajectory analysis, which we will use to estimate community stability, which is composed of a series of vectors moving around a PCoA ordination" width="100%" />
    
