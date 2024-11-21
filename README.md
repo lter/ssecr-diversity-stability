@@ -30,9 +30,11 @@
 ## Project summary
 
 ### Question
-1) Do producer and consumer diversity promote multi-trophic aggregate stability? Do they promote multi-trophic compositional stability?
+1) Do producer and consumer diversity promote multi-trophic aggregate stability? Do they promote multi-trophic compositional stability? (see conceptual model below)
 2) How are compositional and aggregate stability related?
 3) Do general trends arise across terrestrial and aquatic ecosystems?
+
+<img src="images/Conceptual_model_multitrophic.jpeg" alt="Conceptual model showing potential relationships among producer/consumer diversity and producer/consumer stability. We suggest that consumer diversity should influence consumer/producer diversity and stability. Similarly, producer diversity should influence consumer/producer diversity and stability. Finally, consumer and producer stability should influence multitrophic stability." width="100%" />
 
 ### Motivation
 Diversity-stability relationships are a foundation of community ecology but are controversial and highly debated. Historically, studies have focused on the stability of land-plant communities, focusing on how species richness promotes the stability of primary production or above-ground biomass (hereafter “aggregate stability”). However, these studies may neglect underlying changes in community composition (hereafter “compositional stability”). As the biodiversity crisis worsens, understanding the strength and direction of biodiversity-stability relationships across multiple ecosystems and multiple facets of stability will be critical in predicting implications of biodiversity change. Additionally, the strength and direction of diversity-stability relationships may differ with the degree of abiotic variability in a system, but less research has compared diversity-stability relationships in multiple ecosystems. 
