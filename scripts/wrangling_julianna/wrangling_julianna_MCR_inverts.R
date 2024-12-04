@@ -57,7 +57,7 @@ updated_taxonomy <- read_csv(here("../taxa_tables/MCR_invert_taxa_annotated.csv"
 #inverts %>% 
 #  select(Taxonomy) %>% 
 #  unique() %>% 
-#  arrange() %>% 
+#  arrange(Taxonomy) %>% 
 #  write_csv(here("../taxa_tables/MCR_invert_taxa.csv"))
 
 # Changed Tectus niloticus to Rochia nilotica

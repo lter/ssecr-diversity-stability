@@ -49,6 +49,7 @@ updated_taxonomy <- read_csv(here("../taxa_tables/MCR_algae_taxa_annotated.csv")
 #algae %>% 
 #  select(Taxonomy_Substrate_Functional_Group) %>% 
 #  unique() %>%
+#  arrange(Taxonomy_Substrate_Functional_Group) %>% 
 #  write_csv(here("../taxa_tables/MCR_algae_taxa.csv"))
 
 # cross referenced with WORMS and made the following changes:

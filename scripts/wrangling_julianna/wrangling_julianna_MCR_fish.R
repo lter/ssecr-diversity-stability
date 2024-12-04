@@ -35,3 +35,37 @@ librarian::shelf(here, # relative file paths
 ## -------------------------------------------- ##
 
 fish_1 <- read_csv(here("../data/MCR_fish_abundance_20240927.csv"))
+updated_taxonomy <- read_csv(here("../taxa_tables/MCR_fish_taxa_annotated.csv"))
+# HILLARY SPP LIST
+# ^ sent to me via Hillary on Dec 3, 2024
+
+# NOTES ON FISH DATA
+# 2005 used a different method--start with 2006
+# need to deal with the 1m and 5m swaths differently (both x 50 m)
+# Need to make decisions about spp not identified to the spp level
+# "no fish observed" is an option
+
+## -------------------------------------------- ##
+#             Taxa cleaning ----
+## -------------------------------------------- ##
+
+# Make taxa table
+# fish_1 %>% 
+#   select(Taxonomy) %>% 
+#   unique() %>% 
+#   arrange(Taxonomy) %>% 
+#   write_csv(here("../taxa_tables/MCR_fish_taxa.csv"))
+
+# list of fishes not identified to species
+low_res_fishes <- updated_taxonomy %>% 
+  filter(`Low taxonomic resolution` == "Y") %>%
+  select(Taxonomy)
+
+# count up the instances of the fishes not identified to species
+fish_1 %>% 
+  filter(Taxonomy %in% low_res_fishes$Taxonomy) %>% 
+  group_by(Taxonomy) %>% 
+  summarize(Sum_count = sum(Count)) %>% view() # most there ever is is 47--maybe OK to exclude?
+# should ask Tom
+
+
