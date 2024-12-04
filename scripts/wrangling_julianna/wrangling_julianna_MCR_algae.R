@@ -13,7 +13,7 @@
 #### Last Updated: November 20th, 2024
 
 # Purpose:
-## Clean the Moorea benthic algal dataset, using code from the Moorea algal 
+## Clean the Moorea benthic algal dataset, inspired by code from the Moorea algal 
 ## working group--specifically Lauren Enright and Noam Altman-Kurosaki
 
 ## ------------------------------------------ ##
