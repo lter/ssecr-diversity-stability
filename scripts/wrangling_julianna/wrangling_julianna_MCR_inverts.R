@@ -124,7 +124,7 @@ invert_3 %>%
          plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", 
                                     str_split(Site, pattern = " ")[[1]][2])), 
          subplot = paste0(Transect, "_", Quadrat),
-         unique_ID = paste0(site, "_", habitat_fine, "_", plot, subplot),
+         unique_ID = paste0(site, "_", habitat_fine, "_", plot, "_", subplot),
          unit_abundance = "count",
          scale_abundance = "1m^2",
          species = Taxonomy,
