@@ -348,6 +348,11 @@ dev.off()
 #### CTA Length metrics ----
 # Create an empty list to store the trajectory lengths for each matrix
 # Define the list of dataframes and matrices
+# CTA Metrics ----
+
+#extracting CTA length, angles, and directionality metrics 
+# create lists of matrixs (mean has site metadata, but matrices do not)
+
 mean_df_list <- list(mcr_habitat_means, mcr_coral_means, mcr_algae_means)
 matrix_list <- list(mcr_comm_matrix, mcr_coral_matrix, mcr_algae_matrix)
 
