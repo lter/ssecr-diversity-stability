@@ -71,6 +71,7 @@ updated_taxonomy <- read_csv(here("../taxa_tables/SBC_taxa_annotated.csv"))
 # "Agalophenia spp." to "Aglaophenia spp."
 # Crisia occidentalis to Filicrisia franciscana
 # Dodecaceria fewkesi to Dodecaceria pacifica
+# Haemulon californiensis to Brachygenys californiensis
 
 
 

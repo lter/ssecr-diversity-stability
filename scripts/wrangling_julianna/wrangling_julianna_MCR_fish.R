@@ -94,6 +94,16 @@ fish_1 %>%
   # manually changed "cf" entries in Taxonomy updated to be without cf
   rename(Taxonomy = Taxonomy_updated) -> fish_2
 
+# Andy says - description for every Blennie spp 6, etc. is unique
+# Unknown Scaridae does not have a unique description
+# They're such small numbers, probably fine to just exclude them
+# most conservative thing is to just chuck them > also no way to do biomass
+# also FYI biomass is way more stable than abundance
+# also thinks it's fine to count the "cf" species as the species they are recorded as
+# sometimes these are for spp that are not even described (but reeeeally similar - 
+# length/weight probably the same; trophic is also probably the same );
+# these differences are more regional 
+
 ## -------------------------------------------- ##
 #             QA QC ----
 ## -------------------------------------------- ##
