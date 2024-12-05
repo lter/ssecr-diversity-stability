@@ -6,7 +6,64 @@
 ## ------------------------------------------ ##
 
 #### Author: James Sturges
-#### Last Updated: October 9th, 2024
+#### Last Updated: November 14th, 2024
+
+# install.packages(librarian)
+librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasampler, supportR, cowplot, summarytools, datacleanr)
+
+# read data directly from EDI repo
+data_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=edi.437.2&entityid=d9c5d73d11fc6a16ec41139b63b27751"
+data_long <- read.csv(file = data_url) # should be 217512 obs, 11 var
+
+# calculate number of species per site
+species_richness_per_site <- data_long %>%
+  group_by(site) %>%
+  summarise(num_species = n_distinct(species))
+species_richness_per_site
+
+#create a site vector to make site level dataframes
+sites <- c("mcr", "sbc", "csun.usvi", "Main_Hawaiian_Islands", "Florida_Keys")
+
+# Loop through each site and create a data frame for each
+for (site_name in sites) {
+  # Create a filtered data frame and assign it a unique name
+  assign(paste0(gsub("\\.", "_", site_name), "_df"), subset(data_long, site == site_name))
+}
+
+
+
+summarytools::dfSummary(mcr_df)
+summarytools::view(dfSummary(mcr_df))
+summarytools::view(dfSummary(sbc_df))
+summarytools::view(dfSummary(csun_usvi_df))
+summarytools::view(dfSummary(Main_Hawaiian_Islands_df))
+summarytools::view(dfSummary(Florida_Keys_df))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #### Required packages ----
 

@@ -1,7 +1,7 @@
 # Project Information ----
 # SSECR: Diversity-Stability Relationships
-# Authors: James Sturges & Noam-Altman-Kurosaki
-# Last Updated: November 4th, 2024
+# Co-Leads: James Sturges & Dr. Junna Wang
+# Last Updated: December 12th, 2024
 
 # Data Frame Generation ----
 
@@ -306,7 +306,7 @@ mcr_coral_means = mcr_coral_means %>%
 
 
 trajectoryPCoA(D2, sites = mcr_coral_means$habitat, surveys = mcr_coral_means$vector_nums, traj.colors = custom_palette, lwd = 2, survey.labels = T) 
-legend("bottomleft", inset = c(0.14, -0.05), bty="n", legend=c("Fringing", "Outer 10", "Outer 17"),  
+legend("bottomleft", inset = c(0.18, 0.72), bty="n", legend=c("Fringing", "Outer 10", "Outer 17"),  
        col = custom_palette, lwd = 2, xpd = TRUE)
 
 # Capture the plot output
@@ -333,7 +333,7 @@ mcr_algae_means = mcr_algae_means %>%
 
 
 trajectoryPCoA(D3, sites = mcr_algae_means$habitat, surveys = mcr_algae_means$vector_nums, traj.colors = custom_palette, lwd = 2, survey.labels = T) 
-legend("bottomright", inset = c(0, -0.2), bty="n", legend=c("Fringing", "Outer 10", "Outer 17","Backreef"),  
+legend("bottomright", inset = c(0.07, 0.72), bty="n", legend=c("Fringing", "Outer 10", "Outer 17","Backreef"),  
        col = custom_palette, lwd = 2, xpd = TRUE)
 
 # Capture the plot output
@@ -345,48 +345,45 @@ png(filename = "figures/CTA/mcr_algae_trajectory_plot.png", width = 8, height = 
 trajectory_plot
 dev.off()
 
+#### CTA Length metrics ----
+# Create an empty list to store the trajectory lengths for each matrix
+# Define the list of dataframes and matrices
+mean_df_list <- list(mcr_habitat_means, mcr_coral_means, mcr_algae_means)
+matrix_list <- list(mcr_comm_matrix, mcr_coral_matrix, mcr_algae_matrix)
 
-D <- vegan::vegdist(mcr_comm_matrix,"bray")
+# Initialize empty lists to store results
+dist_list <- list()
+lengths_list <- list()
+angles_list <- list()
+directionality_list <- list()
 
-custom_palette <- c("#003300",  
-                    "#990000",  
-                    "#ff7f0e",  
-                    "#000066") 
+# Assign names to the matrices for easy referencing
+names(matrix_list) <- c("mcr_comm_matrix", "mcr_coral_matrix", "mcr_algae_matrix")
 
-# whole community by plot location CTAs
+# Iterate over each matrix in the list
+for (i in seq_along(matrix_list)) {
+  # Perform the vegdist operation to calculate Bray-Curtis dissimilarity
+  dist_list[[i]] <- vegdist(matrix_list[[i]], method = "bray")
+  
+  # Calculate trajectory metrics
+  lengths <- trajectoryLengths(dist_list[[i]], site = mean_df_list[[i]]$habitat, surveys = mean_df_list[[i]]$year)
+  angles <- trajectoryAngles(dist_list[[i]], site = mean_df_list[[i]]$habitat, surveys = mean_df_list[[i]]$year)
+  directionality <- trajectoryDirectionality(dist_list[[i]], site = mean_df_list[[i]]$habitat, surveys = mean_df_list[[i]]$year)
+  
+  # Store results in lists
+  lengths_list[[i]] <- lengths
+  angles_list[[i]] <- angles
+  directionality_list[[i]] <- directionality
+  
+  # Define file paths with the matrix names
+  matrix_name <- names(matrix_list)[i]
+  lengths_file <- paste0("tables/mcr/lengths_", matrix_name, ".csv")
+  angles_file <- paste0("tables/mcr/angles_", matrix_name, ".csv")
+  directionality_file <- paste0("tables/mcr/directionality_", matrix_name, ".csv")
+  
+  # Save each metric to CSV, ensuring each matrix gets its own files
+  write_csv(as.data.frame(lengths), lengths_file)
+  write_csv(as.data.frame(angles), angles_file)
+  write_csv(as.data.frame(directionality), directionality_file)
+}
 
-D <- vegan::vegdist(mcr_comm_matrix, "bray")
-
-# Define a custom color palette
-custom_palette <- c("#003300",  
-                    "#990000",  
-                    "#ff7f0e",  
-                    "#000066") 
-
-# Adjust mcr_habitat_means to include both habitat and plot information
-mcr_habitat_means <- mcr_habitat_means %>%
-  mutate(vector_nums = year - min(year) + 1,
-         habitat_plot = paste(habitat, plot, sep = "_"))  # Create unique habitat-plot identifier
-
-# Generate the plot using trajectoryPCoA
-trajectoryPCoA(
-  D, 
-  sites = mcr_habitat_means$habitat_plot,  # Use unique habitat-plot identifiers
-  surveys = mcr_habitat_means$vector_nums, 
-  traj.colors = custom_palette, 
-  lwd = 2, 
-  survey.labels = TRUE
-) 
-
-# Add a legend with custom colors for each habitat
-legend("topright", inset = c(0, -0.25), bty = "n", 
-       legend = c("Fringing", "Outer 10", "Outer 17", "Backreef"),  
-       col = custom_palette, lwd = 2, xpd = TRUE)
-
-# Capture the plot output
-trajectory_plot <- recordPlot()
-
-# Save the plot as a PNG file
-png(filename = "figures/CTA/mcr_comm_trajectory_plot.png", width = 8, height = 8, res = 300, units = "in")
-trajectory_plot
-dev.off()
