@@ -47,7 +47,8 @@ kbs_consumer <- kbs_consumer %>%
   filter(species != "Other") # removing unidentified individuals n=45
 
 # GROUPING NOTES: traps are sampled weekly throughout the growing season -- it may make the most sense to sum rather than average?
-  
+kbs_consumer %>%
+  count(species)
   
 
 # PRODUCER
@@ -89,7 +90,8 @@ kbs_producer <- kbs_producer %>% # removing unknown - still have some IDed to ge
  # mutate(species = if_else(is.na(species), "sp.", species)) %>% # converting "NA" to "sp." - only "dicot" and "monocot" were one word and so have "NA" as second word
  # mutate(species = paste(genus, species), genus = NULL) # recombining genus and species, getting rid of genus column
 
-
+kbs_producer %>%
+  count(species)
 
 ###### KNZ LTER harmonization ######
 # producer
@@ -126,7 +128,8 @@ knz_producer$abundance <- as.numeric(as.character(knz_producer$abundance))
 knz_producer <- knz_producer %>% # do we want to filter all of these??
   filter(!species %in% c("annual forb", "carex spp.", "cyperu spp.", "euphor spp.", "symphy spp."))
 
-
+knz_producer %>%
+  count(species)
 
 
 # consumer
@@ -159,4 +162,11 @@ knz_consumer <- knz_consumer %>%
   filter(!abundance %in% c("", "0")) %>% # removing 0 and NA for abundance
   mutate(species = as.character(species)) %>% # converting species codes to character
   mutate(abundance = as.numeric(abundance)) # converting abundance to numeric
+
+knz_consumer %>%
+  count(species)
+
+
+###### CDR LTER harmonization ######
+
 
