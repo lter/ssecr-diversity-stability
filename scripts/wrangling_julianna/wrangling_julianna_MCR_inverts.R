@@ -46,16 +46,98 @@ librarian::shelf(here, # relative file paths
 # The “year one” survey spread between 2005-2006 to cover all locations. Each subsequent year contains a complete survey
 # In 2021 fore reef 10 m and 17 m surveys were not conducted due to COVID border closures in French Polynesia
 
-inverts <- read_csv(here("../data/MCR_invert_abundance_20231220.csv"))
+inverts_1 <- read_csv(here("../data/MCR_invert_abundance_20231220.csv"))
+updated_taxonomy <- read_csv(here("../taxa_tables/MCR_invert_taxa_annotated.csv"))
+
+## -------------------------------------------- ##
+#             Taxa cleaning ----
+## -------------------------------------------- ##
 
 # Make taxa table
 #inverts %>% 
 #  select(Taxonomy) %>% 
 #  unique() %>% 
-#  arrange() %>% 
+#  arrange(Taxonomy) %>% 
 #  write_csv(here("../taxa_tables/MCR_invert_taxa.csv"))
 
 # Changed Tectus niloticus to Rochia nilotica
 
+# update taxonomy and trophic designations (done manually)
+inverts_1 %>% 
+  full_join(updated_taxonomy) %>% 
+  select(-Taxonomy) %>% 
+  rename(Taxonomy = 
+           Taxonomy_updated) %>% 
+  # use dates after 2006 because the first year was 2005-2006 (not consistent with others)
+  filter(Year > 2006)  %>% 
+  # exclude organisms off the quadrat (i.e., those that have a "1 m" in their taxa name)
+  mutate(Taxonomy_on_quad = case_when(str_detect(Taxonomy, pattern = "1") ~ "off_quad",
+                                 TRUE ~ "on_quad")) %>% 
+  # filter these out
+  filter(Taxonomy_on_quad == "on_quad") -> inverts_2
+
+## -------------------------------------------- ##
+#             QA QC ----
+## -------------------------------------------- ##
+
+# check to see if there's any NA's
+is.na(inverts_2) %>% unique() # looks good
+# check for any weird placeholder values (e.g., -9999)
+inverts_2$Count %>% min() # looks good
+
+# get a list of sites
+inverts_2 %>% 
+  group_by(Year, Date, Location, Site, Habitat, Transect, Quadrat) %>% 
+  summarize(n = n()) %>% # can see n() varies a ton
+  select(-n) -> quad_list
+
+# filter all the relevant trophic groups and then join with quad list
+inverts_2 %>% 
+  filter(Count > 0) %>% 
+  filter(Trophic_role == "primary_consumer" | 
+           Trophic_role == "omnivore" | 
+           Trophic_role == "suspension_feeder") %>% 
+  full_join(quad_list) %>% 
+  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ "no_invertebrate_herbivore_observed", 
+                              TRUE ~ Taxonomy),
+         Trophic_role = case_when(is.na(Trophic_role) ~ "herbivore_any_type", 
+                                  TRUE ~ Trophic_role),
+         Count = case_when(is.na(Count) ~ 0, 
+                                  TRUE ~ Count)
+         ) -> invert_3
+
+## -------------------------------------------- ##
+#             SSECR format ----
+## -------------------------------------------- ##
+
+invert_3 %>% 
+  mutate(site = "mcr",
+         taxa_type = Trophic_role,
+         ecosystem = "aquatic",
+         habitat_broad = "coral_reef",
+         habitat_fine = str_to_lower(Habitat),
+         biome = "tropical",
+         guild = "invertebrate",
+         year = Year,
+         month = month(as.Date(Date)),
+         day = day(as.Date(Date)),
+         plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", 
+                                    str_split(Site, pattern = " ")[[1]][2])), 
+         subplot = paste0(Transect, "_", Quadrat),
+         unique_ID = paste0(site, "_", habitat_fine, "_", plot, "_", subplot),
+         unit_abundance = "count",
+         scale_abundance = "1m^2",
+         species = Taxonomy,
+         abundance = Count
+         ) %>% 
+  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, 
+         year, month, day, plot, subplot, unique_ID, unit_abundance,
+         scale_abundance, species, abundance) -> invert_4
+
+## -------------------------------------------- ##
+#             Write CSV ----
+## -------------------------------------------- ##
+
+write_csv(invert_4, here("../cleaned_data/mcr_invert_cleaned.csv"))
 
 
