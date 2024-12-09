@@ -113,9 +113,9 @@ knz_producer <- knz_producer_raw %>%
   mutate(plot = WaterShed, subplot = Transect, sub_subplot = Plot, 
          abundance = Cover, species = paste(AB_genus, AB_species, sep = " "), year = RecYear,
          month = RecMonth, day = RecDay) %>% # renaming columns
-  mutate(unique_ID = paste(site, plot, subplot, sub_subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "sub_subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "sub_subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 # changing cover classes to midpoint of cover class - according to Konza sampling manual https://lter.konza.ksu.edu/sites/default/files/MM_0.pdf
@@ -128,8 +128,9 @@ knz_producer$abundance <- as.numeric(as.character(knz_producer$abundance))
 knz_producer <- knz_producer %>% # do we want to filter all of these??
   filter(!species %in% c("annual forb", "carex spp.", "cyperu spp.", "euphor spp.", "symphy spp."))
 
-knz_producer %>%
-  count(species)
+write.csv(knz_producer,"knz_producer.csv", row.names = FALSE) # exporting csv
+
+
 
 
 # consumer
@@ -151,9 +152,10 @@ knz_consumer <- knz_consumer_raw %>%
   mutate(plot = WATERSHED, subplot = REPSITE, 
        abundance = TOTAL, species = SPCODE, year = RECYEAR,
        month = RECMONTH, day = RECDAY) %>% # renaming columns
-  mutate(unique_ID = paste(site, plot, subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  mutate(plot = tolower(plot)) %>% # lowercasing plot to be consistent with producer
+  mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
@@ -163,10 +165,71 @@ knz_consumer <- knz_consumer %>%
   mutate(species = as.character(species)) %>% # converting species codes to character
   mutate(abundance = as.numeric(abundance)) # converting abundance to numeric
 
-knz_consumer %>%
-  count(species)
+
+write.csv(knz_consumer,"knz_consumer.csv", row.names = FALSE) # exporting csv
+
+
 
 
 ###### CDR LTER harmonization ######
+# producer 
+cdr_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.273.11&entityid=27ddb5d8aebe24db99caa3933e9bc8e2"
+cdr_producer_raw <- read.csv(file = cdr_producer_url)
 
 
+cdr_producer <- cdr_producer_raw %>%
+  mutate(site = "CDR", # adding general LTER/dataset info to each row
+         taxa_type = "producer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "plant", 
+         unit_abundance = "g/m2", 
+         scale_abundance = "m2") %>%
+  mutate(plot = Plot, subplot = Strip, 
+         abundance = `Biomass..g.m2.`, species = Species, year = Year,
+         month = Month) %>% # renaming columns
+  separate(Date, c("month_discard", "day", "year_discard"), sep = "/") %>% # separating date components in order to get "day" -- not using month/year from this, discarding those extra columns
+  mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+cdr_producer$species <- str_replace(cdr_producer$species, "Festuca Sp.", "Festuca sp.") # fixing typo
+cdr_producer$species <- str_replace(cdr_producer$species, "cyperus sp", "Cyperus sp.") # fixing typo
+cdr_producer$species <- str_replace(cdr_producer$species, "leptoloma sp.", "Leptoloma sp.") # fixing typo
+
+cdr_producer <- cdr_producer %>%
+  filter(!species %in% c("32 Species Weeds", "Fungi", "Grasses", "Green matter", "Green matter (alive)", 
+                         "Miscellaneous Forb", "Miscellaneous forb", "Miscellaneous grass", "Miscellaneous grasses",
+                         "Miscellaneous herbs", "Miscellaneous litter", "Miscellaneous sedges", "Miscellaneous sp.",
+                         "Mosses", "Mosses & lichens", "Real Weeds", "Unsorted Biomass", "Unsorted biomass", "Weeds",
+                         "era sp", "erg sp", "miscellaneous seedhead", "unknown forb", "unknown grass"))
+
+
+# consumer
+cdr_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.418.8&entityid=aae64949e1ef41513062633cfb6da7d5"
+cdr_consumer_raw <- read.delim(file = cdr_consumer_url)
+
+
+cdr_consumer <- cdr_consumer_raw %>%
+  mutate(site = "CDR", # adding general LTER/dataset info to each row
+         taxa_type = "consumer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "insect", 
+         unit_abundance = "count", 
+         scale_abundance = "25 sweeps") %>%
+  mutate(plot = Plot, subplot = NA, 
+         abundance = Count, species = paste(Genus, Specific.epithet, sep = " "), year = Year,
+         month = Month, day = NA) %>% # renaming columns
+  mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+cdr_consumer_raw %>%
+  count(Genus, Specific.epithet, Further.ID)
