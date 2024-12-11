@@ -345,7 +345,7 @@ png(filename = "figures/CTA/mcr_algae_trajectory_plot.png", width = 8, height = 
 trajectory_plot
 dev.off()
 
-#### CTA Length metrics ----
+# CTA Length metrics ----
 # Create an empty list to store the trajectory lengths for each matrix
 # Define the list of dataframes and matrices
 # CTA Metrics ----
