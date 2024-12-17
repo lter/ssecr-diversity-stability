@@ -10,7 +10,7 @@
 # Load `librarian` package
 library(librarian)
 # Install missing packages and load needed libraries
-shelf(tidyverse, summarytools)
+shelf(tidyverse, summarytools, googlesheets4, googledrive)
 
 
 
@@ -233,3 +233,40 @@ cdr_consumer <- cdr_consumer_raw %>%
 
 cdr_consumer_raw %>%
   count(Genus, Specific.epithet, Further.ID)
+cdr_consumer_raw %>%
+  filter(Order == "Homoptera") %>%
+  count(Genus)
+
+cdr_consumer_raw$Further.ID <- str_trim(cdr_consumer_raw$Further.ID, side = c("both")) 
+cdr_consumer_raw$Further.ID <- str_replace_all(cdr_consumer_raw$Further.ID, "^na$", "") 
+
+cdr_consumer_trial_taxonomy <- cdr_consumer_raw %>%
+  mutate(ID = paste(Genus, Specific.epithet, Further.ID, sep = " ")) %>%
+  count(ID)
+
+
+## Loading info on taxonomy resolutions from google drive
+googledrive::drive_auth() # Authenticate Google drive 
+cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/14KEoAB88NcpEHVWZ0-VvB8hEXTNMWwCjf0kWB311fJg/edit?gid=45649463#gid=45649463")
+
+cdr_consumer_trial_taxonomy$ID <- str_trim(cdr_consumer_trial_taxonomy$ID, side = c("both")) 
+cdr_cleaned_species$PreferredName <- str_trim(cdr_cleaned_species$PreferredName, side = c("both")) 
+
+cdr_consumer_trial_taxonomy %>%
+  full_join(cdr_cleaned_species, by = c("ID" = "PreferredName")) %>%
+  filter(!is.na(n.x)) %>%
+  View()
+
+
+
+cdr_cleaned_species <- cdr_consumer_taxonomy %>%
+  count(PreferredName)
+
+
+
+
+
+
+
+
+
