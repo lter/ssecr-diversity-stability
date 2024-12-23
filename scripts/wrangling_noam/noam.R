@@ -7,8 +7,8 @@
 
 #### Author(s): Noam Altman-Kurosaki
 #### Last Updated: November 7th, 2024
-librarian::shelf(vegan, lme4, dplyr, tidyr, lattice, lavaan, ggplot2)
-source("00_test-data.R")
+librarian::shelf(vegan, lme4, dplyr, tidyr, lattice, lavaan, piecewiseSEM, ggplot2)
+
 
 # function for z standardization
 z_standard <- function(x){
@@ -119,11 +119,7 @@ habitat_details <- list(
        lambda_min = 8, lambda_max = 12, meanlog = 1.5, sdlog = 0.4, num_transects = 8)
 )
 
-habitat_data <- bind_rows(
-  lapply(habitat_details, function(h) do.call(simulate_habitat, h))
-)
 
-head(habitat_data)
 
 # Simulate data for all habitats
 set.seed(132)
