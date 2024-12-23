@@ -194,10 +194,13 @@ knz_multitroph_dss <- knz_multitroph_diversity %>%
     multitroph_stability = stability(abundance))
 
 # combine dfs for SEM
-knz_comb <- left_join(knz_prod_dss, knz_con_dss, 
+knz_comb <- ungroup(
+            left_join(knz_prod_dss[,-which(names(knz_prod_dss) %in% c("taxa_type", "guild"))],
+                      knz_con_dss[,-which(names(knz_con_dss) %in% c("taxa_type", "guild"))], 
                       by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
             left_join(knz_multitroph_dss,
                       by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
+)
 
 mod_list <- list(
   lm(log(prod_stability, 2) ~ prod_shannon + prod_synchrony + con_shannon,  data = knz_comb),
@@ -210,7 +213,9 @@ mod_list <- list(
 # might have to standardize/use transformed vars, then use lme/lms instead of Gamma
 
 # run sem - need to collapse the separate models into a single multiple regression - look into this further
-knz_sem <- psem(  lm(log(prod_stability, 2) ~ prod_shannon + prod_synchrony + con_shannon,  data = knz_comb),
-                  lm(log(con_stability, 2) ~ con_shannon + con_synchrony + prod_shannon,  data = knz_comb),
-                  lm(log(multitroph_stability,2) ~ prod_stability + con_stability,  data = knz_comb))
-summary(knz_sem)
+knz_sem <- psem(
+  lm(log(prod_stability, 2) ~ prod_shannon + prod_synchrony + con_shannon,  data = knz_comb),
+  lm(log(con_stability, 2) ~ con_shannon + con_synchrony + prod_shannon,  data = knz_comb),
+  lm(log(multitroph_stability,2) ~ prod_stability + con_stability,  data = knz_comb),
+  data = knz_comb)
+semOutput(knz_sem)
