@@ -1,7 +1,7 @@
 # Noam Altman-Kurosaki
 # Konza multitrophic analyses
 
-librarian::shelf(vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, ggplot2, codyn)
+librarian::shelf(vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, semPlot, ggplot2, codyn)
 
 
 # function for z standardization
@@ -202,20 +202,150 @@ knz_comb <- ungroup(
                       by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
 )
 
-mod_list <- list(
-  lm(log(prod_stability, 2) ~ prod_shannon + prod_synchrony + con_shannon,  data = knz_comb),
-  lm(log(con_stability, 2) ~ con_shannon + con_synchrony + prod_shannon,  data = knz_comb),
-  lm(log(multitroph_stability,2) ~ prod_stability + con_stability,  data = knz_comb)
+# log transform/rescale variables for lavaan - NOTE: might be able to do this with glmms with piecewiseSEM in the future
+knz_comb$prod_stability_log <- log(knz_comb$prod_stability, 2)
+knz_comb$con_stability_log <- log(knz_comb$con_stability, 2)
+knz_comb$multitroph_stability_log <- log(knz_comb$multitroph_stability, 2)
+
+# specify models for lavaan
+mod_list <-
+  '
+# regregssions
+prod_synchrony ~ prod_shannon
+con_synchrony ~ con_shannon
+prod_stability_log ~ prod_shannon + prod_synchrony + con_shannon
+con_stability_log ~ con_shannon + con_synchrony + prod_shannon
+multitroph_stability_log ~ con_stability_log + prod_stability_log 
+
+# covariances
+prod_shannon ~~ con_shannon
+con_stability_log ~~ prod_stability_log
+'
+
+knz_fit <- lavaan::sem(mod_list, estimator = "ML", data = knz_comb)
+
+summary(knz_fit)
+
+knz_model_fit<-data.frame(model = lavInspect(knz_fit, "fit")[c("chisq","df", "pvalue", "rmsea","cfi","tli")])
+knz_model_fit
+
+knz_model_fit_df<-as.data.frame(knz_model_fit)
+modindices(knz_fit)
+varTable(knz_fit)
+
+knz_r2 <- lavaan::inspect(knz_fit, "r2")
+knz_r2_labels <- paste0("R² = ", round(knz_r2, 2)) # converting to character vector
+
+sem_plot <- semPaths(
+  knz_fit, 
+  what = "std",        # Show standardized estimates
+  whatLabels = "std",  # Show standardized coefficients on paths
+  edge.label.cex = 1,  # Adjust size of edge labels
+  style = "lisrel",    # Classic LISREL-style diagram
+  layout = "tree2",     # Tree layout
+  curvePivot = TRUE,   # Curve pivot for covariances
+  nCharNodes = 0,      # Full variable names
+  sizeMan = 12,         # Size of manifest variables
+  sizeLat = 12,        # Size of latent variables
+  asize = 2,           # Arrowhead size
+  residScale = 10,    # Scale residuals
+  as.expression = TRUE
 )
 
-# check residuals of all the models
-# lapply(mod_list, plot) # some look a little wonky - talk to nick about troubleshooting this
-# might have to standardize/use transformed vars, then use lme/lms instead of Gamma
 
-# run sem - need to collapse the separate models into a single multiple regression - look into this further
-knz_sem <- psem(
-  lm(log(prod_stability, 2) ~ prod_shannon + prod_synchrony + con_shannon,  data = knz_comb),
-  lm(log(con_stability, 2) ~ con_shannon + con_synchrony + prod_shannon,  data = knz_comb),
-  lm(log(multitroph_stability,2) ~ prod_stability + con_stability,  data = knz_comb),
-  data = knz_comb)
-semOutput(knz_sem)
+
+knz_model_fit_df_plot<-knz_model_fit_df %>% mutate(variables = row.names(.)) %>% filter(variables %in% c("chisq","df","pvalue","rmsea"))
+
+param_summary <- standardizedSolution(knz_fit, type="std.all") # standardize solution
+param_summary_sub<-param_summary %>% filter(!rhs == lhs, !lhs == rhs) # remove equivalent comparisons
+
+# add variables to specify directionality
+param_summary_sub$from <- param_summary_sub$rhs
+param_summary_sub$to <- param_summary_sub$lhs
+
+# extract R2
+SEM_r2<-parameterEstimates(knz_fit,rsquare = TRUE) %>% filter(op == "r2")
+
+# Rename variables
+knz_model_fit_df_plot$model <- sprintf("%.2f", knz_model_fit_df_plot$model)
+combined_annotation <- paste(knz_model_fit_df_plot$variables, "=", knz_model_fit_df_plot$model, collapse = "; \n")
+
+
+
+
+
+# param_summary_sub <- param_summary_sub %>% 
+#   mutate(from = fct_recode(from,
+#                            "consumer synchrony" = "con_synchrony",
+#                            "producer synchrony" = "prod_synchrony",
+#                            "producer diversity" = "prod_shannon_log",
+#                            "consumer diversity" = "con_shannon_log",
+#                            "producer stability" = "prod_stability_log",
+#                            "consumer stability" = "con_stability_log"),
+#          to = fct_recode(to,
+#                          "consumer synchrony" = "con_synchrony",
+#                          "producer synchrony" = "prod_synchrony",
+#                          "multitrophic stability" = "multitroph_stability_log",
+#                          "producer stability" = "prod_stability_log",
+#                          "consumer stability" = "con_stability_log",))
+# 
+
+
+# add significance codes
+param_summary_sub<-param_summary_sub %>% mutate(direction = ifelse(est.std < 0, "-", "+"),
+                                                sig = ifelse(pvalue < 0.05, "yes","no"))
+
+SEM_table<-param_summary_sub[c("to","from","est.std","se","pvalue")]
+# write.csv(SEM_table,"./Tables/SEM_trop.csv", row.names = F)
+
+hs_graph <- as_tbl_graph(param_summary_sub, directed = T)
+
+coord_positions <- data.frame(name = c("algal diversity","herbivore diversity",
+                                       "herbivore synchrony","algal synchrony",
+                                       "multitrophic stability"),
+                              y = c(15,15,
+                                    10,10,
+                                    5),
+                              x = c(2,3,
+                                    3,2,
+                                    2.5))
+
+trop_coord_ordered<-data.frame(name = row.names(data.frame(hs_graph_trop[4])))
+trop_coord<-merge(trop_coord_ordered,coord_positions, sort = F)
+
+sem_path_tropical<-
+  ggraph(hs_graph_trop,trop_coord) + 
+  theme_bw() +
+  removeGrid() +
+  geom_edge_link(aes(edge_color = ifelse(!is.na(sig) & sig == "yes", est.std, NA), # changed from est
+                     alpha = ifelse(!is.na(sig) & sig == "yes", 1,0.5),
+                     label = ifelse(!is.na(sig) & sig == "yes", round(est.std,2), NA)),
+                 arrow = arrow(length = unit(3, 'mm'),angle = 20,
+                               ends = "last",
+                               type = "open"),
+                 start_cap = circle(12, 'mm'),
+                 end_cap = square(25, 'mm'),
+                 width = 3,
+                 angle_calc = 'along',
+                 label_colour = "black",
+                 label_size = 2.6) +
+  labs(edge_color = "Coef. estimate", linetype = "none", fill = "variable", title = "Tropical") +
+  geom_node_point(aes(fill = name), fill = "black",size = 30, pch =21) +
+  theme(axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = c(.6,0.07),
+        legend.direction = "horizontal",
+        legend.key.width=unit(0.8, 'cm'),
+        legend.background = element_blank()) +
+  guides(alpha = "none", fill = "none") +
+  scale_edge_linetype(guide = "none") +
+  scale_edge_alpha(guide = 'none') +
+  scale_edge_colour_gradientn(colors = c(low = "blue",mid = "white",high = "red"), 
+                              values = scales::rescale(c(-0.5, -0.15,0, 0.15,0.5)),
+                              limits = c(-0.5, 0.5), oob = scales::squish) +
+  geom_node_text(aes(label = stringr::str_wrap(name, 8)), color = "white") +
+  lims(x = c(1.5,3.5),
+       y = c(2,17))
+
+
