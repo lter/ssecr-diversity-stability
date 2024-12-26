@@ -307,6 +307,10 @@ cor(knz_comb$prod_stability_log, knz_comb$con_stability_log) # -0.27
     theme_classic()
 )
 
+(cor_stab_panel <- ggpubr::ggarrange(div_cor_plot, stab_cor_plot,
+                                      nrow = 1, ncol = 2)
+)
+
 ##### structural equation modeling approach #####
 
 # specify models for lavaan
