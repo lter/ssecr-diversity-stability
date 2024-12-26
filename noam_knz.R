@@ -1,7 +1,7 @@
 # Noam Altman-Kurosaki
 # Konza multitrophic analyses
 
-librarian::shelf(vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, semPlot, ggplot2, codyn)
+librarian::shelf(vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, semPlot, ggplot2, codyn, ggpubr)
 
 
 # function for z standardization
@@ -124,42 +124,8 @@ knz_con_dss <- knz_con_diversity %>%
     con_stability = stability(abundance)) %>%
   dplyr::left_join(knz_con_synch_sub, by = "plot")
 
-# visualize relationships
-pairs(knz_prod_dss[, -which(names(knz_prod_dss) %in% long_meta_cols)])
-pairs(knz_con_dss[, -which(names(knz_con_dss) %in% long_meta_cols)])
 
-#### basic glms ####
-# when I have a synthesized dataset I would use site as a random effect both here and below in the SEM approach
-
-# producers
-knz_prod_divstab_mod <- glm(prod_stability ~ prod_shannon, family = Gamma("log"), data = knz_prod_dss)
-plot(knz_prod_divstab_mod) # some patterning in the residuals - tested with transformations. Seems due to low sample size
-car::Anova(knz_prod_divstab_mod) # X2 = 4.9, P = 0.03
-
-knz_prod_richstab_mod <- glm(prod_stability ~ prod_richness, family = Gamma("log"), data = knz_prod_dss)
-plot(knz_prod_richstab_mod) # some patterning in the residuals but a little better than shannon
-car::Anova(knz_prod_richstab_mod) # X2 = 4.2, P = 0.04
-
-knz_prod_synchstab_mod <- glm(prod_stability ~ prod_synchrony, family = Gamma("log"), data = knz_prod_dss)
-plot(knz_prod_synchstab_mod) # strong patterning in residuals - due to low range and near uniformity of synchrony?
-car::Anova(knz_prod_synchstab_mod) # X2 = 1.2606, P = 0.2615
-
-# consumers
-knz_con_divstab_mod <- glm(con_stability ~ con_shannon, family = Gamma("log"), data = knz_con_dss)
-plot(knz_con_divstab_mod) # some patterning in the residuals - tested with transformations. Seems due to low sample size
-car::Anova(knz_con_divstab_mod) # X2 = 0.49, P = 0.48
-
-knz_con_richstab_mod <- glm(con_stability ~ con_richness, family = Gamma("log"), data = knz_con_dss)
-plot(knz_con_richstab_mod) # looks good
-car::Anova(knz_con_richstab_mod) # X2 = 1.5, P = 0.22
-
-knz_con_synchstab_mod <- glm(con_stability ~ con_synchrony, family = Gamma("log"), data = knz_con_dss)
-plot(knz_con_synchstab_mod) # strong patterning in residuals but not as bad as producer dataset
-car::Anova(knz_con_synchstab_mod) # X2 = 30.6, P = 5.8E-06
-
-
-##### structural equation modeling approach #####
-### calculate multitrophic stability
+# calculate multitrophic stability
 # combine producers and consumers
 knz_multitroph <- merge(knz_prod_wide[,-which(names(knz_prod_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
                         knz_con_wide[,-which(names(knz_con_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
@@ -195,17 +161,153 @@ knz_multitroph_dss <- knz_multitroph_diversity %>%
 
 # combine dfs for SEM
 knz_comb <- ungroup(
-            left_join(knz_prod_dss[,-which(names(knz_prod_dss) %in% c("taxa_type", "guild"))],
-                      knz_con_dss[,-which(names(knz_con_dss) %in% c("taxa_type", "guild"))], 
-                      by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
-            left_join(knz_multitroph_dss,
-                      by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
+  left_join(knz_prod_dss[,-which(names(knz_prod_dss) %in% c("taxa_type", "guild"))],
+            knz_con_dss[,-which(names(knz_con_dss) %in% c("taxa_type", "guild"))], 
+            by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
+    left_join(knz_multitroph_dss,
+              by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
 )
 
 # log transform/rescale variables for lavaan - NOTE: might be able to do this with glmms with piecewiseSEM in the future
 knz_comb$prod_stability_log <- log(knz_comb$prod_stability, 2)
 knz_comb$con_stability_log <- log(knz_comb$con_stability, 2)
 knz_comb$multitroph_stability_log <- log(knz_comb$multitroph_stability, 2)
+
+
+# visualize relationships - zoom in here
+pairs(knz_comb[, -which(names(knz_comb) %in% long_meta_cols)])
+
+
+#### basic lms ####
+# when I have a synthesized dataset I would use site as a random effect both here and below in the SEM approach
+
+# producers
+knz_prod_dss_mod <- lm(prod_stability_log ~ prod_shannon + prod_synchrony + con_shannon, data = knz_comb)
+plot(knz_prod_dss_mod) # some patterning in the residuals but not the worst
+car::Anova(knz_prod_dss_mod) # X2 = 4.9, P = 0.03
+# Sum Sq Df F value    Pr(>F)    
+# prod_shannon   0.00048  1  0.0275 0.8716272    
+# prod_synchrony 0.40602  1 23.2396 0.0007014 ***
+# con_shannon    0.02782  1  1.5926 0.2355946    
+# Residuals      0.17471 10    
+
+
+knz_prod_richstab_mod <- lm(prod_stability_log ~ prod_richness + prod_synchrony + con_shannon, data = knz_comb)
+plot(knz_prod_richstab_mod) # slightly stronger patterning than shannon
+car::Anova(knz_prod_richstab_mod)
+# Sum Sq Df F value    Pr(>F)    
+# prod_richness  0.00002  1  0.0014 0.9706503    
+# prod_synchrony 0.41442  1 23.6587 0.0006575 ***
+#   con_shannon    0.05124  1  2.9255 0.1179816    
+# Residuals      0.17516 10     
+
+
+# consumers
+knz_con_dss_mod <- lm(con_stability_log ~ con_shannon + con_synchrony + prod_shannon, data = knz_comb)
+plot(knz_con_dss_mod) # some patterning in the residuals - similar to producers
+car::Anova(knz_con_dss_mod) 
+# Sum Sq Df F value    Pr(>F)    
+# con_shannon   0.00000  1  0.0001 0.9939831    
+# con_synchrony 0.86956  1 23.3355 0.0006911 ***
+# prod_shannon  0.00580  1  0.1557 0.7014250    
+# Residuals     0.37263 10     
+
+knz_con_richstab_mod <- lm(con_stability_log ~ con_richness + con_synchrony + prod_shannon, data = knz_comb)
+plot(knz_con_richstab_mod) # similar to above
+car::Anova(knz_con_richstab_mod)
+# Sum Sq Df F value    Pr(>F)    
+# con_richness  0.02320  1  0.6639 0.4341697    
+# con_synchrony 0.74775  1 21.3986 0.0009421 ***
+# prod_shannon  0.00188  1  0.0538 0.8212512    
+# Residuals     0.34944 10                   
+
+# multitrophic
+knz_multitroph_dss_mod <- lm(multitroph_stability_log ~ con_stability_log + prod_stability_log, data = knz_comb)
+plot(knz_multitroph_dss_mod) # looks pretty good
+car::Anova(knz_multitroph_dss_mod)
+# Sum Sq Df F value    Pr(>F)    
+# con_stability_log  1.60926  1 76.3394 2.798e-06 ***
+#   prod_stability_log 0.03110  1  1.4755    0.2499    
+# Residuals          0.23188 11    
+
+# correlations
+cor(knz_comb$prod_shannon, knz_comb$con_shannon) # 0.97
+cor(knz_comb$prod_stability_log, knz_comb$con_stability_log) # -0.27
+
+# basic plots
+(prod_divstab_plot <- ggplot(data = knz_comb, aes(x = prod_shannon, y = prod_stability_log)) +
+  geom_point() +
+  stat_smooth(method = "lm") +
+  theme_classic()
+  )
+
+(prod_synchstab_plot <- ggplot(data = knz_comb, aes(x = prod_synchrony, y = prod_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(prod_constab_plot <- ggplot(data = knz_comb, aes(x = con_shannon, y = prod_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(prod_stab_panel <- ggpubr::ggarrange(prod_divstab_plot, prod_synchstab_plot, prod_constab_plot,
+                                      nrow = 1, ncol = 3)
+)
+
+(con_divstab_plot <- ggplot(data = knz_comb, aes(x = con_shannon, y = con_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(con_synchstab_plot <- ggplot(data = knz_comb, aes(x = con_synchrony, y = con_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(con_prodstab_plot <- ggplot(data = knz_comb, aes(x = prod_shannon, y = con_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(con_stab_panel <- ggpubr::ggarrange(con_divstab_plot, con_synchstab_plot, con_prodstab_plot,
+                                      nrow = 1, ncol = 3)
+)
+
+(mult_prodstab_plot <- ggplot(data = knz_comb, aes(x = prod_stability_log, y = multitroph_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(mult_constab_plot <- ggplot(data = knz_comb, aes(x = con_stability_log, y = multitroph_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(mult_stab_panel <- ggpubr::ggarrange(mult_prodstab_plot, mult_constab_plot,
+                                     nrow = 1, ncol = 2)
+)
+
+(div_cor_plot <- ggplot(data = knz_comb, aes(x = prod_shannon, y = con_shannon)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+(stab_cor_plot <- ggplot(data = knz_comb, aes(x = prod_stability_log, y = con_stability_log)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()
+)
+
+##### structural equation modeling approach #####
 
 # specify models for lavaan
 mod_list <-
@@ -238,114 +340,59 @@ knz_r2_labels <- paste0("R² = ", round(knz_r2, 2)) # converting to character ve
 
 sem_plot <- semPaths(
   knz_fit, 
-  what = "std",        # Show standardized estimates
+  what = "col",        # create unweighted path
   whatLabels = "std",  # Show standardized coefficients on paths
-  edge.label.cex = 1,  # Adjust size of edge labels
-  style = "lisrel",    # Classic LISREL-style diagram
-  layout = "tree2",     # Tree layout
+  layout = "tree2",    # Tree layout
   curvePivot = TRUE,   # Curve pivot for covariances
   nCharNodes = 0,      # Full variable names
-  sizeMan = 12,         # Size of manifest variables
+  sizeMan = 12,        # Size of manifest variables
   sizeLat = 12,        # Size of latent variables
-  asize = 2,           # Arrowhead size
-  residScale = 10,    # Scale residuals
+  asize = 3,           # Arrowhead size
+  residuals = FALSE,
+  edge.label.cex = 1,  # Adjust size of edge labels
+  edge.label.color = "black", # Ensure edge labels are visible
   as.expression = TRUE
 )
 
+# Extract path information
+edge_info <- lavaan::parameterEstimates(knz_fit, standardized = TRUE)
+edge_significance <- edge_info$pvalue
+edge_values <- edge_info$std.all
+
+# Extract standardized coefficients and significance
+edge_info <- lavaan::parameterEstimates(knz_fit, standardized = TRUE)
+
+# Define edge attributes based on significance and standardized coefficients
+edge_colors <- ifelse(edge_info$std.all > 0, "blue", "red")  # Blue for positive, red for negative
+edge_lty <- ifelse(edge_info$pvalue < 0.05, 1, 2)            # Solid for significant, dashed for non-significant
+
+# Modify graph attributes
+sem_plot$graphAttributes$Edges$color <- edge_colors  # Set edge colors
+sem_plot$graphAttributes$Edges$lty <- edge_lty     # Set line types
+
+# Replot with updated properties
+plot(sem_plot)
+
+## add R2 to main response variables - EXTRACTED THIS CODE FROM CHAT GPT BECAUSE IT'S CRAZY UNINTUITIVE IN SEMPATH
+# Extract node positions
+node_positions <- sem_plot$layout
+node_labels <- sem_plot$graphAttributes$Nodes$labels
+
+# Loop through variables and add R² labels
+for (i in seq_along(knz_r2_labels)) {
+  var_name <- names(knz_r2)[i]
+  node_index <- which(node_labels == var_name)
+  
+  # Add R² annotation slightly below each node
+  text(
+    x = node_positions[node_index, 1],       # X-coordinate of the node
+    y = node_positions[node_index, 2] - 0.1, # Slight offset below node
+    labels = knz_r2_labels[i],                  # R² label
+    cex = 0.8                               # Label size
+  )
+}
 
 
-knz_model_fit_df_plot<-knz_model_fit_df %>% mutate(variables = row.names(.)) %>% filter(variables %in% c("chisq","df","pvalue","rmsea"))
 
-param_summary <- standardizedSolution(knz_fit, type="std.all") # standardize solution
-param_summary_sub<-param_summary %>% filter(!rhs == lhs, !lhs == rhs) # remove equivalent comparisons
-
-# add variables to specify directionality
-param_summary_sub$from <- param_summary_sub$rhs
-param_summary_sub$to <- param_summary_sub$lhs
-
-# extract R2
-SEM_r2<-parameterEstimates(knz_fit,rsquare = TRUE) %>% filter(op == "r2")
-
-# Rename variables
-knz_model_fit_df_plot$model <- sprintf("%.2f", knz_model_fit_df_plot$model)
-combined_annotation <- paste(knz_model_fit_df_plot$variables, "=", knz_model_fit_df_plot$model, collapse = "; \n")
-
-
-
-
-
-# param_summary_sub <- param_summary_sub %>% 
-#   mutate(from = fct_recode(from,
-#                            "consumer synchrony" = "con_synchrony",
-#                            "producer synchrony" = "prod_synchrony",
-#                            "producer diversity" = "prod_shannon_log",
-#                            "consumer diversity" = "con_shannon_log",
-#                            "producer stability" = "prod_stability_log",
-#                            "consumer stability" = "con_stability_log"),
-#          to = fct_recode(to,
-#                          "consumer synchrony" = "con_synchrony",
-#                          "producer synchrony" = "prod_synchrony",
-#                          "multitrophic stability" = "multitroph_stability_log",
-#                          "producer stability" = "prod_stability_log",
-#                          "consumer stability" = "con_stability_log",))
-# 
-
-
-# add significance codes
-param_summary_sub<-param_summary_sub %>% mutate(direction = ifelse(est.std < 0, "-", "+"),
-                                                sig = ifelse(pvalue < 0.05, "yes","no"))
-
-SEM_table<-param_summary_sub[c("to","from","est.std","se","pvalue")]
-# write.csv(SEM_table,"./Tables/SEM_trop.csv", row.names = F)
-
-hs_graph <- as_tbl_graph(param_summary_sub, directed = T)
-
-coord_positions <- data.frame(name = c("algal diversity","herbivore diversity",
-                                       "herbivore synchrony","algal synchrony",
-                                       "multitrophic stability"),
-                              y = c(15,15,
-                                    10,10,
-                                    5),
-                              x = c(2,3,
-                                    3,2,
-                                    2.5))
-
-trop_coord_ordered<-data.frame(name = row.names(data.frame(hs_graph_trop[4])))
-trop_coord<-merge(trop_coord_ordered,coord_positions, sort = F)
-
-sem_path_tropical<-
-  ggraph(hs_graph_trop,trop_coord) + 
-  theme_bw() +
-  removeGrid() +
-  geom_edge_link(aes(edge_color = ifelse(!is.na(sig) & sig == "yes", est.std, NA), # changed from est
-                     alpha = ifelse(!is.na(sig) & sig == "yes", 1,0.5),
-                     label = ifelse(!is.na(sig) & sig == "yes", round(est.std,2), NA)),
-                 arrow = arrow(length = unit(3, 'mm'),angle = 20,
-                               ends = "last",
-                               type = "open"),
-                 start_cap = circle(12, 'mm'),
-                 end_cap = square(25, 'mm'),
-                 width = 3,
-                 angle_calc = 'along',
-                 label_colour = "black",
-                 label_size = 2.6) +
-  labs(edge_color = "Coef. estimate", linetype = "none", fill = "variable", title = "Tropical") +
-  geom_node_point(aes(fill = name), fill = "black",size = 30, pch =21) +
-  theme(axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = c(.6,0.07),
-        legend.direction = "horizontal",
-        legend.key.width=unit(0.8, 'cm'),
-        legend.background = element_blank()) +
-  guides(alpha = "none", fill = "none") +
-  scale_edge_linetype(guide = "none") +
-  scale_edge_alpha(guide = 'none') +
-  scale_edge_colour_gradientn(colors = c(low = "blue",mid = "white",high = "red"), 
-                              values = scales::rescale(c(-0.5, -0.15,0, 0.15,0.5)),
-                              limits = c(-0.5, 0.5), oob = scales::squish) +
-  geom_node_text(aes(label = stringr::str_wrap(name, 8)), color = "white") +
-  lims(x = c(1.5,3.5),
-       y = c(2,17))
 
 
