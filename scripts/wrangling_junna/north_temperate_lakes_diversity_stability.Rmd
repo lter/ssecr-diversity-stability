@@ -1,0 +1,296 @@
+---
+title: "NTL_LTER"
+output: pdf_document
+date: "2024-11-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(vegan)
+library(ggpubr)
+```
+
+
+## Potential problems
+(1) abundance cannot represent biomass; for phytoplankton it has no problems, but for upper trophic levels body size should be considered. 
+(2) when calculating stability, do we need to convert date-based sampling events to annual average first, because each year may have different sampling events?
+(3) I still need stability data for phytoplankton; I will use primary productivity data;
+
+
+```{r phytoplankton in trout lake area, fig.width=10, fig.height=4}
+library(tidyverse)
+library(vegan)
+rm(list=ls())
+##
+data_phyto_trout <- read.csv('harmonized_data/phytoplankton_trout_lake_area.csv')
+##
+## The Simpson index is a quantitative measure of how evenly individuals are distributed among species in a community.the problem with "- 1" if abundance is not count. 
+##
+## The Shannon index: H = -SUM(p * ln (p)). It measures the diversity of a community. 
+##
+## Steps of doing so:
+## (0.0) check unit_abundance and scale_abundance are uniform throughout a dataset; otherwise uniform unit is needed. 
+## (0.0) convert this excel sheet to large matrix
+## (1) annual average of community characteristics
+## (2) aggregated stability matrix
+## (3) average of the whole data
+## (4) diversity statistics (I should use these packages)
+##
+## Do we have duplicated rows? Yes. deal with duplication!
+sum(duplicated(data_phyto_trout[,1:14])==TRUE)
+##
+## remove duplicated rows
+data_phyto_trout <- data_phyto_trout %>% group_by(year, month, day, unique_ID, species) %>% summarise(abundance = sum(abundance))
+##
+## convert it into a data.frame
+data_phyto_trout_convert <- data_phyto_trout %>% mutate(date=as.Date(year, month, day)) %>% pivot_wider(names_from=species, values_from = abundance, values_fill = 0)
+## change NA values into 0
+data_phyto_trout_convert[is.na(data_phyto_trout_convert)] <- 0.0
+##
+## when to use group
+data_phyto_trout_annual <- data_phyto_trout_convert %>% ungroup %>% dplyr::select(-(c('date', 'month', 'day'))) %>% group_by(unique_ID, year) %>% summarise_all(mean)
+##
+## calculate stability, but this data has only one year data
+##
+## further step to site level data
+data_phyto_trout_site <- data_phyto_trout_annual %>% ungroup %>% dplyr::select(-year) %>% group_by(unique_ID) %>% summarise_all(mean)
+H <- diversity(data_phyto_trout_site[,-1])
+S <- specnumber(data_phyto_trout_site[,-1])
+## they are highly correlated. 
+plot(H, S)
+##
+diversity_stability_phyto <- data.frame(unique_ID = data_phyto_trout_site$unique_ID, shannon = H, richness = S, lake_id=substring(data_phyto_trout_site$unique_ID, 1, 2))
+#
+lake_feature <- read.csv('lake_characteristics.csv')
+diversity_stability_phyto <- left_join(diversity_stability_phyto, lake_feature, by="lake_id")
+##
+## diversity is quite similar among these sites. 
+##
+## get stability of primary productivity
+productivity <- read.csv('/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.402.2_Metabolism Phenology/model_output.csv')
+### We have the productivity for 5 sites ~ "allequash", "bigmuskellunge", "crystal", "trout", "sparkling"; I can calculate this. 
+unique(productivity$lake)
+###
+stability_nep <- productivity %>% group_by(lake) %>% summarise(cv_1 = 1.0/sd(Fnep))
+stability_nep$lake_id <- c('AL', 'BM', 'CR', 'fish', 'mendota', 'monona', 'TR', 'SP')
+### great! the five lakes has 38 years data
+diversity_stability_phyto <- diversity_stability_phyto %>% left_join(stability_nep, by='lake_id')
+diversity_stability_phyto$area_log <- log(diversity_stability_phyto$surface.area..hectare.)
+#
+p1 <- ggplot(data=diversity_stability_phyto, aes(x=shannon, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Producer shannon diversity', y='Producer aggregated stability (1/cv)', title='Producer (phytoplankton)')
+
+p2 <- ggplot(data=diversity_stability_phyto, aes(x=richness, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Producer richness', y='Producer aggregated stability (1/cv)', title='Producer (phytoplankton)')
+
+p3 <- ggplot(data=diversity_stability_phyto, aes(x=area_log, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Log transformed lake surface area', y='Producer aggregated stability (1/cv)', title='Producer (phytoplankton)')
+
+ggarrange(p1, p2, p3, nrow=1, ncol=3)
+ggsave("project_results/producer_diversity_stability.png")
+#
+
+```
+
+```{r zooplankton trout lake, fig.width=10, fig.height=4}
+#
+# This includes data in 1980s and 1990s. 
+data_zoop_trout <- read.csv('harmonized_data/zooplankton_trout_lake_area.csv')
+# unifying lake id
+data_zoop_trout$unique_ID[data_zoop_trout$unique_ID=='Tr_lake_2'] <- 'TR_lake_2'
+data_zoop_trout$unique_ID[data_zoop_trout$unique_ID=='Bm_lake_1'] <- 'BM_lake_1'
+##
+## remove the rows with species name = empty: 218 rows
+data_zoop_trout <- data_zoop_trout[data_zoop_trout$species!="", ]
+#
+sum(duplicated(data_zoop_trout[,1:14])==TRUE)
+## 15 duplicated rows
+#
+## remove duplicated rows
+data_zoop_trout <- data_zoop_trout %>% group_by(year, month, day, unique_ID, species) %>% summarise(abundance = sum(abundance))
+##
+## convert it into a data.frame
+data_zoop_trout_convert <- data_zoop_trout %>% mutate(date=as.Date(year, month, day)) %>% pivot_wider(names_from=species, values_from = abundance, values_fill = 0)
+## change NA values into 0
+data_zoop_trout_convert[is.na(data_zoop_trout_convert)] <- 0.0
+##
+## aggregated into annual average
+data_zoop_trout_annual <- data_zoop_trout_convert %>% ungroup %>% dplyr::select(-(c('date', 'month', 'day'))) %>% group_by(unique_ID, year) %>% summarise_all(mean)
+##
+## calculate stability
+data_zoop_trout_annual$total <- rowSums(data_zoop_trout_annual[, -(1:2)])
+stability_cv <- data_zoop_trout_annual %>% group_by(unique_ID) %>% summarise(cv_1 = 1.0/sd(total))
+##
+## further step to site level data
+data_zoop_trout_site <- data_zoop_trout_annual %>% ungroup %>% dplyr::select(-year) %>% group_by(unique_ID) %>% summarise_all(mean)
+H <- diversity(data_zoop_trout_site[,-1])
+S <- specnumber(data_zoop_trout_site[,-1])
+## they are highly correlated. 
+plot(H, S)
+##
+diversity <- data.frame(unique_ID = data_zoop_trout_site$unique_ID, shannon = H, richness = S, lake_id=substring(data_zoop_trout_site$unique_ID, 1, 2))
+##
+## combine diversity and stability
+diversity_stability_zoop <- diversity %>% left_join(stability_cv, by="unique_ID")
+##
+## adding the effect of ecosystem size
+lake_feature <- read.csv('lake_characteristics.csv')
+diversity_stability_zoop <- diversity_stability_zoop %>% left_join(lake_feature, by='lake_id')
+plot(data=diversity_stability_zoop, log(surface.area..hectare.) ~ cv_1)    # stability is highly correlated to lake area
+##
+diversity_stability_zoop$area_log <- log(diversity_stability_zoop$surface.area..hectare.)
+summary(lm(data=diversity_stability_zoop, cv_1 ~ area_log + shannon))
+summary(lm(data=diversity_stability_zoop, cv_1 ~ shannon))
+summary(lm(data=diversity_stability_zoop, cv_1 ~ richness))
+summary(lm(data=diversity_stability_zoop, cv_1 ~ area_log))           # this is the best model. 
+##
+p1 <- ggplot(data=diversity_stability_zoop, aes(x=shannon, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Consumer shannon diversity', y='Consumer aggregated stability (1/cv)', title='Consumer (zooplankton)')
+
+p2 <- ggplot(data=diversity_stability_zoop, aes(x=richness, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Consumer richness', y='Consumer aggregated stability (1/cv)', title='Consumer (zooplankton)')
+
+p3 <- ggplot(data=diversity_stability_zoop, aes(x=area_log, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Log transformed lake surface area', y='Consumer aggregated stability (1/cv)', title='Consumer (zooplankton)')
+
+ggarrange(p1, p2, p3, nrow=1, ncol=3)
+ggsave("project_results/consumer_zooplankton_diversity_stability.png")
+
+
+```
+
+```{r benthic macroinvertebrates, fig.width=10, fig.height=4}
+## I should remove taxon_code column
+## only three lakes but each lake more sites
+##
+data_binvert_trout <- read.csv('harmonized_data/benthic_macroinvertebrates_trout_lake_area.csv')
+# one lake has multiple locations; need to deal with that
+## data_binvert_trout$taxon_code <- NULL
+##
+## remove the rows with species name = empty: 11 rows
+data_binvert_trout <- data_binvert_trout[data_binvert_trout$species!="", ]
+#
+sum(duplicated(data_binvert_trout[,1:12])==TRUE)
+## 0 duplicated rows
+##
+## convert it into a data.frame: this is a yearly dataset
+data_binvert_trout_convert <- data_binvert_trout %>% pivot_wider(names_from=species, values_from = abundance, values_fill = 0)
+## change NA values into 0
+data_binvert_trout_convert[is.na(data_binvert_trout_convert)] <- 0.0
+##
+## aggregated into annual average: no need 
+data_binvert_trout_annual <- data_binvert_trout_convert %>% ungroup %>% dplyr::select(-c(site, taxa_type, ecosystem, habitat, biome, guild, plot, unit_abundance, scale_abundance)) 
+##
+## calculate stability
+data_binvert_trout_annual$total <- rowSums(data_binvert_trout_annual[, -(1:2)])
+stability_cv <- data_binvert_trout_annual %>% group_by(unique_ID) %>% summarise(cv_1 = 1.0/sd(total))
+##
+## further step to site level data
+data_binvert_trout_site <- data_binvert_trout_annual %>% ungroup %>% dplyr::select(-year) %>% group_by(unique_ID) %>% summarise_all(mean)
+H <- diversity(data_binvert_trout_site[,-1])
+S <- specnumber(data_binvert_trout_site[,-1])
+## they are highly correlated. 
+plot(H, S)
+##
+diversity <- data.frame(unique_ID = data_binvert_trout_site$unique_ID, shannon = H, richness = S, lake_id=substring(data_binvert_trout_site$unique_ID, 1, 2))
+##
+## combine diversity and stability
+diversity_stability_binvert <- diversity %>% left_join(stability_cv, by="unique_ID")
+
+plot(data=diversity_stability_binvert, shannon ~ cv_1)
+plot(data=diversity_stability_binvert, richness ~ cv_1)
+##
+## adding the effect of ecosystem size
+lake_feature <- read.csv('lake_characteristics.csv')
+diversity_stability_binvert <- diversity_stability_binvert %>% left_join(lake_feature, by='lake_id')
+plot(data=diversity_stability_binvert, log(surface.area..hectare.) ~ cv_1)    # stability is highly correlated to lake area
+##
+diversity_stability_binvert$area_log <- log(diversity_stability_binvert$surface.area..hectare.)
+summary(lm(data=diversity_stability_binvert, cv_1 ~ area_log + shannon))
+summary(lm(data=diversity_stability_binvert, cv_1 ~ area_log))           
+summary(lm(data=diversity_stability_binvert, cv_1 ~ shannon))           # this is the best model, but the relationship is negative. 
+##
+p1 <- ggplot(data=diversity_stability_binvert, aes(x=shannon, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Consumer shannon diversity', y='Consumer aggregated stability (1/cv)', title='Consumer (Benthic invertebrates)')
+
+p2 <- ggplot(data=diversity_stability_binvert, aes(x=richness, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Consumer richness', y='Consumer aggregated stability (1/cv)', title='Consumer (Benthic invertebrates)')
+
+p3 <- ggplot(data=diversity_stability_binvert, aes(x=area_log, y=cv_1)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Log transformed lake surface area', y='Consumer aggregated stability (1/cv)', title='Consumer (Benthic invertebrates)')
+##
+ggarrange(p1, p2, p3, nrow=1, ncol=3)
+ggsave("project_results/consumer_benthic_invertebrate_diversity_stability.png")
+
+
+```
+
+```{r cross trophic level relationship, fig.width=10, fig.height=8}
+diversity_stability_across <- data.frame(unique_ID = diversity_stability_phyto$unique_ID, lake_id = diversity_stability_phyto$lake_id, 
+                                         area_log = diversity_stability_phyto$area_log, shannon_phyto = diversity_stability_phyto$shannon, 
+                                         richness_phyto = diversity_stability_phyto$richness, cv_1_phyto = diversity_stability_phyto$cv_1)
+#
+diversity_stability_across <- diversity_stability_across %>% left_join(diversity_stability_zoop[,c("lake_id", "richness", "shannon", "cv_1")], by='lake_id') %>% rename("richness_zoop"="richness", "shannon_zoop"="shannon", "cv_1_zoop"="cv_1")
+#
+p1 <- ggplot(data=diversity_stability_across, aes(x=shannon_phyto, y=cv_1_zoop)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Producer shannon diversity', y='Consumer aggregated stability (1/cv)', title='Producer-Consumer (zooplankton)')
+p1
+#
+p2 <- ggplot(data=diversity_stability_across, aes(x=shannon_zoop, y=cv_1_phyto)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Consumer shannon diversity', y='Producer aggregated stability (1/cv)', title='Producer-Consumer (zooplankton)')
+p2
+#
+p3 <- ggplot(data=diversity_stability_across, aes(x=shannon_phyto, y=shannon_zoop)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Producer shannon diversity', y='Consumer shannon diversity', title='Producer-Consumer (zooplankton) diversity')
+p3
+#
+p4 <- ggplot(data=diversity_stability_across, aes(x=cv_1_phyto, y=cv_1_zoop)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(color='green') +
+  labs(x='Producer aggregated stability (1/cv)', y='Consumer aggregated stability (1/cv)', title='Producer-Consumer (zooplankton) stability')
+p4
+##
+ggarrange(p1, p2, p3, p4, nrow=2, ncol=2)
+ggsave("project_results/producer_consumer_diversity_stability.png")
+
+```
+
+

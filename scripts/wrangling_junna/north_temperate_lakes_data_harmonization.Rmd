@@ -1,0 +1,229 @@
+---
+title: "NTL_LTER"
+output: pdf_document
+date: "2024-11-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r phytoplankton in trout lake area}
+library(tidyverse)
+rm(list=ls())
+##
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.238.20_Phytoplankton_Trout_Lake_Area/'
+data_phyto_trout <- read.csv(file.path(dir, 'phytoplanktonnl.csv'))
+# 7 lakes in Allequash, Big Muskellunge, Crystal, Sparkling, and Trout lakes and Crystal Bog, and Trout Bog (two bog lakes)
+#
+unique(data_phyto_trout$lakeid) 
+length(unique(data_phyto_trout$taxa_name))   ### ~200 species
+#
+data_phyto_year_trout <- data_phyto_trout %>% group_by(lakeid, year4) %>% summarise(num_sample = n_distinct(sampledate))
+# ~600 species
+ggplot(data_phyto_year_trout, aes(x=year4, y=num_sample, color=lakeid)) +
+  geom_point() +
+  geom_line()
+# CR and SP are not as frequently sampled as the Mendota. 
+#
+# start to harmonize using data collected in 2005
+# only use data collected in the three months: 4, 8, and 11; to be consistent among these lakes. 
+data_phyto_trout$month <- month(data_phyto_trout$sampledate)
+data_phyto_trout2005   <- data_phyto_trout %>% filter(year4==2005) %>% filter(month %in% c(4, 8, 11)) 
+#
+# for the Miscellaneous division, give it a unique taxon name--Miscellaneous
+data_phyto_trout2005$taxa_name[data_phyto_trout2005$taxa_name==''] <- data_phyto_trout2005$division[data_phyto_trout2005$taxa_name=='']
+#
+# check if there is duplicated rows
+sum(duplicated(data_phyto_trout2005[,1:7])==TRUE)  # 18 rows
+# merge duplicated rows: use the average of them
+data_phyto_trout2005 <- data_phyto_trout2005 %>% group_by(lakeid, year4, sampledate, sta, depth_range, division, taxa_name, genus, month) %>% summarise_all(mean)
+#
+# for each site, we only have one station and one depth, so we can omit sta and depth: nsta=n_distinct(sta), ndepth=n_distinct(depth_range)
+# output the data that are needed
+# total biomass unit: mg/L; relative total biovolume: %
+data_phyto_trout_out <- data.frame(site=data_phyto_trout2005$lakeid, taxa_type="producer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='plant')
+##
+data_phyto_trout_out$year  <- data_phyto_trout2005$year4
+data_phyto_trout_out$month <- month(data_phyto_trout2005$sampledate)
+data_phyto_trout_out$day   <- day(data_phyto_trout2005$sampledate)
+##
+data_phyto_trout_out$plot  <- 1
+data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat, data_phyto_trout_out$plot, sep='_')
+data_phyto_trout_out$unit_abundance  <- "mg/L"
+data_phyto_trout_out$scale_abundance <- "1L"
+data_phyto_trout_out$species   <- data_phyto_trout2005$taxa_name
+data_phyto_trout_out$abundance <- data_phyto_trout2005$biomass_conc
+#### if biomass_conc = 0.0000, i used biomass_conc = 0.0001
+data_phyto_trout_out$abundance[data_phyto_trout_out$abundance==0.0000] <- 0.0001
+####
+write.csv(data_phyto_trout_out, 'harmonized_data/phytoplankton_trout_lake_area.csv', row.names = F)
+
+```
+
+
+```{r phytoplankton in experimental lakes--not used}
+library(tidyverse)
+rm(list=ls())
+##
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/edi.1557.3_IISD Experimental Lakes Area_Phytoplankton/'
+data_phyto_experimental <- read.csv(file.path(dir, 'Tabular Data - Phytoplankton Species Abundance, Biomass and Cell Volume.csv'))
+# 7 lakes in Allequash, Big Muskellunge, Crystal, Sparkling, and Trout lakes and Crystal Bog, and Trout Bog (two bog lakes)
+#
+unique(data_phyto_experimental$monitoring_location_name) ## five lakes only
+length(unique(data_phyto_experimental$species_code))   ### ~363 species
+#
+data_phyto_experimental$year4 <- year(as.Date(data_phyto_experimental$date_collected, "%Y-%m-%d"))
+data_phyto_experimental_year <- data_phyto_experimental %>% group_by(monitoring_location_name, year4) %>% summarise(num_sample = n_distinct(date_collected))
+#
+ggplot(data_phyto_experimental_year, aes(x=year4, y=num_sample, color=monitoring_location_name)) +
+  geom_point() +
+  geom_line()
+### some years have lower data #### I need to know which lakes are affected by experiments
+### we will need to only look at the data at certain months, because no observation in certain months of certain years. 
+### average biomass and average richness of multiple months? 
+
+### this is a great example of studying climate change effects! do not necessarily multitropic level, but it has to be long-term. 
+
+
+```
+
+```{r zooplankton trout lake}
+library(tidyverse)
+rm(list=ls())
+## downloaded 11/4/2024
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.37.38_Zooplankton_Trout_Lake_Area/'
+data_zoop_trout <- read.csv(file.path(dir, 'ntl37_v11.csv'))
+# uniform lakeid
+unique(data_zoop_trout$lakeid)  # Bm -> BM; "Tr" -> "TR"
+# 
+data_zoop_trout$lakeid[data_zoop_trout$lakeid=='Bm'] <- 'BM'
+data_zoop_trout$lakeid[data_zoop_trout$lakeid=='Tr'] <- 'TR'
+#
+# check if there is duplicated rows
+sum(duplicated(data_zoop_trout[, c(1:4, 6)])==TRUE)  # 140 rows; 
+sum(duplicated(data_zoop_trout[, c(1:5)])==TRUE)     # no duplication;
+# so many species have species code, but have no names or unknown. 
+#
+data_zoop_trout_year <- data_zoop_trout %>% group_by(lakeid, year4) %>% summarize(nsta=n_distinct(station), num_sample = n_distinct(sample_date))
+# reframe(date=unique(sample_date))
+# we only have one station for each lake. 
+#
+ggplot(data_zoop_trout_year, aes(x=year4, y=num_sample, color=lakeid)) +
+  geom_point() +
+  geom_line()  
+
+#### prepare for output datasets
+data_zoop_trout_out <- data.frame(site=data_zoop_trout$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='zooplankton')
+####
+data_zoop_trout_out$year  <- data_zoop_trout$year4
+data_zoop_trout_out$month <- month(data_zoop_trout$sample_date)
+data_zoop_trout_out$day   <- day(data_zoop_trout$sample_date)
+####
+data_zoop_trout_out$plot  <- data_zoop_trout$station
+data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat, data_zoop_trout_out$plot, sep='_')
+data_zoop_trout_out$unit_abundance  <- "number/L"
+data_zoop_trout_out$scale_abundance <- "1L"
+data_zoop_trout_out$species   <- data_zoop_trout$species_name
+data_zoop_trout_out$abundance <- data_zoop_trout$density
+###
+### remove the rows without species name
+data_zoop_trout_out <- data_zoop_trout_out[data_zoop_trout_out$species!='', ]
+###
+### merge duplicated rows
+data_zoop_trout_out <- data_zoop_trout_out %>% group_by(site, taxa_type, ecosystem, habitat, biome, guild, year, month, day, plot, unique_ID, unit_abundance, scale_abundance, species) %>% summarise(abundance = sum(abundance))
+
+####
+write.csv(data_zoop_trout_out, 'harmonized_data/zooplankton_trout_lake_area.csv', row.names = F)
+
+```
+
+
+
+```{r zooplankton Madison lake--not used}
+library(tidyverse)
+rm(list=ls())
+## downloaded 11/4/2024
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.90.35_Zooplankton_Madison_Lakes_Area/'
+data_zoop_madison <- read.csv(file.path(dir, 'ntl90_v10.csv'))
+
+data_zoop_madison_year <- data_zoop_madison %>% group_by(lakeid, year4) %>% summarise(num_sample = n_distinct(sample_date))
+ggplot(data_zoop_madison_year, aes(x=year4, y=num_sample, color=lakeid)) +
+  geom_point() +
+  geom_line()  
+  
+# zooplankton data is more than phyotoplankton; but still they are measured at different frequency; the depths are different for different lakes
+
+```
+```{r pelagic macroinvertebrates trout lake--not used}
+library(tidyverse)
+rm(list=ls())
+## downloaded 11/4/2024
+## this is once each year, but it has different replicates.
+## trout lakes have four additional sampling sites at depth 10m, 15m, 20m, 25m.  
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.13.36_pelagic_macrovertebrate_abundance/'
+data_pinvert <- read.csv(file.path(dir, 'ntl13_v12.csv'))
+unique(data_pinvert$lakeid)   # "AL" "BM" "CB" "CR" "SP" "TB" "TR"
+#
+data_pinvert_year <- data_pinvert %>% filter(!(lakeid=='TR' & sta > 2))                              # depth sta == 2; 
+#
+unique(data_pinvert_year$taxon) # only four taxon??? not useful. 
+# "CHAOBORUS [a genus of midges] LARVAE" "LEPTODORA [largest cpredatory water fleas]"        "MYSIS"            "CHAOBORUS PUPAE"  "BYTHOTREPHES" 
+# This is not enough.
+
+```
+
+```{r benthic macroinvertebrates}
+# one lake may have multiple sites; these lakes can be used to answer some research questions. 
+# ntl11_1_v12 has all the data
+dir <- '/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.11.38_benthic_macroinvertebrates/'
+data_binvert <- read.csv(file.path(dir, 'ntl11_1_v12.csv'))
+#
+data_binvert_year <- data_binvert %>% group_by(lakeid, site, year4) %>% summarise(num_taxon = n_distinct(taxon_code))
+# most data are from 2011, 3 years in the 1980s,
+##
+# macrophytes are only at 3 lakes (CR, SP, TR), but each lake has different replicates!
+unique(data_binvert_year$lakeid)
+####
+tmp <- data_binvert_year %>% filter(lakeid=='TR')
+unique(tmp$year4)
+#### CR lake has 5 sites: 27, 43, 6, 9, and GILL; gill likely mean the data collected by gill net. 
+#### SP lake has 5 sites: "1",  "19", "21", "24", "GILL"
+#### TR lake has 7 sites: "17", "31", "50", "56", "67", "7", "GILL"
+
+#### data wranggle: change 'sp' to 'SP'; important!
+#### I have to choose the years: all the sites are measured 
+#### CR is measured in these 14 years (maximum): 1982 1985 1987 2011 2012 2013 2014 2015 2016 2017 2018 2019 2022 2023
+#### SP is mostly measured in 2011 2012 2014 2015 2016 2017 2018 2019 2022 2023; although some sites with data in the 1980s. 
+#### TR is measured in so many years from 1980s, 1990s, 2000s, and 2010s; but I only use the data after 2011 in order to be comparable across different sites. 
+
+#### 
+data_binvert$lakeid[data_binvert$lakeid=='sp'] <- 'SP'
+# only use the data after 2010; and get the average of multiple replicates
+data_binvert2000 <- data_binvert %>% filter(year4 > 2010) 
+data_binvert2000_avg <- data_binvert2000 %>% group_by(lakeid, year4, site, taxon_code, description) %>% summarise(abundance=sum(number_indiv) / n_distinct(rep)) 
+####
+#### present (N) and abundant (A; too many to be counted); data after 2010 does not have this problem;
+data_binvert_out <- data.frame(site=data_binvert2000_avg$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='benthic macroinvertebrates')
+data_binvert_out$year <- data_binvert2000_avg$year4
+data_binvert_out$plot <- data_binvert2000_avg$site
+####
+data_binvert_out$unique_ID <- paste(data_binvert_out$site, data_binvert_out$habitat, data_binvert_out$plot, sep='_')
+####
+data_binvert_out$unit_abundance  <- "number/sampler"
+data_binvert_out$scale_abundance <- "1_modified_Hester-Dendy_sampler"
+data_binvert_out$species    <- data_binvert2000_avg$description
+data_binvert_out$abundance  <- data_binvert2000_avg$abundance
+####
+#### remove rows without species names
+data_binvert_out <- data_binvert_out[data_binvert_out$species!="", ]
+#
+write.csv(data_binvert_out, 'harmonized_data/benthic_macroinvertebrates_trout_lake_area.csv', row.names = F)
+
+###protocols
+###The modified Hester-Dendy samplers are constructed as a bolted together stack of ten plastic mesh panels and a plastic scrubbing ball between hardboard end panels. They are placed in the lakes early to mid August, and left for approximately four weeks. Each sampling site consists of three dendy samplers spaced 3 meters apart. Shoreline samplers are set in about one meter of water, deep sites at the deepest part of the lake. The shoreline sets are retrieved by a snorkeler who places the sampler in a container before surfacing to avoid loss of invertebrates due to disturbance, while deep sites are pulled up to the surface from a boat.
+###
+
+```
+

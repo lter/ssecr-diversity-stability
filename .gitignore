@@ -17,9 +17,6 @@
 # Output files from R CMD check
 /*.Rcheck/
 
-# RStudio files
-.Rproj.user/
-
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
@@ -83,3 +80,4 @@ vignettes/*.pdf
 
 # Folders to ignore
 ## Add any folders you’d like to ignore below (with or without the trailing slash)
+.Rproj.user
