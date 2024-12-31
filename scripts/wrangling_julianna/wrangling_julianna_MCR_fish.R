@@ -72,7 +72,7 @@ low_res_fishes <- updated_taxonomy %>%
 fish_1 %>% 
   filter(Taxonomy %in% low_res_fishes$Taxonomy) %>% 
   group_by(Taxonomy) %>% 
-  summarize(Sum_count = sum(Count)) %>% view() # most there ever is is 47--maybe OK to exclude?
+  summarize(Sum_count = sum(Count)) # %>% view() # most there ever is is 47--maybe OK to exclude?
 # should ask Tom
 
 # total instances of these fish:
@@ -120,7 +120,7 @@ fish_2 %>%
   filter(Fine_Trophic == "na" |
            Fine_Trophic == "Unknown") %>% 
   group_by(Taxonomy) %>% 
-  summarize(Sum_count = sum(Count)) %>% view() # this is extremely rare
+  summarize(Sum_count = sum(Count)) # %>% view() # this is extremely rare
 
 # filter all the relevant trophic groups and then join with quad list
 fish_2 %>% 
@@ -156,20 +156,21 @@ fish_3 %>%
          habitat_fine = str_to_lower(Habitat),
          biome = "tropical",
          guild = "fish",
+         herbivore = NA,
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
          plot = paste0("lter_", Site), 
          subplot = paste0(Transect, "_", Swath, "m"),
-         unique_ID = paste0(site, "_", habitat_fine, "_", plot, "_", subplot),
-         unit_abundance = "biomass_g",
+         unique_ID = paste0(site, "_", habitat_fine, "_", plot),
+         unit_abundance = "g",
          scale_abundance = case_when(Swath == 5 ~ "5x50m",
                                      Swath == 1 ~ "1x50m",
                                      TRUE ~ "ERROR"),
          species = Taxonomy,
          abundance = Biomass
   ) %>%
-  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, 
+  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
          scale_abundance, species, abundance) -> fish_4
 

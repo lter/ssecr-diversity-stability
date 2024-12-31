@@ -118,19 +118,20 @@ invert_3 %>%
          habitat_fine = str_to_lower(Habitat),
          biome = "tropical",
          guild = "invertebrate",
+         herbivore = NA,
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
          plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", 
                                     str_split(Site, pattern = " ")[[1]][2])), 
          subplot = paste0(Transect, "_", Quadrat),
-         unique_ID = paste0(site, "_", habitat_fine, "_", plot, "_", subplot),
+         unique_ID = paste0(site, "_", habitat_fine, "_", plot),
          unit_abundance = "count",
-         scale_abundance = "1m^2",
+         scale_abundance = "1m2",
          species = Taxonomy,
          abundance = Count
          ) %>% 
-  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, 
+  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
          scale_abundance, species, abundance) -> invert_4
 

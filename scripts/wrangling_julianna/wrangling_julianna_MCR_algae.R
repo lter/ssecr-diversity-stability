@@ -144,6 +144,7 @@ algae_4 %>%
   mutate(habitat_broad = "coral_reef") %>% 
   mutate(biome = "tropical") %>% 
   mutate(guild = "algae") %>% 
+  mutate(herbivore = "no") %>% 
   mutate(habitat_fine = str_to_lower(Habitat)) %>% 
   mutate(Date = as.Date(Date)) %>% 
   rename(year = Year) %>% 
@@ -151,12 +152,12 @@ algae_4 %>%
          day = day(Date)) %>% 
   mutate(plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", str_split(Site, pattern = " ")[[1]][2]))) %>% 
   mutate(subplot = paste0(Transect, "_", Quadrat)) %>% 
-  mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot, "_", subplot)) %>% 
+  mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
   mutate(unit_abundance = "percent") %>% 
-  mutate(scale_abundance = "0.25m^2") %>% 
+  mutate(scale_abundance = "0.25m2") %>% 
   mutate(species = Taxonomy_Substrate_Functional_Group) %>% 
   mutate(abundance = Percent_Cover) %>% 
-  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, 
+  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
          species, abundance) -> algae_5
 
