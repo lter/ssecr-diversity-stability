@@ -157,14 +157,78 @@ algae_4 %>%
   mutate(scale_abundance = "0.25m2") %>% 
   mutate(species = Taxonomy_Substrate_Functional_Group) %>% 
   mutate(abundance = Percent_Cover) %>% 
+  # filter 2005/2006
+  filter(year > 2006) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
          species, abundance) -> algae_5
+
+
+# also get just MACROALGAE
+# get just algae, but re-join with quad_key to make sure we also have zeros
+algae_4 %>% 
+  filter(Is_macroalgae == "y") %>% 
+  full_join(quad_key) %>% 
+  # replace instances with zero
+  mutate(Percent_Cover = case_when(is.na(Percent_Cover) ~ 0,
+                                   TRUE ~ Percent_Cover)) -> macroalgae_1
+
+# now format in the style we need
+macroalgae_1 %>% 
+  mutate(site = "mcr") %>% 
+  mutate(taxa_type = "producer") %>% 
+  mutate(ecosystem = "aquatic") %>% 
+  mutate(habitat_broad = "coral_reef") %>% 
+  mutate(biome = "tropical") %>% 
+  mutate(guild = "algae") %>% 
+  mutate(herbivore = "no") %>% 
+  mutate(habitat_fine = str_to_lower(Habitat)) %>% 
+  mutate(Date = as.Date(Date)) %>% 
+  rename(year = Year) %>% 
+  mutate(month = month(Date), 
+         day = day(Date)) %>% 
+  mutate(plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", str_split(Site, pattern = " ")[[1]][2]))) %>% 
+  mutate(subplot = paste0(Transect, "_", Quadrat)) %>% 
+  mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
+  mutate(unit_abundance = "percent") %>% 
+  mutate(scale_abundance = "0.25m2") %>% 
+  mutate(species = Taxonomy_Substrate_Functional_Group) %>% 
+  mutate(abundance = Percent_Cover) %>% 
+  # filter 2005/2006
+  filter(year > 2006) %>% 
+  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
+         year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
+         species, abundance) -> macroalgae_2
+
+## -------------------------------------------- ##
+#             Summary stats ----
+## -------------------------------------------- ##
+
+# year range
+algae_5 %>% 
+  select(year) %>% 
+  range()
+
+# number of taxa
+algae_5 %>% 
+  select(species) %>% 
+  unique() %>% 
+  dim()
+  
+# And for macroalgae:
+macroalgae_2 %>% 
+  select(year) %>% 
+  range()
+  
+macroalgae_2 %>% 
+  select(species) %>% 
+  unique() %>% 
+  dim()
 
 ## -------------------------------------------- ##
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(algae_5, here("../cleaned_data/mcr_algae_cleaned.csv"))
-
+write_csv(algae_5, here("../cleaned_data/mcr_algae.csv"))
+write_csv(macroalgae_2, here("../cleaned_data/mcr_macroalgae.csv"))
           

@@ -73,13 +73,13 @@ fish_1 %>%
   filter(Taxonomy %in% low_res_fishes$Taxonomy) %>% 
   group_by(Taxonomy) %>% 
   summarize(Sum_count = sum(Count)) # %>% view() # most there ever is is 47--maybe OK to exclude?
-# should ask Tom
+# Andy agrees it is fine to exclude these
 
 # total instances of these fish:
 fish_1 %>% 
   filter(Taxonomy %in% low_res_fishes$Taxonomy) %>%
   select(Count) %>% 
-  sum() # 325
+  sum() # 219
 
 # compared to how many total fish observations:
 fish_1 %>% 
@@ -116,7 +116,9 @@ fish_2 %>%
 
 # Explore na & unknown trophic designations:
 fish_2 %>% 
-  filter(is.na(`Low taxonomic resolution`)) %>% 
+  filter(is.na(`Low taxonomic resolution`) |
+           `Low taxonomic resolution` == "M"
+           ) %>% 
   filter(Fine_Trophic == "na" |
            Fine_Trophic == "Unknown") %>% 
   group_by(Taxonomy) %>% 
@@ -125,7 +127,8 @@ fish_2 %>%
 # filter all the relevant trophic groups and then join with quad list
 fish_2 %>% 
   # get rid of bad resolution
-  filter(is.na(`Low taxonomic resolution`)) %>% 
+  filter(is.na(`Low taxonomic resolution`)|
+           `Low taxonomic resolution` == "M") %>% 
   filter(Count > 0) %>% # two instances where no fish was observed
   filter(Fine_Trophic != "Piscivore" & 
            Fine_Trophic != "Fish Scale Consumer" & 
@@ -133,9 +136,9 @@ fish_2 %>%
            Fine_Trophic != "Unknown"
            ) %>% 
   full_join(transect_list) %>% 
-  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ "no_relevant_fish_observed", 
+  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ NA, 
                               TRUE ~ Taxonomy),
-         Fine_Trophic = case_when(is.na(Fine_Trophic) ~ "relevant_fish", 
+         Fine_Trophic = case_when(is.na(Fine_Trophic) ~ NA, 
                                   TRUE ~ Fine_Trophic),
          Count = case_when(is.na(Count) ~ 0, 
                            TRUE ~ Count),
@@ -175,10 +178,25 @@ fish_3 %>%
          scale_abundance, species, abundance) -> fish_4
 
 ## -------------------------------------------- ##
+#             Summary stats ----
+## -------------------------------------------- ##
+
+# year range
+fish_4 %>% 
+  select(year) %>% 
+  range()
+
+# number of taxa
+fish_4 %>% 
+  select(species) %>% 
+  unique() %>% 
+  dim()
+
+## -------------------------------------------- ##
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(fish_4, here("../cleaned_data/mcr_fish_cleaned.csv"))
+write_csv(fish_4, here("../cleaned_data/mcr_fish.csv"))
 
 
 

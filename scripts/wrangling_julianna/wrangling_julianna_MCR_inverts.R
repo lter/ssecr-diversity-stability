@@ -98,7 +98,7 @@ inverts_2 %>%
            Trophic_role == "omnivore" | 
            Trophic_role == "suspension_feeder") %>% 
   full_join(quad_list) %>% 
-  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ "no_invertebrate_herbivore_observed", 
+  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ NA, 
                               TRUE ~ Taxonomy),
          Trophic_role = case_when(is.na(Trophic_role) ~ "herbivore_any_type", 
                                   TRUE ~ Trophic_role),
@@ -136,9 +136,24 @@ invert_3 %>%
          scale_abundance, species, abundance) -> invert_4
 
 ## -------------------------------------------- ##
+#             Summary stats ----
+## -------------------------------------------- ##
+
+# year range
+invert_4 %>% 
+  select(year) %>% 
+  range()
+
+# number of taxa
+invert_4 %>% 
+  select(species) %>% 
+  unique() %>% 
+  dim()
+
+## -------------------------------------------- ##
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(invert_4, here("../cleaned_data/mcr_invert_cleaned.csv"))
+write_csv(invert_4, here("../cleaned_data/mcr_invertebrate.csv"))
 
 
