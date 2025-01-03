@@ -61,11 +61,12 @@ updated_taxonomy <- read_csv(here("../taxa_tables/SBC_taxa_annotated.csv"))
 
 # Make taxa table
 # sbc_1 %>% 
-#   select(SCIENTIFIC_NAME) %>% 
-#   unique() %>% 
+#   group_by(SCIENTIFIC_NAME, COMMON_NAME) %>% 
+#   summarize(N = n()) %>% 
+#   select(-N) %>% 
 #   mutate(SCIENTIFIC_NAME = as.character(SCIENTIFIC_NAME)) %>% 
 #   arrange(SCIENTIFIC_NAME) %>% 
-#   write_csv(here("../taxa_tables/SBC_taxa.csv"))
+#   write_csv(here("../taxa_tables/SBC_taxa_common.csv"))
 
 ## CHANGES TO TAXONOMY
 # "Agalophenia spp." to "Aglaophenia spp."
