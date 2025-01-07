@@ -232,7 +232,7 @@ cdr_consumer <- cdr_consumer_raw %>%
                   "unit_abundance", "scale_abundance"))
 
 cdr_consumer_raw %>%
-  count(Genus, Specific.epithet, Further.ID)
+  count(Order, Family.subfamily., Genus, Specific.epithet, Further.ID)
 cdr_consumer_raw %>%
   filter(Order == "Homoptera") %>%
   count(Genus)
@@ -242,7 +242,7 @@ cdr_consumer_raw$Further.ID <- str_replace_all(cdr_consumer_raw$Further.ID, "^na
 
 cdr_consumer_trial_taxonomy <- cdr_consumer_raw %>%
   mutate(ID = paste(Genus, Specific.epithet, Further.ID, sep = " ")) %>%
-  count(ID)
+  count(Order, Family.subfamily., ID)
 
 
 ## Loading info on taxonomy resolutions from google drive
@@ -260,7 +260,7 @@ cdr_consumer_trial_taxonomy %>%
 
 
 cdr_cleaned_species <- cdr_consumer_taxonomy %>%
-  count(PreferredName)
+  count(Order, Family, PreferredName, PreferredCode)
 
 
 
