@@ -152,19 +152,12 @@ kbs_producer <- kbs_producer %>%
   mutate(species = word(species, 2, sep=" ")) %>% # subsetting second word of name as genus
   select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
            "plot", "subplot", "year", "month", "unique_ID", "genus", "species", "id_confidence", "abundance", 
-           "unit_abundance", "scale_abundance"))
-
-kbs_producer %>%
-  count(genus, species, id_confidence)
+           "unit_abundance", "scale_abundance")) # reordering columns
 
 
- # mutate(genus = word(species, 1, sep=" ")) %>% # getting rid of authorities for scientific names, subsetting first word of name as genus
-  #mutate(species = word(species, 2, sep=" ")) %>% # subsetting second word of species name
- # mutate(species = if_else(is.na(species), "sp.", species)) %>% # converting "NA" to "sp." - only "dicot" and "monocot" were one word and so have "NA" as second word
- # mutate(species = paste(genus, species), genus = NULL) # recombining genus and species, getting rid of genus column
+write.csv(kbs_producer,"kbs_producer.csv", row.names = FALSE) # exporting csv
 
-kbs_producer %>%
-  count(species)
+
 
 ###### KNZ LTER harmonization ######
 # producer
