@@ -6,7 +6,6 @@
 ## ------------------------------------------ ##
 
 #### Author(s): Katherine Hulting
-#### Last Updated: November 18th, 2024
 # Load `librarian` package
 library(librarian)
 # Install missing packages and load needed libraries
@@ -44,11 +43,29 @@ kbs_consumer <- kbs_consumer_raw %>%
                   "unit_abundance", "scale_abundance"))
 
 kbs_consumer <- kbs_consumer %>%
-  filter(species != "Other") # removing unidentified individuals n=45
+  mutate(id_confidence = if_else( # adding confidence column for species ID -- not going to include species IDed as "Other"
+    species %in% c("Other"), 0, 1
+  )) %>%
+  mutate(herbivore = dplyr::case_when( # classifying feeding group
+    species %in% c(
+      "Adalia bipunctata", "Brachiacantha ursina", "Chilocorus stigma",
+      "Coccinella septempunctata", "Coccinella trifaciata", "Coleomegilla maculata",
+      "Cycloneda munda", "Harmonia axyridis", "Hippodamia convergens", "Hippodamia glacialis",
+      "Hippodamia parenthesis", "Hippodamia tredecimpunctata", "Hippodamia variegata", 
+      "Propylea quatuorodecipuntata"
+    ) ~ "predator",
+    species %in% c( # these are true omnivores, but include species in the families that have different feeding modes
+      "Cantharid", "Carabid", "Lacewing", "Lampyrid", "Mecoptera",
+      "Psyllobora vigintimaculata" # consumes primarily fungus
+    ) ~ "omnivore",
+    species %in% c(
+      "Syrphid"
+    ) ~ "nectarivorous"
+  )) %>%
+  separate(species, sep = " ", into = c("genus", "species")) # separating into genus and species column
 
-# GROUPING NOTES: traps are sampled weekly throughout the growing season -- it may make the most sense to sum rather than average?
-kbs_consumer %>%
-  count(species)
+write.csv(kbs_consumer,"kbs_consumer.csv", row.names = FALSE) # exporting csv
+
   
 
 # PRODUCER
@@ -79,12 +96,68 @@ kbs_producer <- kbs_producer_raw %>%
                   "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-# Species data is a mess! need to talk about how to handle. lots of IDs to genus
-# may want to compare to past synthesis groups that have worked with this data
-kbs_producer <- kbs_producer %>% # removing unknown - still have some IDed to genus or as "dicot" or "monocot"
-  filter(!species %in% c("another unknown dicot", "unknown Asteraceae", "unknown Brassicaceae", "unknown Sedge",
-                         "Unknown dicot", "Unknown grass", "Unknown monocot", "Unkown Fabaceae", "UnSorted",
-                         "Composite Basal", "Composite sp.", "Dicots", "Monocots", "Unknown Orchidaceae", "Composite Basal Leaves")) #%>%
+kbs_producer$species <- str_trim(kbs_producer$species, side = "both") # removing white space from strings
+
+kbs_producer <- kbs_producer %>%
+  mutate(id_confidence = dplyr::case_when(
+    species %in% c(
+      "another unknown dicot", "unknown Asteraceae", "unknown Brassicaceae", "unknown Sedge",
+      "Unknown dicot", "Unknown grass", "Unknown monocot", "Unkown Fabaceae", "UnSorted",
+      "Composite Basal", "Composite sp.", "Dicots", "Monocots", "Unknown Orchidaceae", 
+      "Composite Basal Leaves", "Aster basal leaves", 
+      "Aster sp.", "Brassica sp.", "Bromus sp.", "Carex sp.", "Celastrus sp.", "Cerastium sp.", "Cirsium sp.", "Cornus sp.", # genus classifications
+      "Desmodium sp.", "Erigeron sp.", "Festuca sp.", "Fragaria sp.", "Geum sp.", "Hieracium sp.", "Juncus sp.", "Lactuca sp.", "Lonicera spp.",
+      "Melilotus sp.", "Monarda sp.", "Plantago sp.", "Poa sp.", "Populus sp.", "Prunus spp.", "Rhamnus sp.", "Rosa sp.",
+      "Rubus sp.", "Rumex species", "Setaria sp.", "Solidago sp.", "Sonchus sp.", "Trifolium sp.", "Veronica sp.", "Vicia sp.", "Vitis sp."
+    ) ~ 0,
+    species %in% c(
+      "Abutilon theophrasti Medikus", "Acer spp.", "Achillea millefolium L.", "Agrostis gigantea Roth",
+      "Ambrosia artemisiifolia L.", "Antennaria plantaginifolia (L.) Richards.", "Anthemis cotula L.",
+      "Apocynum androsaemifolium L.", "Apocynum cannabinum L.", "Arabidopsis thaliana (L.) Heynh.", 
+      "Arabis glabra (L.) Bernh.", "Arctium minus (Hill) Bernh.", "Arrhenatherum elatius (L.) Beauv. ex J. & C. Presl",
+      "Artemisia campestris ssp. Caudata (Michx.) Hall & Clements", "Artemisia vulgaris L.", "Asclepias syriaca L.",
+      "Asparagus officinalis L.", "Asplenium platyneuron (L.) Oakes", "Aster cordifolius", "Aster ericoides L.",
+      "Aster novae-angliae L.", "Aster pilosus Willd.", "Aster sagittifolius", "Barbarea vulgaris R. Br.", 
+      "Botrychium dissectum", "Brassica kaber (DC.) L.C.Wheeler", "Brassica kaber (DC.) L.C.Wheeler", 
+      "Brassica rapa L.", "Bromus inermis Leyss.", "Bromus japonicus Thunb. ex Murr.", "Bromus mollis L.", "Bromus tectorum L.",
+      "Carex muhlenburgii", "Celastrus orbiculatus Thunb.", "Centaurea stoebe L. ssp. micranthos (Gugler) Hayek",
+      "Cerastium arvense L.", "Cerastium vulgatum L.", "Chenopodium album L.", "Cirsium altissimum (L.) Spreng.", "Cirsium arvense (L.) Scop.",
+      "Cirsium discolor (Muhl. ex Willd.) Spreng.", "Cirsium vulgare (Savi) Tenore", "Convolvulus arvensis L.", "Conyza canadensis (L.) Cronq.",
+      "Cornus racemosa Lam.", "Crataegus spp.", "Crepis capillaris (L.) Wallr.", "Cyperus esculentus L.", "Dactylis glomerata L.",
+      "Daucus carota L.", "Desmodium illinoense", "Desmodium marilandicum (L.) DC.", "Desmodium paniculatum (L.) DC.", "Dianthus armeria L.",
+      "Diervilla sp.", "Digitaria sanguinalis (L.) Scop.", "Duchesnea indica (Andr.) Focke", "Echinochloa crus-galli (L.) Beauv.", 
+      "Elaeagnus umbellata Thunb.", "Elymus canadensis", "Elymus repens (L.) Gould", "Epilobium coloratum Biehler.", "Eragrostis cilianensis (All.) E.Mosher", 
+      "Erigeron annuus (L.) Pers.", "Erigeron strigosus Muhl. ex Willd.", "Euthamia graminifolia (L.) Nutt.", "Festuca rubra L.", 
+      "Fragaria virginiana Duchesne", "Geum laciniatum", "Geum virginianum", "Gnaphalium obtusifolium L.", "Helianthus occidentalis Riddell", 
+      "Hieracium aurantiacum L.", "Hieracium caespitosum", "Hypericum perforatum L.", "Juncus acuminatus Michx.", "Juncus tenuis Willd.", 
+      "Lactuca canadensis L.", "Lactuca saligna L.", "Lactuca serriola L.", "Lonicera morrowii", "Lotus corniculatus L.", "Malus spp.", 
+      "Medicago lupulina L.", "Medicago sativa L.", "Melilotus alba var. annua H.S.Coe", "Melilotus officinalis (L.) Lam.", 
+      "Mimosa sp.", "Monarda fistulosa L.", "Oenothera biennis L.", "Oxalis stricta L.", "Panicum dichotomiflorum Michx.", "Parthenocissus quinquefolia (L.) Planch.",
+      "Phalaris angusta Nees ex Trin.", "Phalaris arundinacea L.", "Phleum pratense L.", "Physalis heterophylla Nees", "Physalis longifolia  Nutt.",
+      "Phytolacca americana L.", "Plantago lanceolata L.", "Plantago major L.", "Plantago rugelii Dcne.", "Poa annua L.", "Poa compressa L.", "Poa pratensis L.",
+      "Polygonatum biflorum (Walt.) Ell.", "Polygonum convolvulus L.", "Polygonum pensylvanicum L.", "Populus deltoides", "Potentilla argentea L.", 
+      "Potentilla arguta Pursh", "Potentilla arguta Pursh", "Potentilla norvegica L.", "Potentilla recta L.", "Potentilla reptans L.", 
+      "Potentilla simplex Michx.", "Prunus serotina Ehrh.", "Prunus virginiana L.", "Ranunculus abortivus L.", "Rhamnus cathartica L.",
+      "Rhamnus frangula L.", "Rhus glabra L.", "Rhus typhina L.", "Robinia pseudoacacia L.", "Rosa multiflora Thunb. ex Murr.", "Rubus allegheniensis T.C. Porter", "Rubus flagellaris",
+      "Rubus occidentalis L.", "Rumex acetosella L.", "Rumex crispus L.", "Rumex obtusifolius L.", "Sassafras albidum (Nutt.) Nees", 
+      "Setaria faberi Herrm.", "Setaria pumila (Poir.) Roem. & Schult", "Setaria viridis (L.) Beauv.", "Silene alba (Mill.) E.H.L.Krause",
+      "Solanum sp.", "Solidago canadensis L.", "Solidago juncea Aiton", "Solidago nemoralis Ait.", "Solidago rugosa Ait.", "Solidago speciosa L.",
+      "Sonchus arvensis L.", "Sonchus asper (L.) Hill", "Sonchus oleraceus L.", "Stellaria media (L.) Vill.", "Taraxacum officinale Weber in", 
+      "Toxicodendron radicans (L.) Ktze.", "Trifolium agrarium", "Trifolium arvense L.", "Trifolium campestre Schreb.", "Trifolium dubium Sibth.",
+      "Trifolium hybridum L.", "Trifolium pratense L.", "Trifolium repens L.", "Verbascum blattaria L.", "Verbascum thapsus L.", "Veronica arvensis L.",
+      "Veronica peregrina L.", "Vicia villosa  Roth", "Vitex agnus-castus L.", "Vitis aestivalis Michx.", "Vitis riparia Michx.", "Xanthium spinosum L."
+    ) ~ 1
+  )) %>%
+  mutate(genus = word(species, 1, sep=" ")) %>% # subsetting first word of name as genus
+  mutate(species = word(species, 2, sep=" ")) %>% # subsetting second word of name as genus
+  select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+           "plot", "subplot", "year", "month", "unique_ID", "genus", "species", "id_confidence", "abundance", 
+           "unit_abundance", "scale_abundance"))
+
+kbs_producer %>%
+  count(genus, species, id_confidence)
+
+
  # mutate(genus = word(species, 1, sep=" ")) %>% # getting rid of authorities for scientific names, subsetting first word of name as genus
   #mutate(species = word(species, 2, sep=" ")) %>% # subsetting second word of species name
  # mutate(species = if_else(is.na(species), "sp.", species)) %>% # converting "NA" to "sp." - only "dicot" and "monocot" were one word and so have "NA" as second word
