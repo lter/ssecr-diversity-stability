@@ -131,9 +131,11 @@ invert_3 %>%
          taxon_name = Taxonomy,
          abundance = Count
          ) %>% 
+  # add a column saying we're confident in all the spp taxonomies
+  mutate(id_confidence = 1) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
-         scale_abundance, taxon_name, taxon_resolution, abundance) -> invert_4
+         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> invert_4
 
 ## -------------------------------------------- ##
 #             Summary stats ----
@@ -146,7 +148,7 @@ invert_4 %>%
 
 # number of taxa
 invert_4 %>% 
-  select(species) %>% 
+  select(taxon_name) %>% 
   unique() %>% 
   dim()
 

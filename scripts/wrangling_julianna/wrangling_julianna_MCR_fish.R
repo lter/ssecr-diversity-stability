@@ -34,14 +34,12 @@ librarian::shelf(here, # relative file paths
 #             Load data ----
 ## -------------------------------------------- ##
 
-fish_1 <- read_csv(here("../data/MCR_fish_abundance_20241204_Hillary.csv")) 
+fish_1 <- read_csv(here("../data/MCR_fish_abundance_20241204_Hillary.csv")) %>% 
 # ^ these are cleaned fish data with updated taxonomy from Hillary FRESH
 # off the press (12/4/24) that I think she made for a different working group
+  filter(Swath != 2) # I think this is a typo (just one case of this)
+
 updated_taxonomy <- read_csv(here("../taxa_tables/MCR_fish_taxa_annotated.csv"))
-# these are my notes on weird spp^^
-species_list <- read_csv(here("../taxa_tables/MCR_fish_taxonomy_update_Hillary_20241203.csv"))
-# HILLARY SPP LIST
-# ^ sent to me via Hillary on Dec 3, 2024
 
 # NOTES ON FISH DATA
 # 2005 used a different method--start with 2006
@@ -63,9 +61,15 @@ species_list <- read_csv(here("../taxa_tables/MCR_fish_taxonomy_update_Hillary_2
 #   arrange(Taxonomy) %>% 
 #   write_csv(here("../taxa_tables/MCR_fish_taxa.csv"))
 
+# how many observations are biomass not available?
+fish_1 %>% 
+  filter(Biomass <= 0) %>% 
+  summarize(sum(Count),
+            Num_rows = n()) # 1642 individuals across 232 rows
+
 # list of fishes not identified to species
 low_res_fishes <- updated_taxonomy %>% 
-  filter(`Low taxonomic resolution` == "Y") %>%
+  filter(id_confidence == 0) %>%
   select(Taxonomy)
 
 # count up the instances of the fishes not identified to species
@@ -84,7 +88,7 @@ fish_1 %>%
 # compared to how many total fish observations:
 fish_1 %>% 
   select(Count) %>% 
-  sum() # 435,088 -- that's less than a tenth of a percent (0.07%)
+  sum() # 435,087 -- that's less than a tenth of a percent (0.07%)
 
 
 # Need to deal with "CF" records
@@ -116,26 +120,18 @@ fish_2 %>%
 
 # Explore na & unknown trophic designations:
 fish_2 %>% 
-  filter(is.na(`Low taxonomic resolution`) |
-           `Low taxonomic resolution` == "M"
-           ) %>% 
   filter(Fine_Trophic == "na" |
            Fine_Trophic == "Unknown") %>% 
   group_by(Taxonomy) %>% 
   summarize(Sum_count = sum(Count)) # %>% view() # this is extremely rare
 
-# filter all the relevant trophic groups and then join with quad list
+# join with quad list
 fish_2 %>% 
-  # get rid of bad resolution
-  filter(is.na(`Low taxonomic resolution`)|
-           `Low taxonomic resolution` == "M") %>% 
   filter(Count > 0) %>% # two instances where no fish was observed
-  filter(Fine_Trophic != "Piscivore" & 
-           Fine_Trophic != "Fish Scale Consumer" & 
-           Fine_Trophic != "na" &
-           Fine_Trophic != "Unknown"
-           ) %>% 
+  # get rid of negative biomass observations
+  filter(Biomass >= 0) %>% 
   full_join(transect_list) %>% 
+  # fill in for missing
   mutate(Taxonomy = case_when(is.na(Taxonomy) ~ NA, 
                               TRUE ~ Taxonomy),
          Fine_Trophic = case_when(is.na(Fine_Trophic) ~ NA, 
@@ -170,12 +166,13 @@ fish_3 %>%
          scale_abundance = case_when(Swath == 5 ~ "5x50m",
                                      Swath == 1 ~ "1x50m",
                                      TRUE ~ "ERROR"),
-         species = Taxonomy,
+         taxon_name = Taxonomy,
          abundance = Biomass
   ) %>%
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
-         scale_abundance, species, abundance) -> fish_4
+         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> fish_4
+
 
 ## -------------------------------------------- ##
 #             Summary stats ----
@@ -188,7 +185,7 @@ fish_4 %>%
 
 # number of taxa
 fish_4 %>% 
-  select(species) %>% 
+  select(taxon_name) %>% 
   unique() %>% 
   dim()
 
