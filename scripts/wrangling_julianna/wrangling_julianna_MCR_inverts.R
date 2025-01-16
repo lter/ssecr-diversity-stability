@@ -128,12 +128,12 @@ invert_3 %>%
          unique_ID = paste0(site, "_", habitat_fine, "_", plot),
          unit_abundance = "count",
          scale_abundance = "1m2",
-         species = Taxonomy,
+         taxon_name = Taxonomy,
          abundance = Count
          ) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
-         scale_abundance, species, abundance) -> invert_4
+         scale_abundance, taxon_name, taxon_resolution, abundance) -> invert_4
 
 ## -------------------------------------------- ##
 #             Summary stats ----
