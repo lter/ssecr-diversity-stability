@@ -64,9 +64,12 @@ kbs_consumer <- kbs_consumer %>%
   )) %>%
   separate(species, sep = " ", into = c("genus", "species")) # separating into genus and species column
 
-write.csv(kbs_consumer,"kbs_consumer.csv", row.names = FALSE) # exporting csv
 
-  
+write.csv(kbs_consumer,"kbs_consumer.csv", row.names = FALSE) # exporting csv to local computer
+
+googledrive::drive_upload(media = file.path("kbs_consumer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1O2n89tOIMNZGXTzCZNb0Qsj_C8dRI09l"))
+
 
 # PRODUCER
 kbs_produce_url <- "https://lter.kbs.msu.edu/datatables/291.csv"
@@ -327,6 +330,7 @@ cdr_consumer_trial_taxonomy %>%
 
 cdr_cleaned_species <- cdr_consumer_taxonomy %>%
   count(Order, Family, PreferredName, PreferredCode)
+
 
 
 
