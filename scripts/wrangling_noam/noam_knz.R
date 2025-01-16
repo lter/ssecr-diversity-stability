@@ -400,7 +400,7 @@ for (i in seq_along(knz_r2_labels)) {
 
 
 #### PSEM SCREW AROUND - IGNORE
-# psem_mod <- psem(knz_prod_richstab_mod,  knz_con_richstab_mod, knz_multitroph_dss_mod)
-# summary(psem_mod)
+psem_mod <- psem(knz_prod_dss_mod,  knz_con_dss_mod, knz_multitroph_dss_mod)
+summary(psem_mod)
 
 
