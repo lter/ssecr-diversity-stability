@@ -31,8 +31,6 @@ librarian::shelf(here, # relative file paths
                  tidyverse # data wrangling
 )
 
-
-
 ## -------------------------------------------- ##
 #             Load data ----
 ## -------------------------------------------- ##
