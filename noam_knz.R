@@ -311,6 +311,8 @@ cor(knz_comb$prod_stability_log, knz_comb$con_stability_log) # -0.27
                                       nrow = 1, ncol = 2)
 )
 
+
+
 ##### structural equation modeling approach #####
 
 # specify models for lavaan
@@ -397,6 +399,8 @@ for (i in seq_along(knz_r2_labels)) {
 }
 
 
-
+#### PSEM SCREW AROUND - IGNORE
+# psem_mod <- psem(knz_prod_richstab_mod,  knz_con_richstab_mod, knz_multitroph_dss_mod)
+# summary(psem_mod)
 
 
