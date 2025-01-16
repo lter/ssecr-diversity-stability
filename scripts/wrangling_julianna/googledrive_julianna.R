@@ -60,7 +60,7 @@ dir.create(path = here("..", "PISCO", "taxa_tables"))
 googledrive::drive_auth(email = "jrenzi@ucsb.edu") # authenticate Google Drive
 
 drive_url <- googledrive::as_id("https://drive.google.com/drive/u/1/folders/19wQilfKU8BYMxidLMoMfE8sq_P-nyr12")
-drive_folder <- googledrive::drive_ls(path = drive_url)
+drive_folder <- googledrive::drive_ls(path = drive_url) # error: shared drive not found
 
 
 

@@ -153,13 +153,13 @@ algae_4 %>%
   mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
   mutate(unit_abundance = "percent") %>% 
   mutate(scale_abundance = "0.25m2") %>% 
-  mutate(species = Taxonomy_Substrate_Functional_Group) %>% 
+  mutate(taxon_name = Taxonomy_Substrate_Functional_Group) %>% 
   mutate(abundance = Percent_Cover) %>% 
   # filter 2005/2006
   filter(year > 2006) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
-         species, abundance) -> algae_5
+         taxon_name, taxon_resolution, abundance) -> algae_5
 
 
 # also get just MACROALGAE
@@ -190,13 +190,15 @@ macroalgae_1 %>%
   mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
   mutate(unit_abundance = "percent") %>% 
   mutate(scale_abundance = "0.25m2") %>% 
-  mutate(species = Taxonomy_Substrate_Functional_Group) %>% 
+  mutate(taxon_name = Taxonomy_Substrate_Functional_Group) %>% 
   mutate(abundance = Percent_Cover) %>% 
   # filter 2005/2006
   filter(year > 2006) %>% 
+  # add a column saying we're confident in all the spp taxonomies
+  mutate(id_confidence = 1) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
-         species, abundance) -> macroalgae_2
+         taxon_name, taxon_resolution, abundance, id_confidence) -> macroalgae_2
 
 ## -------------------------------------------- ##
 #             Summary stats ----
@@ -209,7 +211,7 @@ algae_5 %>%
 
 # number of taxa
 algae_5 %>% 
-  select(species) %>% 
+  select(taxon_name) %>% 
   unique() %>% 
   dim()
   
@@ -219,7 +221,7 @@ macroalgae_2 %>%
   range()
   
 macroalgae_2 %>% 
-  select(species) %>% 
+  select(taxon_name) %>% 
   unique() %>% 
   dim()
 
