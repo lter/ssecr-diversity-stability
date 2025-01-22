@@ -160,11 +160,13 @@ kbs_producer <- kbs_producer %>%
 
 write.csv(kbs_producer,"kbs_producer.csv", row.names = FALSE) # exporting csv
 
+googledrive::drive_upload(media = file.path("kbs_producer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1O2n89tOIMNZGXTzCZNb0Qsj_C8dRI09l"))
 
 
-###### KNZ LTER harmonization ######
+#### KNZ LTER harmonization ####
 # producer
-knz_produce_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.69.23&entityid=63768b48f41e790a40e7fa4f9267c3a2"
+knz_produce_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.69.24&entityid=63768b48f41e790a40e7fa4f9267c3a2"
 knz_producer_raw <- read.csv(file = knz_produce_url)
 
 
@@ -180,11 +182,11 @@ knz_producer <- knz_producer_raw %>%
          unit_abundance = "cover class", 
          scale_abundance = "10 m2") %>%
   mutate(plot = WaterShed, subplot = Transect, sub_subplot = Plot, 
-         abundance = Cover, species = paste(AB_genus, AB_species, sep = " "), year = RecYear,
+         abundance = Cover, genus = AB_genus, species = AB_species, year = RecYear,
          month = RecMonth, day = RecDay) %>% # renaming columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "sub_subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "sub_subplot", "year", "month", "day", "unique_ID", "genus", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 # changing cover classes to midpoint of cover class - according to Konza sampling manual https://lter.konza.ksu.edu/sites/default/files/MM_0.pdf
@@ -193,17 +195,24 @@ knz_producer$abundance <- fct_recode(knz_producer$abundance, "0.5" = "1", "3.0" 
                                      "37.5" = "4", "62.5" = "5", "85.0" = "6", "97.5" = "7")
 knz_producer$abundance <- as.numeric(as.character(knz_producer$abundance))
 
-# species names
-knz_producer <- knz_producer %>% # do we want to filter all of these??
-  filter(!species %in% c("annual forb", "carex spp.", "cyperu spp.", "euphor spp.", "symphy spp."))
+# assigning confidence to species IDs
+knz_producer <- knz_producer %>%
+  mutate(genus_species = paste(genus, species, sep = " ")) %>% # temporarily pasting together genus and species for assigning ID confidence
+  mutate(id_confidence = if_else( # adding confidence column for species ID 
+    genus_species %in% c("annual forb"), 0, 1
+  )) %>%
+  dplyr::select(!c("genus_species"))
 
 write.csv(knz_producer,"knz_producer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("knz_producer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1UUXzJUKvjcRZW-yzI78O_GLFtSPUCclg"))
 
 
 
 
 # consumer
-knz_consume_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.29.22&entityid=3fb352e2478f776517f7e880fe31b808"
+knz_consume_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.29.23&entityid=3fb352e2478f776517f7e880fe31b808"
 knz_consumer_raw <- read.csv(file = knz_consume_url)
 
 
@@ -219,20 +228,78 @@ knz_consumer <- knz_consumer_raw %>%
          unit_abundance = "count", 
          scale_abundance = "200 sweeps") %>%
   mutate(plot = WATERSHED, subplot = REPSITE, 
-       abundance = TOTAL, species = SPCODE, year = RECYEAR,
+       abundance = TOTAL, species = SPECIES, year = RECYEAR,
        month = RECMONTH, day = RECDAY) %>% # renaming columns
   mutate(plot = tolower(plot)) %>% # lowercasing plot to be consistent with producer
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
                   "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
-                  "unit_abundance", "scale_abundance"))
+                  "unit_abundance", "scale_abundance", "SPCODE"))
 
 knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
 knz_consumer <- knz_consumer %>%
-  filter(!is.na(species)) %>% # removing NAs for species
+  #filter(!is.na(species)) %>% # removing NAs for species
   filter(!abundance %in% c("", "0")) %>% # removing 0 and NA for abundance
-  mutate(species = as.character(species)) %>% # converting species codes to character
+#  mutate(species = as.character(species)) %>% # converting species codes to character
   mutate(abundance = as.numeric(abundance)) # converting abundance to numeric
+
+  
+
+knz_consumer <- knz_consumer %>%
+  mutate(species = dplyr::case_when(
+    species %in% c("Brachystola magna", "brachystol magna") ~ "Brachystola magna",
+    species %in% c("Schistocerca lineata", "schistocer lineata") ~ "Schistocerca lineata",
+    species %in% c("Paratfylotropidia brunneri", "paratylota brunneri", "paratylotr brunneri") ~ "Paratylotropidia brunneri",
+    species %in% c("Hypochlora alba", "hypochlora alba") ~ "Hypochlora alba",
+    species %in% c("Campylacantha olivacea", "campylacan olivacea") ~ "Campylacantha olivacea",
+    species %in% c("Hesperotettix speciosus", "hesperotet speciosus") ~ "Hesperotettix speciosus",
+    species %in% c("Hesperotettix viridis", "hesperotet viridis") ~ "Hesperotettix viridis",
+    species %in% c("Hesperotettix spp.", "hesperotet species", "hesperotet spp.") ~ "Hesperotettix spp.",
+    species %in% c("Phoetaliotes nebrascensis", "phoetaliot nebrascen") ~ "Phoetaliotes nebrascensis",
+    species %in% c("Melanoplus scudderi", "melanoplus scudderi") ~ "Melanoplus scudderi",
+    species %in% c("Melanoplus sanguinipes", "melanoplus sanguinip") ~ "Melanoplus sanguinipes",
+    species %in% c("Melanoplus femurrubrum", "melanoplus femurrubr") ~ "Melanoplus femurrubrum",
+    species %in% c("Melanoplus keeleri", "melanoplus keeleri") ~ "Melanoplus keeleri",
+    species %in% c("Melanoplus packardii", "melanoplus packardii") ~ "Melanoplus packardii",
+    species %in% c("Melanoplus differentialis", "melanoplus different") ~ "Melanoplus differentialis",
+    species %in% c("Melanoplus bivittatus", "melanoplus bivittatu") ~ "Melanoplus bivittatus",
+    species %in% c("Melanoplus confusus", "melanoplus confusus") ~ "Melanoplus confusus",
+    species %in% c("Melanoplus spp.", "melanoplus species", "melanoplus spp.") ~ "Melanoplus spp.",
+    species %in% c("Eritettix simplex", "eritettix simplex") ~ "Eritettix simplex",
+    species %in% c("Syrbula admirabilis", "syrbula admirabil") ~ "Syrbula admirabilis",
+    species %in% c("Orphulella speciosa", "orphulella speciosa", "orphullela speciosa") ~ "Orphulella speciosa",
+    species %in% c("Mermiria picta", "mermiria picta") ~ "Mermiria picta",
+    species %in% c("Mermiria bivittata", "mermiria bivitatta", "mermiria bivittata") ~ "Mermiria bivittata",
+    species %in% c("Opeia obscura", "opeia obscura") ~ "Opeia obscura",
+    species %in% c("Pseuodopomala brachyptera", "pseudopoma brachypte") ~ "Pseuodopomala brachyptera",
+    species %in% c("Boopedon auriventris", "boopedon auriventr") ~ "Boopedon auriventris",
+    species %in% c("Boopedon nubilum", "boopedon nubilum") ~ "Boopedon nubilum",
+    species %in% c("Boopedon gracile", "boopedon gracile") ~ "Boopedon gracile",
+    species %in% c("Ageneotettix deorum", "ageneotett deorum") ~ "Ageneotettix deorum",
+    species %in% c("Mermiria spp.", "mermiria species", "mermiria spp.") ~ "Mermiria spp.",
+    species %in% c("Chortophaga viridifasciata", "chortophag viridifas") ~ "Chortophaga viridifasciata",
+    species %in% c("Arphia xanthoptera", "arphia xanthopte") ~ "Arphia xanthoptera",
+    species %in% c("Arphia simplex", "arphia simplex") ~ "Arphia simplex",
+    species %in% c("Arphia conspersa", "arphia conspersa") ~ "Arphia conspersa",
+    species %in% c("Hadrotettix trifasciatus", "hadrotetti trifascia") ~ "Hadrotettix trifasciatus",
+    species %in% c("Hippiscus rugosus", "hippiscus rugosus") ~ "Hippiscus rugosus",
+    species %in% c("Pardalophora haldemani", "pardalopho haldemani") ~ "Pardalophora haldemani",
+    species %in% c("Arphia spp.", "arphia species", "arphia spp.") ~ "Arphia spp.",
+    species %in% c("Schistocerca obscura", "schistocer obscura") ~ "Schistocerca obscura",
+    species %in% c("Encoptolophus sordidus", "encoptolop sordidus") ~ "Encoptolophus sordidus",
+    species %in% c("Melanoplus angustipennis", "melanoplus angustipe") ~ "Melanoplus angustipennis",
+    species %in% c("Xanthippus corallipes", "xanthippus corallipe") ~ "Xanthippus corallipes",
+    species %in% c("Encoptolophus subgracilis", "encoptolop subgracil") ~ "Encoptolophus subgracilis",
+    species %in% c("Encoptolphus spp.", "encoptolop spp.") ~ "Encoptolophus spp.",
+    species %in% c("melanoplus foedus") ~ "Melanoplus foedus",
+    species %in% c("melanoplus occidenta") ~ "Melanoplus occidenta",
+    species %in% c("oedipodinae", "Oedipodinae spp.") ~ "Oedipodinae spp.",
+    species %in% c("pardalopho apiculata") ~ "Pardalopho apiculata",
+    species %in% c("pardalopho species", "pardalopho spp.") ~ "Pardalopho species",
+    species %in% c("psoloessa delicatul") ~ "Psoloessa delicatul",
+    .default = as.character(species)
+  ))
+
 
 
 write.csv(knz_consumer,"knz_consumer.csv", row.names = FALSE) # exporting csv
@@ -240,7 +307,7 @@ write.csv(knz_consumer,"knz_consumer.csv", row.names = FALSE) # exporting csv
 
 
 
-###### CDR LTER harmonization ######
+#### CDR LTER harmonization ####
 # producer 
 cdr_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.273.11&entityid=27ddb5d8aebe24db99caa3933e9bc8e2"
 cdr_producer_raw <- read.csv(file = cdr_producer_url)
