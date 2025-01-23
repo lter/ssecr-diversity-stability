@@ -238,9 +238,7 @@ knz_consumer <- knz_consumer_raw %>%
 
 knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
 knz_consumer <- knz_consumer %>%
-  #filter(!is.na(species)) %>% # removing NAs for species
   filter(!abundance %in% c("", "0")) %>% # removing 0 and NA for abundance
-#  mutate(species = as.character(species)) %>% # converting species codes to character
   mutate(abundance = as.numeric(abundance)) # converting abundance to numeric
 
   
@@ -298,8 +296,16 @@ knz_consumer <- knz_consumer %>%
     species %in% c("pardalopho species", "pardalopho spp.") ~ "Pardalopho species",
     species %in% c("psoloessa delicatul") ~ "Psoloessa delicatul",
     .default = as.character(species)
-  ))
-
+  )) %>%
+  mutate(herbivore = "herbivore") %>%
+  mutate(id_confidence = dplyr::case_when(
+    species %in% c(
+      "unknown ", "unknown", "Unknown", "Boopedon spp.", "Hadrotettix spp.",
+      "Melanoplus spp.", "Oedipodinae spp."
+    ) ~ 0,
+    .default = 1
+  )) # STILL HAVE SOME TO GROUP AT GENUS LEVEL!!
+# SPLIT SPECIES INTO SPECIES AND GENUS
 
 
 write.csv(knz_consumer,"knz_consumer.csv", row.names = FALSE) # exporting csv
@@ -336,12 +342,26 @@ cdr_producer$species <- str_replace(cdr_producer$species, "Festuca Sp.", "Festuc
 cdr_producer$species <- str_replace(cdr_producer$species, "cyperus sp", "Cyperus sp.") # fixing typo
 cdr_producer$species <- str_replace(cdr_producer$species, "leptoloma sp.", "Leptoloma sp.") # fixing typo
 
+
 cdr_producer <- cdr_producer %>%
-  filter(!species %in% c("32 Species Weeds", "Fungi", "Grasses", "Green matter", "Green matter (alive)", 
-                         "Miscellaneous Forb", "Miscellaneous forb", "Miscellaneous grass", "Miscellaneous grasses",
-                         "Miscellaneous herbs", "Miscellaneous litter", "Miscellaneous sedges", "Miscellaneous sp.",
-                         "Mosses", "Mosses & lichens", "Real Weeds", "Unsorted Biomass", "Unsorted biomass", "Weeds",
-                         "era sp", "erg sp", "miscellaneous seedhead", "unknown forb", "unknown grass"))
+  mutate(id_confidence = dplyr::case_when(
+    species %in% c("32 Species Weeds", "Fungi", "Grasses", "Green matter", "Green matter (alive)", 
+          "Miscellaneous Forb", "Miscellaneous forb", "Miscellaneous grass", "Miscellaneous grasses",
+          "Miscellaneous herbs", "Miscellaneous litter", "Miscellaneous sedges", "Miscellaneous sp.",
+          "Mosses", "Mosses & lichens", "Real Weeds", "Unsorted Biomass", "Unsorted biomass", "Weeds",
+          "era sp", "erg sp", "miscellaneous seedhead", "unknown forb", "unknown grass",
+          "Agrostis sp.", "Erigeron sp.", "Euphorbia sp.", "Lepidium sp.", "Leptoloma sp.",
+          "Lupinus sp.", "Panicum sp.", "Petalostemum sp.", "Rumex sp.", "Silene sp.",
+          "Solidago sp.", "Sporobolus sp.", "Trifolium sp.") ~ 0,
+    .default = 1
+  ))
+
+cdr_producer %>% # still have some to group/drop
+  filter(id_confidence == 1) %>%
+  count(species)
+# need to seperate genus/species into 2 parts
+
+
 
 
 # consumer
@@ -360,18 +380,14 @@ cdr_consumer <- cdr_consumer_raw %>%
          unit_abundance = "count", 
          scale_abundance = "25 sweeps") %>%
   mutate(plot = Plot, subplot = NA, 
-         abundance = Count, species = paste(Genus, Specific.epithet, sep = " "), year = Year,
+         abundance = Count, species = paste(Genus, Specific.epithet, Further.ID, sep = " "), year = Year,
          month = Month, day = NA) %>% # renaming columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
                   "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-cdr_consumer_raw %>%
-  count(Order, Family.subfamily., Genus, Specific.epithet, Further.ID)
-cdr_consumer_raw %>%
-  filter(Order == "Homoptera") %>%
-  count(Genus)
+
 
 cdr_consumer_raw$Further.ID <- str_trim(cdr_consumer_raw$Further.ID, side = c("both")) 
 cdr_consumer_raw$Further.ID <- str_replace_all(cdr_consumer_raw$Further.ID, "^na$", "") 
