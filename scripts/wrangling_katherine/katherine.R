@@ -33,36 +33,35 @@ kbs_consumer <- kbs_consumer_raw %>%
          guild = "insect", 
          unit_abundance = "count", 
          scale_abundance = "1 trap") %>%
-  mutate(plot = Replicate, subplot = Station, abundance = Adults, species = Species, year = Year, # renaming columns
+  mutate(plot = Replicate, subplot = Station, abundance = Adults, taxon_name = Species, year = Year, # renaming columns
          Replicate = NULL, Station = NULL, Adults = NULL, Species = NULL, Year = NULL) %>% # removing old columns
   mutate(abundance = as.numeric(abundance)) %>%
   mutate(year = as.double(year)) %>%
   mutate(unique_ID = paste(site, plot, subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "year", "month", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 kbs_consumer <- kbs_consumer %>%
   mutate(id_confidence = if_else( # adding confidence column for species ID -- not going to include species IDed as "Other"
-    species %in% c("Other"), 0, 1
+    taxon_name %in% c("Other"), 0, 1
   )) %>%
   mutate(herbivore = dplyr::case_when( # classifying feeding group
-    species %in% c(
+    taxon_name %in% c(
       "Adalia bipunctata", "Brachiacantha ursina", "Chilocorus stigma",
       "Coccinella septempunctata", "Coccinella trifaciata", "Coleomegilla maculata",
       "Cycloneda munda", "Harmonia axyridis", "Hippodamia convergens", "Hippodamia glacialis",
       "Hippodamia parenthesis", "Hippodamia tredecimpunctata", "Hippodamia variegata", 
       "Propylea quatuorodecipuntata"
     ) ~ "predator",
-    species %in% c( # these are true omnivores, but include species in the families that have different feeding modes
+    taxon_name %in% c( # these are true omnivores, but include species in the families that have different feeding modes
       "Cantharid", "Carabid", "Lacewing", "Lampyrid", "Mecoptera",
       "Psyllobora vigintimaculata" # consumes primarily fungus
     ) ~ "omnivore",
-    species %in% c(
+    taxon_name %in% c(
       "Syrphid"
     ) ~ "nectarivorous"
-  )) %>%
-  separate(species, sep = " ", into = c("genus", "species")) # separating into genus and species column
+  ))
 
 
 write.csv(kbs_consumer,"kbs_consumer.csv", row.names = FALSE) # exporting csv to local computer
@@ -90,78 +89,66 @@ kbs_producer <- kbs_producer_raw %>%
          scale_abundance = "1 m2") %>%
   mutate(Replicate = str_sub(Replicate, -1), # removing "R" in front of rep # to be consistent with insect data
          Station = str_sub(Station, -1)) %>% # removing "S" in front of station # to be consistent with insect data
-  mutate(plot = Replicate, subplot = Station, abundance = Biomass_g, species = Species, year = Year, # renaming columns
+  mutate(plot = Replicate, subplot = Station, abundance = Biomass_g, taxon_name = Species, year = Year, # renaming columns
          Replicate = NULL, Station = NULL, Biomass_g = NULL, Species = NULL, Year = NULL) %>% # removing old columns
   mutate(abundance = as.numeric(abundance)) %>%
   mutate(year = as.double(year)) %>%
   mutate(unique_ID = paste(site, plot, subplot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "year", "month", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-kbs_producer$species <- str_trim(kbs_producer$species, side = "both") # removing white space from strings
+kbs_producer$taxon_name <- str_trim(kbs_producer$taxon_name, side = "both") # removing white space from strings
 
 kbs_producer <- kbs_producer %>%
+  mutate(taxon_name = dplyr::case_when(
+    taxon_name %in% c("Brassica rapa L.", "Brassica sp.", "Brassica kaber (DC.) L.C.Wheeler") ~ "Brassica sp.", # 25% IDed at genus
+    taxon_name %in% c("Carex muhlenburgii", "Carex sp.") ~ "Carex sp.", # 14% (1/7) IDed at genus
+    taxon_name %in% c("Celastrus orbiculatus Thunb.", "Celastrus sp.") ~ "Celastrus sp.", # 17% (7/39) IDed at genus
+    taxon_name %in% c("Cerastium arvense L.", "Cerastium sp.", "Cerastium vulgatum L.") ~ "Cerastium sp.", # 14% (15/104) IDed at genus
+    taxon_name %in% c("Cirsium altissimum (L.) Spreng.", "Cirsium arvense (L.) Scop.", "Cirsium discolor (Muhl. ex Willd.) Spreng.",
+                      "Cirsium sp.", "Cirsium vulgare (Savi) Tenore") ~ "Cirsium sp.", # 43% (23/53) IDed at genus
+    taxon_name %in% c("Cornus racemosa Lam.", "Cornus sp.") ~ "Cornus sp.", # 86% (12/14) IDed at genus
+    taxon_name %in% c("Desmodium illinoense", "Desmodium marilandicum (L.) DC.", 
+                      "Desmodium paniculatum (L.) DC.", "Desmodium sp.") ~ "Desmodium sp.", # 53% (8/15) IDed at genus
+    taxon_name %in% c("Festuca rubra L.", "Festuca sp.") ~ "Festuca sp.", # 33% (2/6) IDed at genus
+    taxon_name %in% c("Fragaria sp.", "Fragaria virginiana Duchesne") ~ "Fragaria sp.", # 33% (1/3) IDed at genus
+    taxon_name %in% c("Geum laciniatum", "Geum sp.", "Geum virginianum") ~ "Geum sp.", # 88% (49/56) IDed at genus
+    taxon_name %in% c("Hieracium aurantiacum L.", "Hieracium caespitosum", "Hieracium sp.") ~ "Hieracium sp.", # 93% (244/261) IDed at genus
+    taxon_name %in% c("Juncus acuminatus Michx.", "Juncus sp.", "Juncus tenuis Willd.") ~ "Juncus sp.", # 6% (10/162) IDed at genus
+    taxon_name %in% c("Lactuca canadensis L.", "Lactuca saligna L.", "Lactuca sp.", "Lactuca serriola L.") ~ "Lactuca sp.", # 22% (4/18) IDed at genus
+    taxon_name %in% c("Lonicera morrowii", "Lonicera spp.") ~ "Lonicera spp.", # 86% (6/7) IDed at genus
+    taxon_name %in% c("Melilotus alba var. annua H.S.Coe", "Melilotus officinalis (L.) Lam.", "Melilotus sp.") ~ "Melilotus sp.", # 29% (5/17) IDed at genus
+    taxon_name %in% c("Monarda fistulosa L.", "Monarda sp.") ~ "Monarda sp.", # 20% (1/5) IDed at genus
+    taxon_name %in% c("Plantago lanceolata L.", "Plantago major L.", "Plantago rugelii Dcne.", "Plantago sp.") ~ "Plantago sp.", # 10% (1/10) IDed at genus
+    taxon_name %in% c("Populus deltoides", "Populus sp.") ~ "Populus sp.", # 21% (3/14) IDed at genus
+    taxon_name %in% c("Prunus serotina Ehrh.", "Prunus spp.", "Prunus virginiana L.") ~ "Prunus spp.", # 22% (2/9) IDed at genus
+    taxon_name %in% c("Rhamnus cathartica L.", "Rhamnus frangula L.", "Rhamnus sp.") ~ "Rhamnus sp.", # 33% (2/6) IDed at genus
+    taxon_name %in% c("Rosa multiflora Thunb. ex Murr.", "Rosa sp.") ~ "Rosa sp.", # 87% (13/15) IDed at genus
+    taxon_name %in% c("Rubus allegheniensis T.C. Porter", "Rubus flagellaris", "Rubus occidentalis L.", "Rubus sp.") ~ "Rubus sp.", # 17% (41/239) IDed at genus
+    taxon_name %in% c("Sonchus arvensis L.", "Sonchus asper (L.) Hill", "Sonchus oleraceus L.", "Sonchus sp.") ~ "Sonchus sp.", # 20% (1/5) IDed at genus
+    taxon_name %in% c("Veronica arvensis L.", "Veronica peregrina L.", "Veronica sp.") ~ "Veronica sp.", # 66% (14/21) IDed at genus
+    taxon_name %in% c("Vicia sp.", "Vicia villosa  Roth") ~ "Vicia sp.", # 47% (8/17) IDed at genus
+    taxon_name %in% c("Vitex agnus-castus L.", "Vitis aestivalis Michx.", "Vitis riparia Michx.", "Vitis sp.") ~ "Vitis sp.", # 40% (4/10) IDed at genus
+    .default = taxon_name
+  )) %>%
   mutate(id_confidence = dplyr::case_when(
-    species %in% c(
+    taxon_name %in% c(
       "another unknown dicot", "unknown Asteraceae", "unknown Brassicaceae", "unknown Sedge",
       "Unknown dicot", "Unknown grass", "Unknown monocot", "Unkown Fabaceae", "UnSorted",
       "Composite Basal", "Composite sp.", "Dicots", "Monocots", "Unknown Orchidaceae", 
       "Composite Basal Leaves", "Aster basal leaves", 
-      "Aster sp.", "Brassica sp.", "Bromus sp.", "Carex sp.", "Celastrus sp.", "Cerastium sp.", "Cirsium sp.", "Cornus sp.", # genus classifications
-      "Desmodium sp.", "Erigeron sp.", "Festuca sp.", "Fragaria sp.", "Geum sp.", "Hieracium sp.", "Juncus sp.", "Lactuca sp.", "Lonicera spp.",
-      "Melilotus sp.", "Monarda sp.", "Plantago sp.", "Poa sp.", "Populus sp.", "Prunus spp.", "Rhamnus sp.", "Rosa sp.",
-      "Rubus sp.", "Rumex species", "Setaria sp.", "Solidago sp.", "Sonchus sp.", "Trifolium sp.", "Veronica sp.", "Vicia sp.", "Vitis sp."
+      "Aster sp.", "Bromus sp.", # genus classifications
+      "Erigeron sp.", "Poa sp.", "Rumex species", "Setaria sp.", "Solidago sp.", "Trifolium sp."
     ) ~ 0,
-    species %in% c(
-      "Abutilon theophrasti Medikus", "Acer spp.", "Achillea millefolium L.", "Agrostis gigantea Roth",
-      "Ambrosia artemisiifolia L.", "Antennaria plantaginifolia (L.) Richards.", "Anthemis cotula L.",
-      "Apocynum androsaemifolium L.", "Apocynum cannabinum L.", "Arabidopsis thaliana (L.) Heynh.", 
-      "Arabis glabra (L.) Bernh.", "Arctium minus (Hill) Bernh.", "Arrhenatherum elatius (L.) Beauv. ex J. & C. Presl",
-      "Artemisia campestris ssp. Caudata (Michx.) Hall & Clements", "Artemisia vulgaris L.", "Asclepias syriaca L.",
-      "Asparagus officinalis L.", "Asplenium platyneuron (L.) Oakes", "Aster cordifolius", "Aster ericoides L.",
-      "Aster novae-angliae L.", "Aster pilosus Willd.", "Aster sagittifolius", "Barbarea vulgaris R. Br.", 
-      "Botrychium dissectum", "Brassica kaber (DC.) L.C.Wheeler", "Brassica kaber (DC.) L.C.Wheeler", 
-      "Brassica rapa L.", "Bromus inermis Leyss.", "Bromus japonicus Thunb. ex Murr.", "Bromus mollis L.", "Bromus tectorum L.",
-      "Carex muhlenburgii", "Celastrus orbiculatus Thunb.", "Centaurea stoebe L. ssp. micranthos (Gugler) Hayek",
-      "Cerastium arvense L.", "Cerastium vulgatum L.", "Chenopodium album L.", "Cirsium altissimum (L.) Spreng.", "Cirsium arvense (L.) Scop.",
-      "Cirsium discolor (Muhl. ex Willd.) Spreng.", "Cirsium vulgare (Savi) Tenore", "Convolvulus arvensis L.", "Conyza canadensis (L.) Cronq.",
-      "Cornus racemosa Lam.", "Crataegus spp.", "Crepis capillaris (L.) Wallr.", "Cyperus esculentus L.", "Dactylis glomerata L.",
-      "Daucus carota L.", "Desmodium illinoense", "Desmodium marilandicum (L.) DC.", "Desmodium paniculatum (L.) DC.", "Dianthus armeria L.",
-      "Diervilla sp.", "Digitaria sanguinalis (L.) Scop.", "Duchesnea indica (Andr.) Focke", "Echinochloa crus-galli (L.) Beauv.", 
-      "Elaeagnus umbellata Thunb.", "Elymus canadensis", "Elymus repens (L.) Gould", "Epilobium coloratum Biehler.", "Eragrostis cilianensis (All.) E.Mosher", 
-      "Erigeron annuus (L.) Pers.", "Erigeron strigosus Muhl. ex Willd.", "Euthamia graminifolia (L.) Nutt.", "Festuca rubra L.", 
-      "Fragaria virginiana Duchesne", "Geum laciniatum", "Geum virginianum", "Gnaphalium obtusifolium L.", "Helianthus occidentalis Riddell", 
-      "Hieracium aurantiacum L.", "Hieracium caespitosum", "Hypericum perforatum L.", "Juncus acuminatus Michx.", "Juncus tenuis Willd.", 
-      "Lactuca canadensis L.", "Lactuca saligna L.", "Lactuca serriola L.", "Lonicera morrowii", "Lotus corniculatus L.", "Malus spp.", 
-      "Medicago lupulina L.", "Medicago sativa L.", "Melilotus alba var. annua H.S.Coe", "Melilotus officinalis (L.) Lam.", 
-      "Mimosa sp.", "Monarda fistulosa L.", "Oenothera biennis L.", "Oxalis stricta L.", "Panicum dichotomiflorum Michx.", "Parthenocissus quinquefolia (L.) Planch.",
-      "Phalaris angusta Nees ex Trin.", "Phalaris arundinacea L.", "Phleum pratense L.", "Physalis heterophylla Nees", "Physalis longifolia  Nutt.",
-      "Phytolacca americana L.", "Plantago lanceolata L.", "Plantago major L.", "Plantago rugelii Dcne.", "Poa annua L.", "Poa compressa L.", "Poa pratensis L.",
-      "Polygonatum biflorum (Walt.) Ell.", "Polygonum convolvulus L.", "Polygonum pensylvanicum L.", "Populus deltoides", "Potentilla argentea L.", 
-      "Potentilla arguta Pursh", "Potentilla arguta Pursh", "Potentilla norvegica L.", "Potentilla recta L.", "Potentilla reptans L.", 
-      "Potentilla simplex Michx.", "Prunus serotina Ehrh.", "Prunus virginiana L.", "Ranunculus abortivus L.", "Rhamnus cathartica L.",
-      "Rhamnus frangula L.", "Rhus glabra L.", "Rhus typhina L.", "Robinia pseudoacacia L.", "Rosa multiflora Thunb. ex Murr.", "Rubus allegheniensis T.C. Porter", "Rubus flagellaris",
-      "Rubus occidentalis L.", "Rumex acetosella L.", "Rumex crispus L.", "Rumex obtusifolius L.", "Sassafras albidum (Nutt.) Nees", 
-      "Setaria faberi Herrm.", "Setaria pumila (Poir.) Roem. & Schult", "Setaria viridis (L.) Beauv.", "Silene alba (Mill.) E.H.L.Krause",
-      "Solanum sp.", "Solidago canadensis L.", "Solidago juncea Aiton", "Solidago nemoralis Ait.", "Solidago rugosa Ait.", "Solidago speciosa L.",
-      "Sonchus arvensis L.", "Sonchus asper (L.) Hill", "Sonchus oleraceus L.", "Stellaria media (L.) Vill.", "Taraxacum officinale Weber in", 
-      "Toxicodendron radicans (L.) Ktze.", "Trifolium agrarium", "Trifolium arvense L.", "Trifolium campestre Schreb.", "Trifolium dubium Sibth.",
-      "Trifolium hybridum L.", "Trifolium pratense L.", "Trifolium repens L.", "Verbascum blattaria L.", "Verbascum thapsus L.", "Veronica arvensis L.",
-      "Veronica peregrina L.", "Vicia villosa  Roth", "Vitex agnus-castus L.", "Vitis aestivalis Michx.", "Vitis riparia Michx.", "Xanthium spinosum L."
-    ) ~ 1
-  )) %>%
-  mutate(genus = word(species, 1, sep=" ")) %>% # subsetting first word of name as genus
-  mutate(species = word(species, 2, sep=" ")) %>% # subsetting second word of name as genus
-  select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-           "plot", "subplot", "year", "month", "unique_ID", "genus", "species", "id_confidence", "abundance", 
-           "unit_abundance", "scale_abundance")) # reordering columns
-
+    .default = 1
+  ))
 
 write.csv(kbs_producer,"kbs_producer.csv", row.names = FALSE) # exporting csv
 
 googledrive::drive_upload(media = file.path("kbs_producer.csv"), overwrite = T, # exporting to google drive
                           path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1O2n89tOIMNZGXTzCZNb0Qsj_C8dRI09l"))
+
 
 
 #### KNZ LTER harmonization ####
@@ -195,19 +182,19 @@ knz_producer$abundance <- fct_recode(knz_producer$abundance, "0.5" = "1", "3.0" 
                                      "37.5" = "4", "62.5" = "5", "85.0" = "6", "97.5" = "7")
 knz_producer$abundance <- as.numeric(as.character(knz_producer$abundance))
 
+
 # assigning confidence to species IDs
 knz_producer <- knz_producer %>%
-  mutate(genus_species = paste(genus, species, sep = " ")) %>% # temporarily pasting together genus and species for assigning ID confidence
+  mutate(taxon_name = paste(genus, species, sep = " ")) %>% # temporarily pasting together genus and species for assigning ID confidence
   mutate(id_confidence = if_else( # adding confidence column for species ID 
-    genus_species %in% c("annual forb"), 0, 1
+    taxon_name %in% c("annual forb", "carex spp.", "euphor spp."), 0, 1
   )) %>%
-  dplyr::select(!c("genus_species"))
+  dplyr::select(!c("genus", "species"))
 
 write.csv(knz_producer,"knz_producer.csv", row.names = FALSE) # exporting csv
 
 googledrive::drive_upload(media = file.path("knz_producer.csv"), overwrite = T, # exporting to google drive
                           path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1UUXzJUKvjcRZW-yzI78O_GLFtSPUCclg"))
-
 
 
 
@@ -228,13 +215,13 @@ knz_consumer <- knz_consumer_raw %>%
          unit_abundance = "count", 
          scale_abundance = "200 sweeps") %>%
   mutate(plot = WATERSHED, subplot = REPSITE, 
-       abundance = TOTAL, species = SPECIES, year = RECYEAR,
+       abundance = TOTAL, taxon_name = SPECIES, year = RECYEAR,
        month = RECMONTH, day = RECDAY) %>% # renaming columns
   mutate(plot = tolower(plot)) %>% # lowercasing plot to be consistent with producer
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
-                  "unit_abundance", "scale_abundance", "SPCODE"))
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "unit_abundance", "scale_abundance"))
 
 knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
 knz_consumer <- knz_consumer %>%
@@ -244,71 +231,86 @@ knz_consumer <- knz_consumer %>%
   
 
 knz_consumer <- knz_consumer %>%
-  mutate(species = dplyr::case_when(
-    species %in% c("Brachystola magna", "brachystol magna") ~ "Brachystola magna",
-    species %in% c("Schistocerca lineata", "schistocer lineata") ~ "Schistocerca lineata",
-    species %in% c("Paratfylotropidia brunneri", "paratylota brunneri", "paratylotr brunneri") ~ "Paratylotropidia brunneri",
-    species %in% c("Hypochlora alba", "hypochlora alba") ~ "Hypochlora alba",
-    species %in% c("Campylacantha olivacea", "campylacan olivacea") ~ "Campylacantha olivacea",
-    species %in% c("Hesperotettix speciosus", "hesperotet speciosus") ~ "Hesperotettix speciosus",
-    species %in% c("Hesperotettix viridis", "hesperotet viridis") ~ "Hesperotettix viridis",
-    species %in% c("Hesperotettix spp.", "hesperotet species", "hesperotet spp.") ~ "Hesperotettix spp.",
-    species %in% c("Phoetaliotes nebrascensis", "phoetaliot nebrascen") ~ "Phoetaliotes nebrascensis",
-    species %in% c("Melanoplus scudderi", "melanoplus scudderi") ~ "Melanoplus scudderi",
-    species %in% c("Melanoplus sanguinipes", "melanoplus sanguinip") ~ "Melanoplus sanguinipes",
-    species %in% c("Melanoplus femurrubrum", "melanoplus femurrubr") ~ "Melanoplus femurrubrum",
-    species %in% c("Melanoplus keeleri", "melanoplus keeleri") ~ "Melanoplus keeleri",
-    species %in% c("Melanoplus packardii", "melanoplus packardii") ~ "Melanoplus packardii",
-    species %in% c("Melanoplus differentialis", "melanoplus different") ~ "Melanoplus differentialis",
-    species %in% c("Melanoplus bivittatus", "melanoplus bivittatu") ~ "Melanoplus bivittatus",
-    species %in% c("Melanoplus confusus", "melanoplus confusus") ~ "Melanoplus confusus",
-    species %in% c("Melanoplus spp.", "melanoplus species", "melanoplus spp.") ~ "Melanoplus spp.",
-    species %in% c("Eritettix simplex", "eritettix simplex") ~ "Eritettix simplex",
-    species %in% c("Syrbula admirabilis", "syrbula admirabil") ~ "Syrbula admirabilis",
-    species %in% c("Orphulella speciosa", "orphulella speciosa", "orphullela speciosa") ~ "Orphulella speciosa",
-    species %in% c("Mermiria picta", "mermiria picta") ~ "Mermiria picta",
-    species %in% c("Mermiria bivittata", "mermiria bivitatta", "mermiria bivittata") ~ "Mermiria bivittata",
-    species %in% c("Opeia obscura", "opeia obscura") ~ "Opeia obscura",
-    species %in% c("Pseuodopomala brachyptera", "pseudopoma brachypte") ~ "Pseuodopomala brachyptera",
-    species %in% c("Boopedon auriventris", "boopedon auriventr") ~ "Boopedon auriventris",
-    species %in% c("Boopedon nubilum", "boopedon nubilum") ~ "Boopedon nubilum",
-    species %in% c("Boopedon gracile", "boopedon gracile") ~ "Boopedon gracile",
-    species %in% c("Ageneotettix deorum", "ageneotett deorum") ~ "Ageneotettix deorum",
-    species %in% c("Mermiria spp.", "mermiria species", "mermiria spp.") ~ "Mermiria spp.",
-    species %in% c("Chortophaga viridifasciata", "chortophag viridifas") ~ "Chortophaga viridifasciata",
-    species %in% c("Arphia xanthoptera", "arphia xanthopte") ~ "Arphia xanthoptera",
-    species %in% c("Arphia simplex", "arphia simplex") ~ "Arphia simplex",
-    species %in% c("Arphia conspersa", "arphia conspersa") ~ "Arphia conspersa",
-    species %in% c("Hadrotettix trifasciatus", "hadrotetti trifascia") ~ "Hadrotettix trifasciatus",
-    species %in% c("Hippiscus rugosus", "hippiscus rugosus") ~ "Hippiscus rugosus",
-    species %in% c("Pardalophora haldemani", "pardalopho haldemani") ~ "Pardalophora haldemani",
-    species %in% c("Arphia spp.", "arphia species", "arphia spp.") ~ "Arphia spp.",
-    species %in% c("Schistocerca obscura", "schistocer obscura") ~ "Schistocerca obscura",
-    species %in% c("Encoptolophus sordidus", "encoptolop sordidus") ~ "Encoptolophus sordidus",
-    species %in% c("Melanoplus angustipennis", "melanoplus angustipe") ~ "Melanoplus angustipennis",
-    species %in% c("Xanthippus corallipes", "xanthippus corallipe") ~ "Xanthippus corallipes",
-    species %in% c("Encoptolophus subgracilis", "encoptolop subgracil") ~ "Encoptolophus subgracilis",
-    species %in% c("Encoptolphus spp.", "encoptolop spp.") ~ "Encoptolophus spp.",
-    species %in% c("melanoplus foedus") ~ "Melanoplus foedus",
-    species %in% c("melanoplus occidenta") ~ "Melanoplus occidenta",
-    species %in% c("oedipodinae", "Oedipodinae spp.") ~ "Oedipodinae spp.",
-    species %in% c("pardalopho apiculata") ~ "Pardalopho apiculata",
-    species %in% c("pardalopho species", "pardalopho spp.") ~ "Pardalopho species",
-    species %in% c("psoloessa delicatul") ~ "Psoloessa delicatul",
-    .default = as.character(species)
+  mutate(taxon_name = dplyr::case_when( # fixing typos/capitalizations
+    taxon_name %in% c("Brachystola magna", "brachystol magna") ~ "Brachystola magna",
+    taxon_name %in% c("Schistocerca lineata", "schistocer lineata") ~ "Schistocerca lineata",
+    taxon_name %in% c("Paratfylotropidia brunneri", "paratylota brunneri", "paratylotr brunneri") ~ "Paratylotropidia brunneri",
+    taxon_name %in% c("Hypochlora alba", "hypochlora alba") ~ "Hypochlora alba",
+    taxon_name %in% c("Campylacantha olivacea", "campylacan olivacea") ~ "Campylacantha olivacea",
+    taxon_name %in% c("Hesperotettix speciosus", "hesperotet speciosus") ~ "Hesperotettix speciosus",
+    taxon_name %in% c("Hesperotettix viridis", "hesperotet viridis") ~ "Hesperotettix viridis",
+    taxon_name %in% c("Hesperotettix spp.", "hesperotet species", "hesperotet spp.") ~ "Hesperotettix spp.",
+    taxon_name %in% c("Phoetaliotes nebrascensis", "phoetaliot nebrascen") ~ "Phoetaliotes nebrascensis",
+    taxon_name %in% c("Melanoplus scudderi", "melanoplus scudderi") ~ "Melanoplus scudderi",
+    taxon_name %in% c("Melanoplus sanguinipes", "melanoplus sanguinip") ~ "Melanoplus sanguinipes",
+    taxon_name %in% c("Melanoplus femurrubrum", "melanoplus femurrubr") ~ "Melanoplus femurrubrum",
+    taxon_name %in% c("Melanoplus keeleri", "melanoplus keeleri") ~ "Melanoplus keeleri",
+    taxon_name %in% c("Melanoplus packardii", "melanoplus packardii") ~ "Melanoplus packardii",
+    taxon_name %in% c("Melanoplus differentialis", "melanoplus different") ~ "Melanoplus differentialis",
+    taxon_name %in% c("Melanoplus bivittatus", "melanoplus bivittatu") ~ "Melanoplus bivittatus",
+    taxon_name %in% c("Melanoplus confusus", "melanoplus confusus") ~ "Melanoplus confusus",
+    taxon_name %in% c("Melanoplus spp.", "melanoplus species", "melanoplus spp.") ~ "Melanoplus spp.",
+    taxon_name %in% c("Eritettix simplex", "eritettix simplex") ~ "Eritettix simplex",
+    taxon_name %in% c("Syrbula admirabilis", "syrbula admirabil") ~ "Syrbula admirabilis",
+    taxon_name %in% c("Orphulella speciosa", "orphulella speciosa", "orphullela speciosa") ~ "Orphulella speciosa",
+    taxon_name %in% c("Mermiria picta", "mermiria picta") ~ "Mermiria picta",
+    taxon_name %in% c("Mermiria bivittata", "mermiria bivitatta", "mermiria bivittata") ~ "Mermiria bivittata",
+    taxon_name %in% c("Opeia obscura", "opeia obscura") ~ "Opeia obscura",
+    taxon_name %in% c("Pseuodopomala brachyptera", "pseudopoma brachypte") ~ "Pseuodopomala brachyptera",
+    taxon_name %in% c("Boopedon auriventris", "boopedon auriventr") ~ "Boopedon auriventris",
+    taxon_name %in% c("Boopedon nubilum", "boopedon nubilum") ~ "Boopedon nubilum",
+    taxon_name %in% c("Boopedon gracile", "boopedon gracile") ~ "Boopedon gracile",
+    taxon_name %in% c("Ageneotettix deorum", "ageneotett deorum") ~ "Ageneotettix deorum",
+    taxon_name %in% c("Mermiria spp.", "mermiria species", "mermiria spp.") ~ "Mermiria spp.",
+    taxon_name %in% c("Chortophaga viridifasciata", "chortophag viridifas") ~ "Chortophaga viridifasciata",
+    taxon_name %in% c("Arphia xanthoptera", "arphia xanthopte") ~ "Arphia xanthoptera",
+    taxon_name %in% c("Arphia simplex", "arphia simplex") ~ "Arphia simplex",
+    taxon_name %in% c("Arphia conspersa", "arphia conspersa") ~ "Arphia conspersa",
+    taxon_name %in% c("Hadrotettix trifasciatus", "hadrotetti trifascia") ~ "Hadrotettix trifasciatus",
+    taxon_name %in% c("Hippiscus rugosus", "hippiscus rugosus") ~ "Hippiscus rugosus",
+    taxon_name %in% c("Pardalophora haldemani", "pardalopho haldemani") ~ "Pardalophora haldemani",
+    taxon_name %in% c("Arphia spp.", "arphia species", "arphia spp.") ~ "Arphia spp.",
+    taxon_name %in% c("Schistocerca obscura", "schistocer obscura") ~ "Schistocerca obscura",
+    taxon_name %in% c("Encoptolophus sordidus", "encoptolop sordidus") ~ "Encoptolophus sordidus",
+    taxon_name %in% c("Melanoplus angustipennis", "melanoplus angustipe") ~ "Melanoplus angustipennis",
+    taxon_name %in% c("Xanthippus corallipes", "xanthippus corallipe") ~ "Xanthippus corallipes",
+    taxon_name %in% c("Encoptolophus subgracilis", "encoptolop subgracil") ~ "Encoptolophus subgracilis",
+    taxon_name %in% c("Encoptolphus spp.", "encoptolop spp.") ~ "Encoptolophus spp.",
+    taxon_name %in% c("melanoplus foedus") ~ "Melanoplus foedus",
+    taxon_name %in% c("melanoplus occidenta") ~ "Melanoplus occidenta",
+    taxon_name %in% c("oedipodinae", "Oedipodinae spp.") ~ "Oedipodinae spp.",
+    taxon_name %in% c("pardalopho apiculata") ~ "Pardalopho apiculata",
+    taxon_name %in% c("pardalopho species", "pardalopho spp.") ~ "Pardalopho species",
+    taxon_name %in% c("psoloessa delicatul") ~ "Psoloessa delicatul",
+    .default = as.character(taxon_name)
   )) %>%
-  mutate(herbivore = "herbivore") %>%
-  mutate(id_confidence = dplyr::case_when(
-    species %in% c(
+  mutate(taxon_name = dplyr::case_when( # grouping at genus when >5% of observations are at genus level
+    taxon_name %in% c("Amblycorypha oblongifolia", "Amblycorypha rotundifolia", "Amblycorypha spp.") ~ "Amblycorypha spp.", # 20% (1/5) at genus level
+    taxon_name %in% c("Arphia conspersa", "Arphia simplex", "Arphia spp.", "Arphia xanthoptera") ~ "Arphia spp.", # 53% (230/431) at genus level
+    taxon_name %in% c("Encoptolophus sordidus", "Encoptolophus spp.", "Encoptolophus subgracilis") ~ "Encoptolophus spp.", # 18% (8/44) at genus level
+    taxon_name %in% c("Hesperotettix speciosus", "Hesperotettix spp.", "Hesperotettix viridis") ~ "Hesperotettix spp.", # 40% (442/1084) at genus level
+    taxon_name %in% c("Mermiria bivittata", "Mermiria picta", "Mermiria spp.") ~ "Mermiria spp.", # 30% (174/588) at genus level
+    taxon_name %in% c("Neoconocephalus ensiger", "Neoconocephalus robustus", "Neoconocephalus spp.") ~ "Neoconocephalus spp.", # 9% (1/11) at genus level
+    taxon_name %in% c("Pardalopho apiculata", "Pardalopho species") ~ "Pardalopho spp.", # 20% (20/102) at genus level
+    taxon_name %in% c("Pardalophora haldemani", "Pardalophora spp.") ~ "Pardalophora spp.", # 8% (7/90) at genus level
+    taxon_name %in% c("Schistocerca alutacea", "Schistocerca lineata", "Schistocerca obscura", "Schistocerca spp.") ~ "Schistocerca spp.", # 12% (13/107) at genus level,
+    .default = taxon_name
+  )) %>%
+  mutate(herbivore = "herbivore") %>% # all herbivores
+  mutate(id_confidence = dplyr::case_when( # assigning ID confidence
+    taxon_name %in% c(
       "unknown ", "unknown", "Unknown", "Boopedon spp.", "Hadrotettix spp.",
-      "Melanoplus spp.", "Oedipodinae spp."
+      "Melanoplus spp.", "Oedipodinae spp.", "Scudderia spp."
     ) ~ 0,
     .default = 1
-  )) # STILL HAVE SOME TO GROUP AT GENUS LEVEL!!
-# SPLIT SPECIES INTO SPECIES AND GENUS
+  )) 
 
 
 write.csv(knz_consumer,"knz_consumer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("knz_consumer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1UUXzJUKvjcRZW-yzI78O_GLFtSPUCclg"))
+
 
 
 
