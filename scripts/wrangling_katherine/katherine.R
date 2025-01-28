@@ -393,23 +393,23 @@ cdr_consumer_raw <- read.delim(file = cdr_consumer_url)
 # matches old taxonomy to new taxonomy
 #cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/1R1byFNUthmeHypO1gvNslVnW2YwiKlLu1Kaw7hxdvRA/edit?usp=drive_link")
 #cdr_consumer_taxonomy <- as.data.frame(cdr_consumer_taxonomy)
-setwd("~/Documents/SSECR/project/cdr")
-cdr_consumer_taxonomy <- read.csv("CDR-taxonomy.csv")
+#setwd("~/Documents/SSECR/project/cdr")
+#cdr_consumer_taxonomy <- read.csv("CDR-taxonomy.csv")
 # matches old taxonomy to trophic level
-cdr_trophic_level <- read.csv("Trophic level.csv")
+#cdr_trophic_level <- read.csv("Trophic level.csv")
 #cdr_trophic_level <- read_sheet("https://docs.google.com/spreadsheets/d/1fmNRM13-M3q1TNNhxYRh85TFfSerQmb7nNK1PmKai_k/edit?gid=0#gid=0")
 #cdr_trophic_level <- as.data.frame(cdr_trophic_level)
-setwd("~/Documents/SSECR/ssecr-diversity-stability")
+#setwd("~/Documents/SSECR/ssecr-diversity-stability")
 
-cdr_trophic_level <- cdr_trophic_level %>%
-  select(c("Code", "Trophic"))
-cdr_trophic_level$Trophic <- as.numeric(cdr_trophic_level$Trophic)
-cdr_trophic_level <- cdr_trophic_level %>%
-  filter(Code != "")
+#cdr_trophic_level <- cdr_trophic_level %>%
+#  select(c("Code", "Trophic"))
+#cdr_trophic_level$Trophic <- as.numeric(cdr_trophic_level$Trophic)
+#cdr_trophic_level <- cdr_trophic_level %>%
+#  filter(Code != "")
 
-cdr_consumer_taxonomy <- cdr_consumer_taxonomy %>% # joining codes/updated names to trophic level
-  left_join(cdr_trophic_level, by = c("OLD_PreferredCode" = "Code")) %>%
-  select(!c("id_confidence"))
+#cdr_consumer_taxonomy <- cdr_consumer_taxonomy %>% # joining codes/updated names to trophic level
+#  left_join(cdr_trophic_level, by = c("OLD_PreferredCode" = "Code")) %>%
+#  select(!c("id_confidence"))
 
 # fixing updates taxonomy names
 cdr_consumer <- cdr_consumer_raw %>%
@@ -417,30 +417,140 @@ cdr_consumer <- cdr_consumer_raw %>%
     Further.ID %in% c("na") ~ "",
     .default = Further.ID
   )) %>%
-  mutate(taxon_name = paste(Genus, Specific.epithet, Further.ID, sep = " "))
+  mutate(taxon_name = paste(Order, Family.subfamily., Genus, Specific.epithet, Further.ID, sep = " ")) 
 
-cdr_consumer_taxonomy$ID <- str_trim(cdr_consumer_taxonomy$ID, side = "both") # removing white space from strings
 cdr_consumer$taxon_name <- str_trim(cdr_consumer$taxon_name, side = "both") # removing white space from strings
 
+cdr_consumer <- cdr_consumer %>%
+  mutate(taxon_name = dplyr::case_when(
+    taxon_name %in% c("Araneae Araneidae Argiope undet ", "Araneae Araneidae Argiope undet (small)", "Araneae Araneidae Argiope undet") ~ "Araneae Araneidae Argiope sp.",
+    taxon_name %in% c("Araneae Thomisidae Misumenops asperatus", "Araneae Thomisidae Misumenops undet", "Araneae Thomisidae Misumenops undet sp2.(pale.hairy)") ~ "Araneae Thomisidae Misumenops sp.",
+    taxon_name %in% c("Coleoptera Chrysomelidae Altica fuscoaenea", "Coleoptera Chrysomelidae Altica undet") ~ "Coleoptera Chrysomelidae Altica sp.",
+    taxon_name %in% c("Coleoptera Chrysomelidae Pachybrachis carbonarius (black)", "Coleoptera Chrysomelidae Pachybrachis undet", 
+                      "Coleoptera Chrysomelidae Pachybrachis undet sp2.(black/white)", "Coleoptera Chrysomelidae Pachybrachis undet sp3.(red/black)") ~ "Coleoptera Chrysomelidae Pachybrachis sp.",
+    taxon_name %in% c("Coleoptera Curculionidae Sitona flavescens", "Coleoptera Curculionidae Sitona undet") ~ "Coleoptera Curculionidae Sitona sp.",
+    taxon_name %in% c("Coleoptera Elateridae Ctenicera undet", "Coleoptera Elateridae undet undet (large)") ~ "Coleoptera Elateridae sp.",
+    taxon_name %in% c("Coleoptera Helodidae Cyphon obscurus?", "Coleoptera Helodidae Cyphon padi?",
+                      "Coleoptera Helodidae Cyphon undet", "Coleoptera Helodidae Cyphon variabilis") ~ "Coleoptera Helodidae Cyphon sp.",
+    taxon_name %in% c("Collembola undet undet undet", "Collembola undet undet undet (black.hunchback)",
+                      "Collembola undet undet undet (globular)") ~ "Collembola sp.",
+    taxon_name %in% c("Diptera Bombyliidae Phthiria undet", "Diptera Bombyliidae Phthiria undet sp1.(yellow)", 
+                      "Diptera Bombyliidae Phthiria undet sp2.(green/yellow)", "Diptera Bombyliidae Phthiria undet sp3.(black)") ~ "Diptera Bombyliidae Phthiria sp.",
+    taxon_name %in% c("Diptera Bombyliidae Villa lateralis", "Diptera Bombyliidae Villa undet") ~ "Diptera Bombyliidae Villa sp.",
+    taxon_name %in% c("Diptera Cecidomyiidae undet undet", "Diptera Cecidomyiidae undet undet (orange)",
+                      "Diptera Cecidomyiidae undet undet sp1.(large)", "Diptera Cecidomyiidae undet undet sp3.(red)") ~ "Diptera Cecidomyiidae sp.",
+    taxon_name %in% c("Diptera Ceratopogonidae undet undet", "Diptera Ceratopogonidae undet undet sp1.(blue)",
+                      "Diptera Ceratopogonidae undet undet sp2.(black)", "Diptera Ceratopogonidae undet undet sp4.(orange)",
+                      "Diptera Ceratopogonidae undet undet sp7.(large)", "Diptera Ceratopogonidae undet undet sp8.") ~ "Diptera Ceratopogonidae sp.",
+    taxon_name %in% c("Diptera Chironomidae undet undet", "Diptera Chironomidae undet undet .sp4.(green)",
+                      "Diptera Chironomidae undet undet sp2.(black)", "Diptera Chironomidae undet undet sp3.(black/yellow.leg)",
+                      "Diptera Chironomidae undet undet sp5.", "Diptera Chironomidae undet undet sp6.(large)") ~ "Diptera Chironomidae sp.",
+    taxon_name %in% c("Diptera Drosophilidae Drosophila undet", "Diptera Drosophilidae Opomyza? undet (shiny)",
+                      "Diptera Drosophilidae Scaptomyza undet") ~ "Diptera Drosophilidae sp.",
+    taxon_name %in% c("Diptera Empididae Drapetus? undet (yellow.leg)", "Diptera Empididae Hybos? undet (humpback)",
+                      "Diptera Empididae Platypalpus undet", "Diptera Empididae undet undet") ~ "Diptera Empididae sp.",
+    taxon_name %in% c("Diptera Heleomyzidae Heleomyza undet", "Diptera Heleomyzidae Tephrochlamys undet",
+                      "Diptera Heleomyzidae undet undet") ~ "Diptera Heleomyzidae sp.",
+    taxon_name %in% c("Diptera Milichiidae Eusiphona undet", "Diptera Milichiidae Phyllomyza undet",
+                      "Diptera Milichiidae undet undet") ~ "Diptera Milichiidae sp.",
+    taxon_name %in% c("Diptera Muscidae Coenosia undet", "Diptera Muscidae Coenosia undet sp1.(other)",
+                      "Diptera Muscidae Coenosia undet sp2.(large)", "Diptera Muscidae Coenosia undet sp3.(yellow.legs)") ~ "Diptera Muscidae Coenosia sp.",
+    taxon_name %in% c("Diptera Phoridae undet undet", "Diptera Phoridae undet undet sp2.(dark)",
+                      "Diptera Phoridae undet undet sp3.(pale)") ~ "Diptera Phoridae sp.",
+    taxon_name %in% c("Diptera Sarcophagidae Blaesoxipha(Acridiophaga) undet", "Diptera Sarcophagidae Senotainia undet",
+                      "Diptera Sarcophagidae undet undet") ~ "Diptera Sarcophagidae sp.",
+    taxon_name %in% c("Diptera Sphaeroceridae Leptocera undet", "Diptera Sphaeroceridae Leptocera(Pteremis) undet (small)",
+                      "Diptera Sphaeroceridae Leptocera(Rachispoda) undet (pale)") ~ "Diptera Sphaeroceridae Leptocera sp.",
+    taxon_name %in% c("Diptera Syrphidae Lejops bilineatus", "Diptera Syrphidae Lejops undet") ~ "Diptera Syrphidae Lejops sp.",
+    taxon_name %in% c("Diptera Syrphidae Paragus bicolor", "Diptera Syrphidae Paragus undet") ~ "Diptera Syrphidae Paragus sp.",
+    taxon_name %in% c("Diptera Tephritidae Urophora undet", "Diptera Tephritidae Urophora undet sp2.(other)") ~ "Diptera Tephritidae Urophora sp.",
+    taxon_name %in% c("Hemiptera Alydidae Alydus conspersus", "Hemiptera Alydidae Alydus eurinus",
+                      "Hemiptera Alydidae Alydus undet") ~ "Hemiptera Alydidae Alydus sp.",
+    taxon_name %in% c("Hemiptera Lygaeidae Cymus discors", "Hemiptera Lygaeidae Cymus undet") ~ "Hemiptera Lygaeidae Cymus sp.",
+    taxon_name %in% c("Hemiptera Lygaeidae Geocoris bullatus", "Hemiptera Lygaeidae Geocoris undet") ~ "Hemiptera Lygaeidae Geocoris sp.",
+    taxon_name %in% c("Hemiptera Lygaeidae Slaterobius insignis", "Hemiptera Lygaeidae Sphaerobius insignis") ~ "Hemiptera Lygaeidae Slaterobius insignis",
+    taxon_name %in% c("Hemiptera Pentatomidae Euschistus servus(euschistoides)", "Hemiptera Pentatomidae Euschistus tristigmus",
+                      "Hemiptera Pentatomidae Euschistus undet", "Hemiptera Pentatomidae Euschistus variolarius") ~ "Hemiptera Pentatomidae Euschistus sp.",
+    taxon_name %in% c("Hemiptera Pentatomidae Homaemus bijugis", "Hemiptera Pentatomidae Homaemus undet") ~ "Hemiptera Pentatomidae Homaemus sp.",
+    taxon_name %in% c("Homoptera Cicadellidae Chlorotettix undet", "Homoptera Cicadellidae Chlorotettix unicolor") ~ "Homoptera Cicadellidae Chlorotettix sp.",
+    taxon_name %in% c("Homoptera Cicadellidae Deltocephalus flavicosta", "Homoptera Cicadellidae Deltocephalus gnarus",
+                      "Homoptera Cicadellidae Deltocephalus undet") ~ "Homoptera Cicadellidae Deltocephalus sp.",
+    taxon_name %in% c("Homoptera Cicadellidae Phlepsius irroratus", "Homoptera Cicadellidae Phlepsius undet") ~ "Homoptera Cicadellidae Phlepsius sp.",
+    taxon_name %in% c("Homoptera Delphacidae Delphacodes campestris", "Homoptera Delphacidae Delphacodes undet") ~ "Homoptera Delphacidae Delphacodes sp.",
+    taxon_name %in% c("Homoptera Dictyopharidae Scolops angustatus", "Homoptera Dictyopharidae Scolops desiccatus",
+                      "Homoptera Dictyopharidae Scolops sulcipes", "Homoptera Dictyopharidae Scolops undet") ~ "Homoptera Dictyopharidae Scolops sp.",
+    taxon_name %in% c("Homoptera Membracidae Stictocephala basalis", "Homoptera Membracidae Stictocephala lutea",
+                      "Homoptera Membracidae Stictocephala undet") ~ "Homoptera Membracidae Stictocephala sp.",
+    taxon_name %in% c("Hymenoptera Bethylidae Pristocera armifera", "Hymenoptera Bethylidae undet undet",
+                      "Hymenoptera Bethylidae undet undet sp1", "Hymenoptera Bethylidae undet undet sp2") ~ "Hymenoptera Bethylidae sp.",
+    taxon_name %in% c("Hymenoptera Braconidae Apanteles undet", "Hymenoptera Braconidae Apanteles(Glyptapanteles) undet") ~ "Hymenoptera Braconidae Apanteles sp.",
+    taxon_name %in% c("Hymenoptera Braconidae Bracon undet", "Hymenoptera Braconidae Bracon undet sp1.(black)",
+                      "Hymenoptera Braconidae Bracon undet sp2.(black/orange)", "Hymenoptera Braconidae Bracon undet sp3.(orange)") ~ "Hymenoptera Braconidae Bracon sp.",
+    taxon_name %in% c("Hymenoptera Ceraphronidae Aphanogmus? undet (peeny,.broken.stigma)", "Hymenoptera Ceraphronidae undet undet",
+                      "Hymenoptera Ceraphronidae undet undet sp3.") ~ "Hymenoptera Ceraphronidae sp.",
+    taxon_name %in% c("Hymenoptera Eucharitidae undet undet", "Hymenoptera Eucharitidae undet undet sp1.(dark.brown)") ~ "Hymenoptera Eucharitidae sp.",
+    taxon_name %in% c("Hymenoptera Eupelmidae undet undet", "Hymenoptera Eupelmidae undet undet sp1.(green.flat.back)",
+                      "Hymenoptera Eupelmidae undet undet sp2.(brown.humpback)") ~ "Hymenoptera Eupelmidae sp.",
+    taxon_name %in% c("Hymenoptera Halictidae Agapostemon splendens", "Hymenoptera Halictidae Agapostemon undet") ~ "Hymenoptera Halictidae Agapostemon sp.",
+    taxon_name %in% c("Hymenoptera Halictidae Dialictus laevissimus", "Hymenoptera Halictidae Dialictus pilosus",
+                      "Hymenoptera Halictidae Dialictus undet", "Hymenoptera Halictidae Dialictus vierecki") ~ "Hymenoptera Halictidae Dialictus sp.",
+    taxon_name %in% c("Hymenoptera Halictidae Halictus confusus", "Hymenoptera Halictidae Halictus undet") ~ "Hymenoptera Halictidae Halictus sp.",
+    taxon_name %in% c("Hymenoptera Platygasteridae Amblyaspis undet (spine)", "Hymenoptera Platygasteridae Inostemma undet",
+                      "Hymenoptera Platygasteridae undet undet", "Hymenoptera Platygasteridae undet undet sp1.(small)", "Hymenoptera Platygasteridae undet undet sp2.(long.tail)",
+                      "Hymenoptera Platygasteridae undet undet sp3.(skinny)", "Hymenoptera Platygasteridae undet undet sp4.(yellow.leg)") ~ "Hymenoptera Platygasteridae sp.",
+    taxon_name %in% c("Hymenoptera Pompilidae Aporinellus undet", "Hymenoptera Pompilidae undet undet") ~ "Hymenoptera Pompilidae sp.",
+    taxon_name %in% c("Hymenoptera Sphecidae Cerceris clypeata", "Hymenoptera Sphecidae Cerceris undet") ~ "Hymenoptera Sphecidae Cerceris sp.",
+    taxon_name %in% c("Hymenoptera Sphecidae Philanthus lepidus", "Hymenoptera Sphecidae Philanthus undet") ~ "Hymenoptera Sphecidae Philanthus sp.",
+    taxon_name %in% c("Hymenoptera Tiphiidae Myzinum carolinianum(collare)", "Hymenoptera Tiphiidae Myzinum maculata",
+                      "Hymenoptera Tiphiidae Myzinum undet") ~ "Hymenoptera Tiphiidae Myzinum sp.",
+    taxon_name %in% c("Hymenoptera Torymidae undet undet (green)", "Hymenoptera Torymidae undet undet (green/orange)") ~ "Hymenoptera Torymidae sp.",
+    taxon_name %in% c("Lepidoptera Lycaenidae Everes comyntas", "Lepidoptera Lycaenidae Everes undet (hairy)",
+                      "Lepidoptera Lycaenidae Lycaena phlaeas(americana)", "Lepidoptera Lycaenidae undet undet") ~ "Lepidoptera Lycaenidae sp.",
+    taxon_name %in% c("Lepidoptera Misc.Macrolepidoptera undet undet", "Lepidoptera Misc.Macrolepidoptera undet undet (black)",
+                      "Lepidoptera Misc.Macrolepidoptera undet undet (brown)", "Lepidoptera Misc.Macrolepidoptera undet undet (green.hairy)",
+                      "Lepidoptera Misc.Macrolepidoptera undet undet (green.prognathus)", "Lepidoptera Misc.Macrolepidoptera undet undet (spiny)") ~ "Lepidoptera Misc.Macrolepidoptera sp.",
+    taxon_name %in% c("Lepidoptera Misc.Microlepidoptera undet undet", "Lepidoptera Misc.Microlepidoptera undet undet sp1.(plain)",
+                      "Lepidoptera Misc.Microlepidoptera undet undet sp2.(bar)", "Lepidoptera Misc.Microlepidoptera undet undet sp3.(dark)") ~ "Lepidoptera Misc.Microlepidoptera sp.",
+    taxon_name %in% c("Lepidoptera Pyralidae Crambus undet", "Lepidoptera Pyralidae Crambus undet (shield)", 
+                      "Lepidoptera Pyralidae Crambus undet sp4.(brown/white)", "Lepidoptera Pyralidae Crambus undet sp5.(square)") ~ "Lepidoptera Pyralidae Crambus sp.",
+    taxon_name %in% c("Neuroptera Chrysopidae Chrysopa oculata (+vars)", "Neuroptera Chrysopidae Chrysopa undet", 
+                      "Neuroptera Chrysopidae undet undet") ~ "Neuroptera Chrysopidae sp.",
+    taxon_name %in% c("Neuroptera Coniopterygidae Conwentzia undet", "Neuroptera Coniopterygidae undet undet") ~ "Neuroptera Coniopterygidae sp.",
+    taxon_name %in% c("Odonata Libellulidae Sympetrum obtrusum", "Odonata Libellulidae Sympetrum undet",
+                      "Odonata Libellulidae Sympetrum vicinum") ~ "Odonata Libellulidae Sympetrum sp.",
+    taxon_name %in% c("Orthoptera Acrididae Arphia conspersa", "Orthoptera Acrididae Arphia pseudonietana",
+                      "Orthoptera Acrididae Arphia undet") ~ "Orthoptera Acrididae Arphia sp.",
+    taxon_name %in% c("Orthoptera Tettigoniidae Conocephalus brevipennis", "Orthoptera Tettigoniidae Conocephalus fasciatus",
+                      "Orthoptera Tettigoniidae Conocephalus saltans", "Orthoptera Tettigoniidae Conocephalus strictus", 
+                      "Orthoptera Tettigoniidae Conocephalus undet") ~ "Orthoptera Tettigoniidae Conocephalus sp.",
+    taxon_name %in% c("Psocoptera undet undet undet", "Psocoptera undet undet undet sp1.(marked.wing)", "Psocoptera undet undet undet sp2.(clear.wing)",
+                      "Psocoptera undet undet undet sp3.(brown)", "Psocoptera undet undet undet sp4.(wingless)", "Psocoptera undet undet undet sp5.(large)") ~ "Psocoptera sp.",
+    .default = taxon_name
+  )) %>%
+  mutate(id_confidence = dplyr::case_when(
+    taxon_name %in% c(
+      "Araneae undet undet undet", "Coleoptera Coccinellidae undet undet", "Coleoptera Coccinellidae undet undet (hairy)", "Coleoptera Meloidae Epicauta undet",
+      "Coleoptera undet Coleoptera undet", "Coleoptera undet undet undet", "Diptera Agromyzidae Agromyza undet", "Diptera Agromyzidae undet undet",
+      "Diptera Anthomyiidae undet undet", "Diptera Chloropidae Hippelates undet", "Diptera Chloropidae Thaumatomyia undet", "Diptera Chloropidae undet undet",
+      "Diptera Chloropidae undet undet (orange)", "Diptera Chloropidae undet undet sp1", "Diptera Dolichopodidae undet undet", "Diptera Dolichopodidae undet undet sp1",
+      "Diptera Ephydridae undet undet", "Diptera Ephydridae undet undet sp2", "Diptera Muscidae undet undet", "Diptera Muscidae undet undet (other)",
+      "Diptera Pipunculidae undet undet", "Diptera Sciomyzidae undet undet", "Diptera Syrphidae undet undet", "Diptera Tachinidae undet undet", "Hemiptera Miridae Lygus undet",
+      "Hemiptera Miridae undet undet", "Hemiptera Pentatomidae undet undet", "Hemiptera undet undet undet", "Homoptera Cicadellidae Scleroracus undet",
+      "Homoptera Cicadellidae undet undet", "Hymenoptera Braconidae undet undet", "Hymenoptera Eulophidae undet undet", "Hymenoptera Ichneumonidae undet undet",
+      "Hymenoptera Pteromalidae undet undet", "Lepidoptera Noctuidae undet undet", "Lepidoptera Pyralidae undet undet", "Lepidoptera undet undet undet",
+      "na na na na", "na? na? na? na? na?", "none none none none none", "unk unk unk unk unk"
+    ) ~ 0,
+    .default = 1
+  ))
+cdr_consumer %>%
+  filter(id_confidence == 1) %>%
+  count(taxon_name)
 
-cdr_sum_names <- cdr_consumer %>%
-  count(Order, Family.subfamily., taxon_name)
-setwd("~/Documents/SSECR/project/cdr")
-write.csv(cdr_sum_names,"cdr_sum_names.csv", row.names = FALSE)
 
 
-t1 <- cdr_consumer %>%
-  count(taxon_name) %>%
-  mutate(taxon_name = gsub(" ", "", taxon_name))
-
-t2 <- cdr_consumer_taxonomy %>%
-  filter(ID != "") %>%
-  count(ID) %>%
-  mutate(ID = gsub("", "", ID))
 
 
-charToRaw(t1$taxon_name)
-charToRaw(t2$ID)
+
 
 
 
