@@ -332,22 +332,37 @@ cdr_producer <- cdr_producer_raw %>%
          unit_abundance = "g/m2", 
          scale_abundance = "m2") %>%
   mutate(plot = Plot, subplot = Strip, 
-         abundance = `Biomass..g.m2.`, species = Species, year = Year,
+         abundance = `Biomass..g.m2.`, taxon_name = Species, year = Year,
          month = Month) %>% # renaming columns
   separate(Date, c("month_discard", "day", "year_discard"), sep = "/") %>% # separating date components in order to get "day" -- not using month/year from this, discarding those extra columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-cdr_producer$species <- str_replace(cdr_producer$species, "Festuca Sp.", "Festuca sp.") # fixing typo
-cdr_producer$species <- str_replace(cdr_producer$species, "cyperus sp", "Cyperus sp.") # fixing typo
-cdr_producer$species <- str_replace(cdr_producer$species, "leptoloma sp.", "Leptoloma sp.") # fixing typo
+cdr_producer$taxon_name <- str_replace(cdr_producer$taxon_name, "Festuca Sp.", "Festuca sp.") # fixing typo
+cdr_producer$taxon_name <- str_replace(cdr_producer$taxon_name, "cyperus sp", "Cyperus sp.") # fixing typo
+cdr_producer$taxon_name <- str_replace(cdr_producer$taxon_name, "leptoloma sp.", "Leptoloma sp.") # fixing typo
+
 
 
 cdr_producer <- cdr_producer %>%
-  mutate(id_confidence = dplyr::case_when(
-    species %in% c("32 Species Weeds", "Fungi", "Grasses", "Green matter", "Green matter (alive)", 
+  mutate(taxon_name = dplyr::case_when( # grouping at genus level
+    taxon_name %in% c("Aristida basiramea", "Aristida sp.") ~ "Aristida sp.", #37% (334/902) at genus level
+    taxon_name %in% c("Cyperus filiculmis", "Cyperus schweinitzii", "Cyperus sp.") ~ "Cyperus sp.", #77% (1523/1973) at genus level
+    taxon_name %in% c("Digitaria ischaemum", "Digitaria sanguinalis", "Digitaria sp.") ~ "Digitaria sp.", #95% (311/327) at genus level
+    taxon_name %in% c("Equisetum arvense", "Equisetum laevigatum", "Equisetum sp.") ~ "Equisetum sp.", #6% (3/51) at genus level
+    taxon_name %in% c("Festuca ovina", "Festuca sp.") ~ "Festuca sp.", #78% (59/76) at genus level
+    taxon_name %in% c("Hieracium aurantiacum", "Hieracium longipilum", "Hieracium sp.") ~ "Hieracium sp.", #7% (1/14) at genus level
+    taxon_name %in% c("Lactuca biennis", "Lactuca sp.") ~ "Lactuca sp.", #33% (1/3) at genus level
+    taxon_name %in% c("Oxalis sp.", "Oxalis stricta") ~ "Oxalis sp.", #76% (10/13) at genus level
+    taxon_name %in% c("Potentilla argentea", "Potentilla sp.") ~ "Potentilla sp.", #33% (1/3) at genus level
+    taxon_name %in% c("Setaria italica", "Setaria lutescens (glauca)", "Setaria sp.", "Setaria viridis") ~ "Setaria sp.", #19% (7/37) at genus level
+    taxon_name %in% c("Calamagrostis canadensis", "Calamagrostis sp.") ~ "Calamagrostis sp.", #14% (1/7) at genus level
+    .default = taxon_name
+  )) %>%
+  mutate(id_confidence = dplyr::case_when( # assigining ID confidence
+    taxon_name %in% c("32 Species Weeds", "Fungi", "Grasses", "Green matter", "Green matter (alive)", 
           "Miscellaneous Forb", "Miscellaneous forb", "Miscellaneous grass", "Miscellaneous grasses",
           "Miscellaneous herbs", "Miscellaneous litter", "Miscellaneous sedges", "Miscellaneous sp.",
           "Mosses", "Mosses & lichens", "Real Weeds", "Unsorted Biomass", "Unsorted biomass", "Weeds",
@@ -358,10 +373,14 @@ cdr_producer <- cdr_producer %>%
     .default = 1
   ))
 
-cdr_producer %>% # still have some to group/drop
-  filter(id_confidence == 1) %>%
-  count(species)
-# need to seperate genus/species into 2 parts
+
+
+write.csv(cdr_producer,"cdr_producer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("cdr_producer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1UPaIm6Tp8aQH0gUrOCEz8tV_mkArQkhw"))
+
+
 
 
 
@@ -369,6 +388,65 @@ cdr_producer %>% # still have some to group/drop
 # consumer
 cdr_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.418.8&entityid=aae64949e1ef41513062633cfb6da7d5"
 cdr_consumer_raw <- read.delim(file = cdr_consumer_url)
+
+# reading in taxonomy info
+# matches old taxonomy to new taxonomy
+#cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/1R1byFNUthmeHypO1gvNslVnW2YwiKlLu1Kaw7hxdvRA/edit?usp=drive_link")
+#cdr_consumer_taxonomy <- as.data.frame(cdr_consumer_taxonomy)
+setwd("~/Documents/SSECR/project/cdr")
+cdr_consumer_taxonomy <- read.csv("CDR-taxonomy.csv")
+# matches old taxonomy to trophic level
+cdr_trophic_level <- read.csv("Trophic level.csv")
+#cdr_trophic_level <- read_sheet("https://docs.google.com/spreadsheets/d/1fmNRM13-M3q1TNNhxYRh85TFfSerQmb7nNK1PmKai_k/edit?gid=0#gid=0")
+#cdr_trophic_level <- as.data.frame(cdr_trophic_level)
+setwd("~/Documents/SSECR/ssecr-diversity-stability")
+
+cdr_trophic_level <- cdr_trophic_level %>%
+  select(c("Code", "Trophic"))
+cdr_trophic_level$Trophic <- as.numeric(cdr_trophic_level$Trophic)
+cdr_trophic_level <- cdr_trophic_level %>%
+  filter(Code != "")
+
+cdr_consumer_taxonomy <- cdr_consumer_taxonomy %>% # joining codes/updated names to trophic level
+  left_join(cdr_trophic_level, by = c("OLD_PreferredCode" = "Code")) %>%
+  select(!c("id_confidence"))
+
+# fixing updates taxonomy names
+cdr_consumer <- cdr_consumer_raw %>%
+  mutate(Further.ID = case_when(
+    Further.ID %in% c("na") ~ "",
+    .default = Further.ID
+  )) %>%
+  mutate(taxon_name = paste(Genus, Specific.epithet, Further.ID, sep = " "))
+
+cdr_consumer_taxonomy$ID <- str_trim(cdr_consumer_taxonomy$ID, side = "both") # removing white space from strings
+cdr_consumer$taxon_name <- str_trim(cdr_consumer$taxon_name, side = "both") # removing white space from strings
+
+
+cdr_sum_names <- cdr_consumer %>%
+  count(Order, Family.subfamily., taxon_name)
+setwd("~/Documents/SSECR/project/cdr")
+write.csv(cdr_sum_names,"cdr_sum_names.csv", row.names = FALSE)
+
+
+t1 <- cdr_consumer %>%
+  count(taxon_name) %>%
+  mutate(taxon_name = gsub(" ", "", taxon_name))
+
+t2 <- cdr_consumer_taxonomy %>%
+  filter(ID != "") %>%
+  count(ID) %>%
+  mutate(ID = gsub("", "", ID))
+
+
+charToRaw(t1$taxon_name)
+charToRaw(t2$ID)
+
+
+
+
+
+
 
 
 cdr_consumer <- cdr_consumer_raw %>%
@@ -382,12 +460,17 @@ cdr_consumer <- cdr_consumer_raw %>%
          unit_abundance = "count", 
          scale_abundance = "25 sweeps") %>%
   mutate(plot = Plot, subplot = NA, 
-         abundance = Count, species = paste(Genus, Specific.epithet, Further.ID, sep = " "), year = Year,
+         abundance = Count, taxon_name = paste(Genus, Specific.epithet, Further.ID, sep = " "), year = Year,
          month = Month, day = NA) %>% # renaming columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "species", "abundance", 
+                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
+
+
+
+
+
 
 
 
