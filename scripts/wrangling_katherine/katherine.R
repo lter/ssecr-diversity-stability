@@ -374,7 +374,6 @@ cdr_producer <- cdr_producer %>%
   ))
 
 
-
 write.csv(cdr_producer,"cdr_producer.csv", row.names = FALSE) # exporting csv
 
 googledrive::drive_upload(media = file.path("cdr_producer.csv"), overwrite = T, # exporting to google drive
@@ -525,6 +524,18 @@ cdr_consumer <- cdr_consumer %>%
                       "Orthoptera Tettigoniidae Conocephalus undet") ~ "Orthoptera Tettigoniidae Conocephalus sp.",
     taxon_name %in% c("Psocoptera undet undet undet", "Psocoptera undet undet undet sp1.(marked.wing)", "Psocoptera undet undet undet sp2.(clear.wing)",
                       "Psocoptera undet undet undet sp3.(brown)", "Psocoptera undet undet undet sp4.(wingless)", "Psocoptera undet undet undet sp5.(large)") ~ "Psocoptera sp.",
+    taxon_name %in% c("Homoptera Issidae Bruchomorpha dorsata", "Homoptera Issidae Bruchomorpha nasuta", "Homoptera Issidae Bruchomorpha tristis", 
+                      "Homoptera Issidae Bruchomorpha undet") ~ "Homoptera Issidae Bruchomorpha sp.",
+    taxon_name %in% c("Hymenoptera Andrenidae Perdita perpallida(citrinella)", "Hymenoptera Andrenidae Perdita undet") ~ "Hymenoptera Andrenidae Perdita sp.",
+    taxon_name %in% c("Hymenoptera Chalcididae Brachymeria undet", "Hymenoptera Chalcididae Spilochalcis undet", 
+                      "Hymenoptera Chalcididae undet undet") ~ "Hymenoptera Chalcididae sp.",
+    taxon_name %in% c("Hymenoptera Formicidae Pheidole pilifera", "Hymenoptera Formicidae Pheidole undet") ~ "Hymenoptera Formicidae Pheidole sp.",
+    taxon_name %in% c("Hymenoptera Megachilidae Coelioxys undet", "Hymenoptera Megachilidae Megachile undet", 
+                      "Hymenoptera Megachilidae Osmia undet", "Hymenoptera Megaspilidae undet undet") ~ "Hymenoptera Megachilidae sp.",
+    taxon_name %in% c("Lepidoptera Arctiidae Holomelina aurantiaca", "Lepidoptera Arctiidae undet undet (hairy)") ~ "Lepidoptera Arctiidae sp.",
+    taxon_name %in% c("Lepidoptera Tortricidae undet undet", "Lepidoptera Tortricidae undet undet (red.stripes)",
+                      "Lepidoptera Tortricidae undet undet sp1", "Lepidoptera Tortricidae undet undet sp4", 
+                      "Lepidoptera Tortricidae undet undet sp5") ~ "Lepidoptera Tortricidae sp.",
     .default = taxon_name
   )) %>%
   mutate(id_confidence = dplyr::case_when(
@@ -542,24 +553,9 @@ cdr_consumer <- cdr_consumer %>%
     ) ~ 0,
     .default = 1
   ))
-cdr_consumer %>%
-  filter(id_confidence == 1) %>%
-  count(taxon_name)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-cdr_consumer <- cdr_consumer_raw %>%
+cdr_consumer <- cdr_consumer %>%
   mutate(site = "CDR", # adding general LTER/dataset info to each row
          taxa_type = "consumer",
          ecosystem = "terrestrial",
@@ -570,44 +566,18 @@ cdr_consumer <- cdr_consumer_raw %>%
          unit_abundance = "count", 
          scale_abundance = "25 sweeps") %>%
   mutate(plot = Plot, subplot = NA, 
-         abundance = Count, taxon_name = paste(Genus, Specific.epithet, Further.ID, sep = " "), year = Year,
+         abundance = Count, year = Year,
          month = Month, day = NA) %>% # renaming columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
                   "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
-                  "unit_abundance", "scale_abundance"))
+                  "unit_abundance", "scale_abundance", "id_confidence"))
 
 
+write.csv(cdr_consumer,"cdr_consumer.csv", row.names = FALSE) # exporting csv
 
-
-
-
-
-
-cdr_consumer_raw$Further.ID <- str_trim(cdr_consumer_raw$Further.ID, side = c("both")) 
-cdr_consumer_raw$Further.ID <- str_replace_all(cdr_consumer_raw$Further.ID, "^na$", "") 
-
-cdr_consumer_trial_taxonomy <- cdr_consumer_raw %>%
-  mutate(ID = paste(Genus, Specific.epithet, Further.ID, sep = " ")) %>%
-  count(Order, Family.subfamily., ID)
-
-
-## Loading info on taxonomy resolutions from google drive
-googledrive::drive_auth() # Authenticate Google drive 
-cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/14KEoAB88NcpEHVWZ0-VvB8hEXTNMWwCjf0kWB311fJg/edit?gid=45649463#gid=45649463")
-
-cdr_consumer_trial_taxonomy$ID <- str_trim(cdr_consumer_trial_taxonomy$ID, side = c("both")) 
-cdr_cleaned_species$PreferredName <- str_trim(cdr_cleaned_species$PreferredName, side = c("both")) 
-
-cdr_consumer_trial_taxonomy %>%
-  full_join(cdr_cleaned_species, by = c("ID" = "PreferredName")) %>%
-  filter(!is.na(n.x)) %>%
-  View()
-
-
-
-cdr_cleaned_species <- cdr_consumer_taxonomy %>%
-  count(Order, Family, PreferredName, PreferredCode)
+googledrive::drive_upload(media = file.path("cdr_consumer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1UPaIm6Tp8aQH0gUrOCEz8tV_mkArQkhw"))
 
 
 
