@@ -49,7 +49,7 @@ data_phyto_trout_out$month <- month(data_phyto_trout2005$sampledate)
 data_phyto_trout_out$day   <- day(data_phyto_trout2005$sampledate)
 ##
 data_phyto_trout_out$plot  <- 1
-data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat, data_phyto_trout_out$plot, sep='_')
+data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat_fine, data_phyto_trout_out$plot, sep='_')
 data_phyto_trout_out$unit_abundance  <- "mg/L"
 data_phyto_trout_out$scale_abundance <- "1L"
 data_phyto_trout_out$taxon_name   <- data_phyto_trout2005$taxa_name
@@ -101,12 +101,12 @@ data_zoop_trout_out$month <- month(data_zoop_trout$sample_date)
 data_zoop_trout_out$day   <- day(data_zoop_trout$sample_date)
 ####
 data_zoop_trout_out$plot  <- data_zoop_trout$station
-data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat, data_zoop_trout_out$plot, sep='_')
+data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat_fine, data_zoop_trout_out$plot, sep='_')
 data_zoop_trout_out$unit_abundance  <- "number/L"
 data_zoop_trout_out$scale_abundance <- "1L"
 data_zoop_trout_out$taxon_name <- data_zoop_trout$species_name
-data_zoop_trout_out$abundance <- data_zoop_trout$density
-data_zoop_trout_out$species_code <- data_zoop_trout$species_code
+data_zoop_trout_out$abundance  <- data_zoop_trout$density
+data_zoop_trout_out$taxon_code <- data_zoop_trout$species_code
 ###
 ### set the rows without species name as not confident
 data_zoop_trout_out$id_confidence <- TRUE
@@ -124,8 +124,13 @@ googledrive::drive_upload(media = file.path("harmonized_data/zooplankton_trout_l
 
 
 ```{r benthic macroinvertebrates}
+library(tidyverse)
+rm(list=ls())
 ###
 data_binvert <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.11.38&entityid=64a3def6d4f03ea0ac3e8630b75df453')
+# A: abundant but not counted
+# N: Taxon present but not counted
+# A and N cannot be taken account of. 
 #
 data_binvert_year <- data_binvert %>% group_by(lakeid, site, year4) %>% summarise(num_taxon = n_distinct(taxon_code))
 # most data are from 2011, 3 years in the 1980s,
@@ -149,14 +154,14 @@ unique(tmp$year4)
 data_binvert$lakeid[data_binvert$lakeid=='sp'] <- 'SP'
 # only use the data after 2010; and get the average of multiple replicates
 data_binvert2000 <- data_binvert %>% filter(year4 > 2010) 
-data_binvert2000_avg <- data_binvert2000 %>% group_by(lakeid, year4, site, taxon_code, description) %>% summarise(abundance=sum(number_indiv) / n_distinct(rep)) 
+data_binvert2000_avg <- data_binvert2000 %>% group_by(lakeid, year4, site, taxon_code, description) %>% summarise(abundance=sum(number_indiv) / n_distinct(rep)) %>% filter(abundance > 0)
 ####
 #### present (N) and abundant (A; too many to be counted); data after 2010 does not have this problem;
 data_binvert_out <- data.frame(site=data_binvert2000_avg$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='benthic macroinvertebrates', herbivore='unsure')
 data_binvert_out$year <- data_binvert2000_avg$year4
 data_binvert_out$plot <- data_binvert2000_avg$site
 ####
-data_binvert_out$unique_ID <- paste(data_binvert_out$site, data_binvert_out$habitat, data_binvert_out$plot, sep='_')
+data_binvert_out$unique_ID <- paste(data_binvert_out$site, data_binvert_out$habitat_fine, data_binvert_out$plot, sep='_')
 ####
 data_binvert_out$unit_abundance  <- "number/sampler"
 data_binvert_out$scale_abundance <- "1_modified_Hester-Dendy_sampler"
