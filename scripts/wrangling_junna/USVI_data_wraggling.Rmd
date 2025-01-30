@@ -1,0 +1,63 @@
+---
+title: "USVI_TCRMP"
+output: pdf_document
+date: "2025-01-20"
+author: "Junna Wang"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r benthic cover}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl)
+rm(list=ls())
+#
+path <- '../../../data_discovery/USVI_TCRMP/TCRMP_Master_Benthic_Cover_Feb2022.xlsx'
+sheets_name <- excel_sheets(path)
+benthic_cover <- read_excel(path, sheet="BenthicData")
+#
+############################reading google sheet method does not work######################
+# gs4_auth()
+# path <- 'https://docs.google.com/spreadsheets/d/1If0CsxbG469kv6U_GyZ0t9ewAtlm03zx/edit#gid=697263468'
+# sheets_name <- read_sheet(path)
+# benthic_cover <- read_excel(path, sheet="BenthicData")
+# #
+# only use annually sampled data
+benthic_cover_annual <- benthic_cover %>% filter(Period=="Annual") %>% select(-Period, -FilmDate, -NoPts, -AnalysisBy, -AnalysisDate)
+#
+benthic_cover_long <- pivot_longer(benthic_cover_annual, cols = -c(SampleYear, SampleMonth, Location, Transect), names_to = "species", values_to = "abundance") %>% filter(abundance > 0 & !is.na(abundance))
+#
+benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, site=Location, plot=Transect)
+benthic_cover_out  <- benthic_cover_long %>% mutate(taxa_type="producer", ecosystem="aquatic", habitat='marine', biome='tropic', guild='benthic producer', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat, plot, sep='_'), confidence=TRUE)
+#
+write.csv(benthic_cover_out, 'harmonized_data/USVI_benthic_cover.csv', row.names = F)
+#
+```
+
+
+```{r fish}
+#
+path <- '../../../data_discovery/USVI_TCRMP/TCRMP_Master_Fish_Census_Aug2022.xlsx'
+sheets_name <- excel_sheets(path)
+fish_data <- read_excel(path, sheet="FishData")
+#
+############################reading google sheet method does not work######################
+# gs4_auth()
+# path <- 'https://docs.google.com/spreadsheets/d/1-FvhfMAFs5hNEqmYm0EJd2P23BBYeV7_/edit#gid=926142160'
+# sheets_name <- read_sheet(path)
+# benthic_cover <- read_excel(path, sheet="BenthicData")
+# #
+# only use annually sampled data
+fish_data_annual <- fish_data %>% filter(Period=="Annual" & Metric=='Biomass') %>% select(-Period, -Year, -CommonName, -Metric, -`0-5`, -`6-10`, -`11-20`, -`21-30`, -`31-40`, -`41-50`, -`51-60`, -`61-70`, -`71-80`, -`81-90`, -`91-100`)
+#
+fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, site=Location, plot=Transect, species=ScientificName, biomass=Total)
+fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat='marine', biome='tropic', guild='fish', unit_abundance='unclear', scale_abundance='per transect', unique_ID=paste(site, habitat, plot, sep='_'), confidence=TRUE)
+#
+write.csv(fish_data_out, 'harmonized_data/USVI_fish_census.csv', row.names = F)
+#
+```
+

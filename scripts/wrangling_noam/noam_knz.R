@@ -1,7 +1,7 @@
 # Noam Altman-Kurosaki
 # Konza multitrophic analyses
-
-librarian::shelf(vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, semPlot, ggplot2, codyn, ggpubr)
+rm(list = ls())
+librarian::shelf(googledrive, vegan, lme4, car, dplyr, tidyr, lattice, lavaan, piecewiseSEM, semPlot, ggplot2, codyn, ggpubr)
 
 
 # function for z standardization
@@ -20,7 +20,7 @@ stability <- function(x){
 }
 
 # read data
-knz_prod <- read.csv(here::here("data", "knz_producer.csv"))
+knz_prod <-  read.csv(here::here("data", "knz_producer.csv"))
 knz_con <- read.csv(here::here("data", "knz_consumer.csv"))
 
 # consumers are read in as integers due to ID codes. convert all spp to factors
