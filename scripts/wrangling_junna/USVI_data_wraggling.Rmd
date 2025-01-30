@@ -19,6 +19,7 @@ rm(list=ls())
 path <- '../../../data_discovery/USVI_TCRMP/TCRMP_Master_Benthic_Cover_Feb2022.xlsx'
 sheets_name <- excel_sheets(path)
 benthic_cover <- read_excel(path, sheet="BenthicData")
+site_metadata <- read_excel(path, sheet="SiteMetadata")
 #
 ############################reading google sheet method does not work######################
 # gs4_auth()
@@ -27,23 +28,37 @@ benthic_cover <- read_excel(path, sheet="BenthicData")
 # benthic_cover <- read_excel(path, sheet="BenthicData")
 # #
 # only use annually sampled data
-benthic_cover_annual <- benthic_cover %>% filter(Period=="Annual") %>% select(-Period, -FilmDate, -NoPts, -AnalysisBy, -AnalysisDate)
+benthic_cover_annual <- benthic_cover %>% filter(Period=="Annual") %>% select(c(SampleYear, SampleMonth, Location, Transect, CALG, RO, FLCY, LYNG, SCHIZ, EAC, AMPH, CLAD, DICT, HALI, LIAG, LOBO, MACA, MICRO, PEY, RAMI, SARG))  # 17 taxon only
 #
-benthic_cover_long <- pivot_longer(benthic_cover_annual, cols = -c(SampleYear, SampleMonth, Location, Transect), names_to = "species", values_to = "abundance") %>% filter(abundance > 0 & !is.na(abundance))
+benthic_cover_long <- pivot_longer(benthic_cover_annual, cols = -c(SampleYear, SampleMonth, Location, Transect), names_to = "taxon_name", values_to = "abundance") %>% filter(abundance > 0 & !is.na(abundance))
 #
-benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, site=Location, plot=Transect)
-benthic_cover_out  <- benthic_cover_long %>% mutate(taxa_type="producer", ecosystem="aquatic", habitat='marine', biome='tropic', guild='benthic producer', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat, plot, sep='_'), confidence=TRUE)
+# add habitat fine information
+benthic_cover_long <- benthic_cover_long %>% left_join(site_metadata[,c("Location", "ReefComplex")], by='Location')
+#
+benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, site=Location, plot=Transect, habitat_fine=ReefComplex)
+benthic_cover_out  <- benthic_cover_long %>% mutate(taxa_type="producer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='benthic algae', herbivore='no', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE)
+#
+# change the order of different columns
+benthic_cover_out <- benthic_cover_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence")]
 #
 write.csv(benthic_cover_out, 'harmonized_data/USVI_benthic_cover.csv', row.names = F)
 #
+googledrive::drive_upload(media = file.path("harmonized_data/USVI_benthic_cover.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w"))
+
 ```
 
 
 ```{r fish}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl)
+rm(list=ls())
 #
 path <- '../../../data_discovery/USVI_TCRMP/TCRMP_Master_Fish_Census_Aug2022.xlsx'
 sheets_name <- excel_sheets(path)
 fish_data <- read_excel(path, sheet="FishData")
+site_metadata <- read_excel(path, sheet="SiteMetadata")
 #
 ############################reading google sheet method does not work######################
 # gs4_auth()
@@ -54,10 +69,20 @@ fish_data <- read_excel(path, sheet="FishData")
 # only use annually sampled data
 fish_data_annual <- fish_data %>% filter(Period=="Annual" & Metric=='Biomass') %>% select(-Period, -Year, -CommonName, -Metric, -`0-5`, -`6-10`, -`11-20`, -`21-30`, -`31-40`, -`41-50`, -`51-60`, -`61-70`, -`71-80`, -`81-90`, -`91-100`)
 #
-fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, site=Location, plot=Transect, species=ScientificName, biomass=Total)
-fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat='marine', biome='tropic', guild='fish', unit_abundance='unclear', scale_abundance='per transect', unique_ID=paste(site, habitat, plot, sep='_'), confidence=TRUE)
+# add habitat fine information
+fish_data_annual <- fish_data_annual %>% left_join(site_metadata[, c("Location", "ReefComplex")], by='Location')
+#
+fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, site=Location, plot=Transect, habitat_fine=ReefComplex, taxon_name=ScientificName, abundance=Total)
+#
+fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='fish', unit_abundance='biomass', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE) %>% mutate(herbivore=case_when(TrophicGroup %in% c("herb", "omni", "plank") ~ "yes",
+                           TrophicGroup %in% c("pisc", "inv", "spng", "unk") ~ "no"))
+#
+fish_data_out <- fish_data_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence", "TrophicGroup")]
 #
 write.csv(fish_data_out, 'harmonized_data/USVI_fish_census.csv', row.names = F)
 #
+googledrive::drive_upload(media = file.path("harmonized_data/USVI_fish_census.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w"))
+
 ```
 
