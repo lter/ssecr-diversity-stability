@@ -105,11 +105,11 @@ sbc_1 %>%
 sbc_2 %>% 
   mutate(plot = SITE) %>% 
   mutate(site = "sbc") %>% 
+  mutate(guild = str_to_lower(taxa_type)) %>% 
   mutate(taxa_type = feeding_type) %>% 
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "kelp_forest") %>% 
   mutate(biome = "temperate") %>% 
-  mutate(guild = taxa_type) %>% 
   mutate(herbivore = NA) %>% 
   mutate(habitat_fine = NA) %>% 
   mutate(date = as.Date(DATE)) %>% 
