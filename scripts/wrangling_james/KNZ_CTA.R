@@ -213,7 +213,7 @@ knz_consumers_means = knz_consumers_means %>%
 
 
 trajectoryPCoA(D, sites = knz_consumers_means$plot, surveys = knz_consumers_means$vector_nums, traj.colors = custom_palette, lwd = 1, survey.labels = T) 
-legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0, 0), bty="n", legend=c("001d", "004b", "n01b", "n04d", "002d", "004f", "002c", "0sub", "020b", "0spb", "n20a", "n20b", "n01a", "n04a"),  col = c(    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0, 0), bty="n", legend=c("001d", "004b", "n01b", "n04d", "002d", "004f", "002c", "0sub", "020b", "0spb", "n20a", "n20b", "n01a", "n04a"),  col = c( "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
                                                                                               "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
                                                                                               "#aec7e8", "#ffbb78", "#98df8a", "#ff9896"), lwd=2)
 
@@ -233,7 +233,6 @@ Dd <- vegan::vegdist(knz_producer_matrix,"bray")
 knz_producer_means = knz_producer_means %>% 
   mutate(vector_nums = year - min(year) + 1)
 
-unique(knz_producers$plot)
 trajectoryPCoA(Dd, sites = knz_producer_means$plot, surveys = knz_producer_means$vector_nums, traj.colors = custom_palette, lwd = 2, survey.labels = T) 
 legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(-0.05, 0), bty="n", legend=c("001d", "004b", "n01b", "n04d", "002d", "004f", "002c", "0sub", "020b", "0spb", "n20a", "n20b", "n01a", "n04a"),  col = c(    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
                                                                                                                                                                                                                "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
