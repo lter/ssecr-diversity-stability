@@ -38,9 +38,6 @@ vignettes/*.pdf
 # Mac stuff
 .DS_Store
 
-# Project file
-*.Rproj
-
 # Microsoft Office partial files
 ~$*.pptx
 ~$*.xlsx
