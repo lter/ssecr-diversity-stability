@@ -5,9 +5,6 @@
 # Session Data files
 .RData
 
-# R projects
-.Rproj
-
 # User-specific files
 .Ruserdata
 
@@ -40,6 +37,9 @@ vignettes/*.pdf
 
 # Mac stuff
 .DS_Store
+
+# Project file
+*.Rproj
 
 # Microsoft Office partial files
 ~$*.pptx
