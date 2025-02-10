@@ -696,3 +696,44 @@ cdr2_consumer_raw <- read.delim(file = cdr2_consumer_url)
 
 
 
+cdr2_consumer <- cdr2_consumer_raw %>%
+  mutate(site = "CDR_oldField", # adding general LTER/dataset info to each row
+         taxa_type = "consumer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "insect", 
+         unit_abundance = "count", 
+         scale_abundance = "200 sweeps") %>%
+  mutate(plot = Field.num, subplot = NA, abundance = X.Specimens,
+         taxon_name = paste(Genus, Specific.epithet, sep = " "), year = Year, month = Month, day = NA) %>% 
+  mutate(abundance = as.numeric(abundance)) %>%
+  mutate(year = as.double(year)) %>%
+  mutate(unique_ID = paste(site, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "year", "month", "unique_ID", "taxon_name", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+
+cdr2_consumer$taxon_name <- str_trim(cdr2_consumer$taxon_name, side = "both") # removing white space from strings
+cdr2_consumer <- cdr2_consumer %>%
+  mutate(taxon_name = dplyr::case_when(
+    taxon_name %in% c("Conocephalus brevipennis", "Conocephalus fasciatus", "Conocephalus nigropleurum",
+                      "Conocephalus saltans", "Conocephalus strictus", "Conocephalus undet") ~ "Conocephalus undet",
+    taxon_name %in% c("Scudderia curvicauda", "Scudderia furcata", "Scudderia texensis",
+                      "Scudderia undet") ~ "Scudderia undet",
+    taxon_name %in% c("Tetrix ornata", "Tetrix undet") ~ "Tetrix undet",
+    .default = taxon_name
+  )) %>%
+  mutate(id_confidence = dplyr::case_when(
+    taxon_name %in% c("Melanoplus undet", "Psinidia??") ~ 0,
+    .default = 1
+  )) %>%
+  mutate(herbivore = "herbivore")
+
+
+
+
+
+
