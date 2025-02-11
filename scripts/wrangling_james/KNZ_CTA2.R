@@ -1,11 +1,10 @@
 # Project Information ----
-# NCEAS SSECR Group: Diversity-Stability Relationships
+# SSECR: Diversity-Stability Relationships
 # Co-Leads: James Sturges & Dr. Junna Wang
 # Last Updated: February 10th, 2024
 
-# Harmonized KNZ Consumer & Producer Data ----
+# Raw Data Availability ----
 
-#install librarian if needed
 # install.packages(librarian)
 librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasampler, supportR, cowplot, summarytools, datacleanr)
 
@@ -15,22 +14,46 @@ librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasam
 knz_consumers = read.csv(file = "data/KNZ/knz_consumer.csv")
 knz_producers = read.csv(file = "data/KNZ/knz_producer.csv")
 
-#### Summary Data ----
-# Summary data for species in consumer sites
+#### Richness Summary Tables ----
+
+# Summary data for consumer species richness across sites
 species_n_consumer_site <- knz_consumers %>%
   group_by(plot, year) %>%
   summarise(num_species = n_distinct(taxon_name))
 species_n_consumer_site
 write.csv(species_n_consumer_site, "tables/KNZ/summary/species_n_consumer_site.csv",row.names = F)
 
-# Summary data for species in producer sites
+# Summary data for producer species richness across sites
 species_n_producer_site <- knz_producers %>%
   group_by(plot, year) %>%
   summarise(num_species = n_distinct(taxon_name))
 species_n_producer_site
 write.csv(species_n_producer_site, "tables/KNZ/summary/species_n_producer_site.csv",row.names = F)
 
-# Summary data for site years count in consumer sites
+#### Site Selection & Order ----
+# remove 4 sites with less than 10 years of data
+unique(knz_consumers$plot)
+site_order = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")
+
+knz_consumers = knz_consumers %>% 
+  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
+  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+
+knz_producers = knz_producers %>% 
+  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
+  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+
+#only keep 15 producer sites that match consumer data
+knz_producers <- knz_producers %>%
+  filter(plot == site_order)
+
+knz_producers <- knz_producers %>%
+  mutate(plot = factor(plot, levels = site_order)) %>%  # Ensure plot matches site_order
+  arrange(match(plot, site_order))
+
+#### Survey History Summary Tables ----
+
+# Summary data years of consumer assemblage data per site
 site_years_count_c <- knz_consumers %>%
   group_by(plot) %>%
   summarise(years_count = n_distinct(year)) %>%
@@ -38,7 +61,7 @@ site_years_count_c <- knz_consumers %>%
 site_years_count_c
 write.csv(site_years_count_c, "tables/KNZ/summary/site_years_count_c.csv",row.names = F)
 
-# Summary data for site years count in producer sites
+# Summary data years of producer assemblage data per site
 site_years_count_p <- knz_producers %>%
   group_by(plot) %>%
   summarise(years_count = n_distinct(year)) %>%
@@ -46,7 +69,8 @@ site_years_count_p <- knz_producers %>%
 site_years_count_p
 write.csv(site_years_count_p, "tables/KNZ/summary/site_years_count_p.csv",row.names = F)
 
-# Species summary for consumers
+# Summary data total number of observations of each consumer species
+# and the number of plots that species has been observed in at least once
 site_spp_summary <- knz_consumers %>%
   group_by(taxon_name) %>%
   summarise(
@@ -57,7 +81,8 @@ site_spp_summary <- knz_consumers %>%
 site_spp_summary
 write.csv(site_spp_summary, "tables/KNZ/summary/site_spp_summary.csv",row.names = F)
 
-# Species summary for producers
+# Summary data total number of observations of each producer species
+# and the number of plots that species has been observed in at least once
 site_producer_summary <- knz_producers %>%
   group_by(taxon_name) %>%
   summarise(
@@ -67,29 +92,8 @@ site_producer_summary <- knz_producers %>%
   arrange(taxon_name)
 site_producer_summary
 write.csv(site_producer_summary, "tables/KNZ/summary/site_producer_summary.csv",row.names = F)
-# KNZ Site Selection ----
 
-# remove 5 sites with less than 10 years of data
-knz_consumers = knz_consumers %>% 
-  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
-  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
 
-knz_producers = knz_producers %>% 
-  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
-  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
-
-# create vector of site names for plotting order
-site_order = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")
-
-# #only keep 15 producer sites that match consumer data
-# knz_producers <- knz_producers %>%
-#   filter(plot == site_order)
-
-knz_producers <- knz_producers %>%
-  mutate(plot = factor(plot, levels = site_order)) %>%  # Ensure plot matches site_order
-  arrange(match(plot, site_order))
-
-#### Generating community matrices ----
 knz_consumer_means <- knz_consumers %>%
   group_by(year, plot, taxon_name) %>%
   summarise(mean_abundance = sqrt(mean(abundance, na.rm = TRUE)), .groups = "drop") %>%
@@ -396,10 +400,7 @@ producer_lengths <- trajectoryLengths(Dd, sites = knz_producer_means$plot, surve
 producer_lengths <- as.data.frame(producer_lengths)
 producer_lengths$site <- site_order
 write.csv(producer_lengths, "tables/KNZ/producer/producer_lengths.csv", row.names = FALSE)
-consumer_lengths <- trajectoryLengths(D, sites = knz_consumer_means$plot, surveys = knz_consumer_means$vector_nums)
-consumer_lengths <- as.data.frame(consumer_lengths)
-consumer_lengths$site <- site_order  
-write.csv(consumer_lengths, "tables/KNZ/consumer/consumer_lengths.csv", row.names = FALSE)
+
 # Calculate trajectory lengths (relative to initial)
 producer_lengths_initial <- trajectoryLengths(Dd, sites = knz_producer_means$plot, surveys = knz_producer_means$vector_nums, relativeToInitial = TRUE)
 producer_lengths_initial <- as.data.frame(producer_lengths_initial)
@@ -435,5 +436,3 @@ producer_directionality <- trajectoryDirectionality(Dd, sites = knz_producer_mea
 producer_directionality <- as.data.frame(producer_directionality)
 producer_directionality$site <- site_order
 write.csv(producer_directionality, "tables/KNZ/producer/producer_directionality.csv", row.names = FALSE)
-
-# Diversity-Stability Relationship
