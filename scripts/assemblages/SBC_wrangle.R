@@ -1,8 +1,6 @@
-# title: "Paths of Change: Community Trajectory Aanalysis of Everglades fish assemblages over 20 years"
-# authors: "James Sturges, Mackenzie White, Sophia Costa, Andy Distrubell, LAB PIS + "
-# date-modified: 2 Feb 2025
-# format: html
-# editor: visual
+# title: "SBC"
+# authors: "James Sturges"
+# date-modified: 4 Feb 2025
 
 library(raster) 
 library(gdm)            
