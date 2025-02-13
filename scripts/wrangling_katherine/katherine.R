@@ -602,17 +602,13 @@ cdr2_producer <- cdr2_producer_raw %>%
          guild = "plant",
          unit_abundance = "g/m2",
          scale_abundance = "3mx4m") %>%
-  mutate(plot = Transect, subplot = Plot, abundance = Biomass..g.m.2.,
+  mutate(plot = OldField, subplot = Transect, sub_subplot = Plot, abundance = Biomass..g.m.2.,
          taxon_name = Species, year = Year, month = NA, day = NA) %>%
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>%
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "sub_subplot","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
-
-cdr2_producer %>%
-  filter(id_confidence == 1) %>%
-  count(taxon_name)
 
 cdr2_producer$taxon_name <- str_trim(cdr2_producer$taxon_name, side = "both") # removing white space from strings
 cdr2_producer <- cdr2_producer %>%
@@ -677,24 +673,25 @@ cdr2_producer <- cdr2_producer %>%
   ))
 
 
+cdr2_producer <- cdr2_producer %>%
+  filter(!plot %in% c("LS", "Ls", "10", "600", "601")) %>%
+  mutate(subplot = dplyr::case_when(
+    subplot %in% c("w") ~ "W",
+    subplot %in% c("r") ~ "R",
+    subplot %in% c("g") ~ "G",
+    subplot %in% c("y") ~ "Y",
+    .default = subplot
+  ))
+cdr2_producer$plot <- as.numeric(cdr2_producer$plot)
 
 
 
 
 
-
-
-
-
-
-
-
-
+ 
 # consumer
 cdr2_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.106.8&entityid=3405c2e271929b0c537492a9ddde102b"
 cdr2_consumer_raw <- read.delim(file = cdr2_consumer_url)
-
-
 
 cdr2_consumer <- cdr2_consumer_raw %>%
   mutate(site = "CDR_oldField", # adding general LTER/dataset info to each row
@@ -712,7 +709,7 @@ cdr2_consumer <- cdr2_consumer_raw %>%
   mutate(year = as.double(year)) %>%
   mutate(unique_ID = paste(site, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "year", "month", "unique_ID", "Family","taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 
@@ -732,8 +729,6 @@ cdr2_consumer <- cdr2_consumer %>%
   )) %>%
   mutate(herbivore = "herbivore")
 
-
-
-
-
+cdr2_consumer <- cdr2_consumer %>%
+  filter(!plot %in% c("11", "21", "27", "32", "40", "44", "47", "76"))
 
