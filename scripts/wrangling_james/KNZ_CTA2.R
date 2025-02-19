@@ -292,7 +292,7 @@ for (site in unique_sites) {
   )
   
   # Save segment lengths as a CSV file
-  csv_filename <- paste0("tables/KNZ/sites/knz_consumer_segment_lengths_", site, ".csv")
+  csv_filename <- paste0("tables/KNZ/site_CTA/knz_consumer_segment_lengths_", site, ".csv")
   write.csv(segment_lengths_df, csv_filename, row.names = FALSE)
   
   # Generate and save the trajectory plot
@@ -335,14 +335,28 @@ for (site in unique_sites_producers) {
     dplyr::select(-plot, -year, -MDS1, -MDS2, -vector_nums)
   
   # Compute Bray-Curtis distance matrix
-  D1 <- vegan::vegdist(site_data, "bray")
+  D2 <- vegan::vegdist(site_data, "bray")
+  
+  
+  # Calculate segment lengths using trajectoryLengths
+  segment_lengths <- trajectoryLengths(D2, sites = site_raw_p$plot, surveys = site_raw_p$vector_nums)
+  
+  # Create a data frame for the segment lengths
+  segment_lengths_df <- data.frame(
+    Segment = seq_along(segment_lengths),
+    Length = segment_lengths
+  )
+  
+  # Save segment lengths as a CSV file
+  csv_filename <- paste0("tables/KNZ/site_CTA/knz_producer_segment_lengths_", site, ".csv")
+  write.csv(segment_lengths_df, csv_filename, row.names = FALSE)
   
   # Open the PNG file for saving
   filename <- paste0("figures/CTA/KNZ/knz_producer_trajectory_plot_", site, ".png")
   png(filename = filename, width = 8, height = 8, res = 300, units = "in")
   
   # Run the trajectoryPCoA function with the specific color for the site
-  trajectoryPCoA(D1, sites = site_raw_p$plot, surveys = site_raw_p$vector_nums, 
+  trajectoryPCoA(D2, sites = site_raw_p$plot, surveys = site_raw_p$vector_nums, 
                  traj.colors = site_color, lwd = 2, survey.labels = T)
   
   # Close the PNG device to save the file
