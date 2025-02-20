@@ -312,9 +312,49 @@ cor(knz_comb$prod_stability_log, knz_comb$con_stability_log) # -0.27
 )
 
 
-### correlations between aggregate and communitu stability
+#### correlations between aggregate and communitu stability ####
+
+knz_prod_com_stab <- read.csv(here::here("data/KNZ", "producer_lengths.csv"))
+knz_con_com_stab <- read.csv(here::here("data/KNZ", "consumer_lengths.csv"))
+
+# specify relevant columns for stability
+community_columns <- c("site", "Trajectory")
 
 
+# subset and rename colummns for merge
+knz_prod_com_stab <- knz_prod_com_stab[,which(names(knz_prod_com_stab) %in% community_columns)] %>%
+  rename(plot = site,
+         com_stab = Trajectory) 
+
+knz_con_com_stab <- knz_con_com_stab[,which(names(knz_con_com_stab) %in% community_columns)] %>%
+  rename(plot = site,
+         com_stab = Trajectory)
+
+# merge with aggregate stability metrics
+knz_prod_agg_mv_dss <- merge(knz_prod_dss, knz_prod_com_stab, by = "plot")
+knz_con_agg_mv_dss <- merge(knz_con_dss, knz_con_com_stab, by = "plot")
+
+cor(knz_prod_agg_mv_dss$prod_stability, knz_prod_agg_mv_dss$com_stab, method = "kendall") # tau = 0.14
+cor(knz_con_agg_mv_dss$con_stability, knz_con_agg_mv_dss$com_stab, method = "kendall") # tau = -0.38
+
+# plot
+(prod_agg_mv_plot <- ggplot(data = knz_prod_agg_mv_dss, aes(x = prod_stability, y = com_stab)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic()  +
+    geom_text(aes(x = 7.7, y = 8, label = "tau = 0.14"), size = 8, hjust = 1)
+)
+
+(con_agg_mv_plot <- ggplot(data = knz_con_agg_mv_dss, aes(x = con_stability, y = com_stab)) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    theme_classic() + 
+    geom_text(aes(x = 1.2, y = 4, label = "tau = -0.38"), size = 8, hjust = 0)
+)
+
+(agg_mv_stab_panel <- ggpubr::ggarrange(prod_agg_mv_plot, con_agg_mv_plot,
+                                     nrow = 1, ncol = 2)
+)
 
 ##### structural equation modeling approach #####
 
