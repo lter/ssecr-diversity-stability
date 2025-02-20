@@ -20,33 +20,33 @@ stability <- function(x){
 }
 
 # read data
-knz_prod <-  read.csv(here::here("data", "knz_producer.csv"))
-knz_con <- read.csv(here::here("data", "knz_consumer.csv"))
+knz_prod <-  read.csv(here::here("data/KNZ", "knz_producer.csv"))
+knz_con <- read.csv(here::here("data/KNZ", "knz_consumer.csv"))
 
 # consumers are read in as integers due to ID codes. convert all spp to factors
-knz_con$species <- as.factor(knz_con$species)
-knz_prod$species <- as.factor(knz_prod$species)
+knz_con$taxon_name <- as.factor(knz_con$taxon_name)
+knz_prod$taxon_name <- as.factor(knz_prod$taxon_name)
 
 # aggregate to plot level - NOTE: dividing by 10 to get areal abundance per 10m2 plot. Not converting to proportional cover
 knz_prod_mean <- knz_prod %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, species, unit_abundance, scale_abundance) %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
   dplyr::summarise(abundance = mean(abundance)/10) 
 
 knz_con_mean <- knz_con %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, species, unit_abundance, scale_abundance) %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
   dplyr::summarise(abundance = mean(abundance))
 
 # calculate synchrony
 knz_prod_synch <- codyn::synchrony(knz_prod_mean,
                                    abundance.var = "abundance",
-                                   species.var = "species",
+                                   species.var = "taxon_name",
                                    time.var = "year",
                                    metric = "Loreau",
                                    replicate.var = "plot")
 colnames(knz_prod_synch) <- c("plot", "prod_synchrony")
 knz_con_synch <- codyn::synchrony(knz_con_mean,
                                    abundance.var = "abundance",
-                                   species.var = "species",
+                                   species.var = "taxon_name",
                                    time.var = "year",
                                    metric = "Loreau",
                                    replicate.var = "plot")
@@ -61,14 +61,14 @@ knz_con_mean <- knz_con_mean[which(knz_con_mean$plot %in% knz_prod_synch_sub$plo
 
 # pivot wider for diversity
 knz_prod_wide <- knz_prod_mean %>%
-  pivot_wider(names_from = species, values_from = abundance, values_fill = list(abundance = 0))
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
 
 knz_con_wide <- knz_con_mean %>%
-  pivot_wider(names_from = species, values_from = abundance, values_fill = list(abundance = 0))
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
 
 # specify meta columns for diversity calculations
 long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
-                    "guild", "plot", "year", "species", "unit_abundance", "scale_abundance")
+                    "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
 
 # calculate diversity
 knz_prod_diversity <- 
@@ -310,6 +310,9 @@ cor(knz_comb$prod_stability_log, knz_comb$con_stability_log) # -0.27
 (cor_stab_panel <- ggpubr::ggarrange(div_cor_plot, stab_cor_plot,
                                       nrow = 1, ncol = 2)
 )
+
+
+### correlations between aggregate and communitu stability
 
 
 
