@@ -334,8 +334,8 @@ knz_con_com_stab <- knz_con_com_stab[,which(names(knz_con_com_stab) %in% communi
 knz_prod_agg_mv_dss <- merge(knz_prod_dss, knz_prod_com_stab, by = "plot")
 knz_con_agg_mv_dss <- merge(knz_con_dss, knz_con_com_stab, by = "plot")
 
-cor(knz_prod_agg_mv_dss$prod_stability, knz_prod_agg_mv_dss$com_stab, method = "kendall") # tau = 0.14
-cor(knz_con_agg_mv_dss$con_stability, knz_con_agg_mv_dss$com_stab, method = "kendall") # tau = -0.38
+cor.test(knz_prod_agg_mv_dss$prod_stability, knz_prod_agg_mv_dss$com_stab, method = "kendall") # tau = 0.14, p = 0.51
+cor.test(knz_con_agg_mv_dss$con_stability, knz_con_agg_mv_dss$com_stab, method = "kendall") # tau = -0.38, p = 0.062
 
 # plot
 (prod_agg_mv_plot <- ggplot(data = knz_prod_agg_mv_dss, aes(x = prod_stability, y = com_stab)) +
