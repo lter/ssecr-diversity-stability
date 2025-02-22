@@ -124,8 +124,8 @@ fish_data_annual <- fish_data_annual %>% left_join(site_metadata[, c("Location",
 #
 fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, site=Location, plot=Transect, habitat_fine=ReefComplex, taxon_name=ScientificName, abundance=Total)
 #
-fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='fish', unit_abundance='biomass', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE) %>% mutate(herbivore=case_when(TrophicGroup %in% c("herb", "omni", "plank") ~ "yes",
-                           TrophicGroup %in% c("pisc", "inv", "spng", "unk") ~ "no"))
+fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='fish', unit_abundance='biomass', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE) %>% mutate(herbivore=case_when(TrophicGroup %in% c("herb", "omni") ~ "yes",
+                           TrophicGroup %in% c("plank", "pisc", "inv", "spng", "unk") ~ "no"))
 #
 fish_data_out <- fish_data_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence", "TrophicGroup")]
 #
