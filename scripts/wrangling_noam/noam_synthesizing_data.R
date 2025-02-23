@@ -170,11 +170,19 @@ knz_comb <- ungroup(
               by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
 )
 
+# write.csv(here::here(file = "data/KNZ", "knz_agg_dss.csv"), x = knz_comb, row.names = F)
 
 #### CDR biodiversity exp data ####
-# read data
+# read data and subset confident IDs
 cdr_biodiv_prod <-  read.csv(here::here("data/CDR_biodiv", "cdr_producer.csv"))
+cdr_biodiv_prod <- subset(cdr_biodiv_prod, id_confidence == 1)
+
 cdr_biodiv_con <- read.csv(here::here("data/CDR_biodiv", "cdr_consumer.csv"))
+cdr_biodiv_con <- subset(cdr_biodiv_con, id_confidence == 1)
+# cdr_biodiv_con abundances being read in as characters still. Convert to numeric
+cdr_biodiv_con$abundance <- as.numeric(cdr_biodiv_con$abundance)
+
+
 
 # consumers are read in as integers due to ID codes. convert all spp to factors
 cdr_biodiv_con$taxon_name <- as.factor(cdr_biodiv_con$taxon_name)
@@ -189,7 +197,7 @@ cdr_biodiv_con_mean <- cdr_biodiv_con %>%
   dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
   dplyr::summarise(abundance = mean(abundance))
 
-# calculate synchrony - NOTE some plots contain only a single species - need to subset and replace with 0s. RETURN TO THIS
+# calculate synchrony 
 cdr_biodiv_prod_synch <- codyn::synchrony(cdr_biodiv_prod_mean,
                                    abundance.var = "abundance",
                                    species.var = "taxon_name",
@@ -197,20 +205,58 @@ cdr_biodiv_prod_synch <- codyn::synchrony(cdr_biodiv_prod_mean,
                                    metric = "Loreau",
                                    replicate.var = "plot")
 colnames(cdr_biodiv_prod_synch) <- c("plot", "prod_synchrony")
-cdr_biodiv_con_synch <- codyn::synchrony(cdr_biodiv_con_mean,
+
+# NOTE some plots contain only a single consumer species at some timepoijts
+# need to subset and replace with NA
+# alternative would be to relace with 1s (a species is perfectly synchronous to self) but doesn't see appropriate given 
+# that it's only a few years at a time
+# See code for craven et al. 2018: https://github.com/idiv-biodiversity/StabilityII/blob/master/TS_extendedSEM.R
+
+problematic_plots <- c()  # Empty vector to store problem plots
+
+for (p in unique(cdr_biodiv_con_mean$plot)) {
+  cat("Processing plot:", p, "\n")  # Show progress
+  
+  plot_data <- cdr_biodiv_con_mean %>% filter(plot == p)  # Subset data for one plot
+  
+  result <- tryCatch({
+    codyn::synchrony(plot_data,
+                     abundance.var = "abundance",
+                     species.var = "taxon_name",
+                     time.var = "year",
+                     metric = "Loreau",
+                     replicate.var = "plot")
+    TRUE  # If success, return TRUE
+  }, error = function(e) {
+    cat("Error in plot:", p, "\nMessage:", e$message, "\n")  # Print error message
+    problematic_plots <<- c(problematic_plots, p)  # Save the problem plot
+    FALSE  # Return FALSE to indicate failure
+  })
+}
+
+cat("Problematic plots:", problematic_plots, "\n") # problematic plot is 248 - almost always only had one species present
+
+# remove and replace with NAs at the end
+
+cdr_biodiv_con_filtered <- subset(cdr_biodiv_con_mean, plot != 248)
+
+
+cdr_biodiv_con_synch <- codyn::synchrony(cdr_biodiv_con_filtered,
                                   abundance.var = "abundance",
                                   species.var = "taxon_name",
                                   time.var = "year",
                                   metric = "Loreau",
                                   replicate.var = "plot")
 colnames(cdr_biodiv_con_synch) <- c("plot", "con_synchrony")
-# not all plots are replicated between producer and consumer datasets
-# remove plots in producers that are not represented in consumer dataset and vice-versa
-cdr_biodiv_prod_synch_sub <- cdr_biodiv_prod_synch[which(cdr_biodiv_prod_synch$plot %in% cdr_biodiv_con_synch$plot),]
-cdr_biodiv_con_synch_sub <- cdr_biodiv_con_synch[which(cdr_biodiv_con_synch$plot %in% cdr_biodiv_prod_synch_sub$plot),]
 
-cdr_biodiv_prod_mean <- cdr_biodiv_prod_mean[which(cdr_biodiv_prod_mean$plot %in% cdr_biodiv_prod_synch_sub$plot),]
-cdr_biodiv_con_mean <- cdr_biodiv_con_mean[which(cdr_biodiv_con_mean$plot %in% cdr_biodiv_prod_synch_sub$plot),]
+# append 248 back in with synchrony = NA
+plot_248_synch <- data.frame(
+  plot = 248,
+  synchrony = NA
+)
+
+cdr_biodiv_con_synch <- rbind(cdr_biodiv_con_synch, plot_248_synch)
+
 
 # pivot wider for diversity
 cdr_biodiv_prod_wide <- cdr_biodiv_prod_mean %>%
@@ -265,7 +311,7 @@ cdr_biodiv_prod_dss <- cdr_biodiv_prod_diversity %>%
     prod_abundance = mean(abundance),
     prod_cv = CV(abundance),
     prod_stability = stability(abundance)) %>%
-  dplyr::left_join(cdr_biodiv_prod_synch_sub, by = "plot")
+  dplyr::left_join(cdr_biodiv_prod_synch, by = "plot")
 
 cdr_biodiv_con_dss <- cdr_biodiv_con_diversity %>%
   dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
@@ -275,7 +321,7 @@ cdr_biodiv_con_dss <- cdr_biodiv_con_diversity %>%
     con_abundance = mean(abundance),
     con_cv = CV(abundance),
     con_stability = stability(abundance)) %>%
-  dplyr::left_join(cdr_biodiv_con_synch_sub, by = "plot")
+  dplyr::left_join(cdr_biodiv_con_synch, by = "plot")
 
 
 # calculate multitrophic stability
@@ -320,6 +366,8 @@ cdr_biodiv_comb <- ungroup(
     left_join(cdr_biodiv_multitroph_dss[,-which(names(cdr_biodiv_multitroph_dss) %in% c("taxa_type", "guild"))],
               by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
 )
+
+# write.csv(here::here(file = "data/CDR_biodiv", "cdr_agg_dss.csv"), x = cdr_biodiv_comb, row.names = F)
 
 
 #### SBC ####
