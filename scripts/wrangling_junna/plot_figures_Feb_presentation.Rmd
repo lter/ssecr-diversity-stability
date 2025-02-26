@@ -60,10 +60,6 @@ summary(lm(data=knz_agg_dss, scale(con_richness) ~ scale(prod_stability)))
 summary(lm(data=knz_agg_dss, scale(prod_richness) ~ scale(con_stability)))
 summary(lm(data=knz_agg_dss, scale(con_richness) ~ scale(con_stability)))
 
-
-
-
-
 ```
 
 
@@ -121,26 +117,26 @@ knz_agg_dss <- knz_agg_dss %>% left_join(knz_producer_length[, c('site', "prod_c
 knz_agg_dss <- knz_agg_dss %>% left_join(knz_consumer_length[, c('site', "con_com_stab")], by=c('plot'='site'))
 
 #
-ggplot(knz_agg_dss, aes(x=prod_stability, y=prod_com_stab)) +
+ggplot(knz_agg_dss, aes(x=prod_stability, y=1/prod_com_stab)) +
   geom_point() +
   geom_smooth(method='lm') +
-  stat_cor(method = "pearson", label.x = 6, label.y = 0.6, size = 5) +  # add correlation and p-value
+  stat_cor(method = "pearson", label.x = 4.5, label.y = 2.15, size = 5) +  # add correlation and p-value
   labs(x='Aggregate stability of producers', y='Compositional stability of producers', title="Two stability metrics comparison") +
   theme_bw()
 ggsave("../../figures/Feb_present/knz_aggregate_compositional_stability_producer.png", width = 4, height = 3, dpi = 300)
 
 
 # we should do some summarization
-ggplot(knz_agg_dss, aes(x=con_stability, y=con_com_stab)) +
+ggplot(knz_agg_dss, aes(x=con_stability, y=1/con_com_stab)) +
   geom_point() +
   geom_smooth(method='lm') +
-  stat_cor(method = "pearson", label.x = 1.8, label.y = 0.38, size = 5) +  # add correlation and p-value
+  stat_cor(method = "pearson", label.x = 1.3, label.y = 3.55, size = 5) +  # add correlation and p-value
   labs(x='Aggregate stability of consumers', y='Compositional stability of consumers', title="Two stability metrics comparison") +
   theme_bw()
 ggsave("../../figures/Feb_present/knz_aggregate_compositional_stability_consumer.png", width = 4, height = 3, dpi = 300)
 #
 
-ggplot(knz_agg_dss, aes(x=prod_richness, y=prod_com_stab)) +
+ggplot(knz_agg_dss, aes(x=prod_richness, y=1/prod_com_stab)) +
   geom_point() +
   geom_smooth(method='lm') +
 #  stat_cor(method = "pearson", label.x = 60, label.y = 2.3, size = 5) +  # add correlation and p-value
@@ -148,16 +144,12 @@ ggplot(knz_agg_dss, aes(x=prod_richness, y=prod_com_stab)) +
   theme_bw()
 
 #
-ggplot(knz_agg_dss, aes(x=con_richness, y=con_com_stab)) +
+ggplot(knz_agg_dss, aes(x=con_richness, y=1/con_com_stab)) +
   geom_point() +
   geom_smooth(method='lm') +
 #  stat_cor(method = "pearson", label.x = 60, label.y = 2.3, size = 5) +  # add correlation and p-value
 #  labs(x='Total richness of producers', y='Consumer aggregated stability', title="Producer diversity-consumer stability relationship") +
   theme_bw()
-
-
-
-
 
 ```
 
