@@ -589,8 +589,8 @@ cdr2_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=
 cdr2_producer_raw <- read.csv(file = cdr2_producer_url)
 
 # one instance of LS is Ls
-cdr2_producer_raw %>%
-  count(OldField, Plot, Transect)
+#cdr2_producer_raw %>%
+#  count(OldField, Plot, Transect)
 
 cdr2_producer <- cdr2_producer_raw %>%
   mutate(site = "CDR_oldField",
@@ -684,6 +684,14 @@ cdr2_producer <- cdr2_producer %>%
   ))
 cdr2_producer$plot <- as.numeric(cdr2_producer$plot)
 
+cdr2_producer %>%
+  count(year, plot, subplot)
+
+
+write.csv(cdr2_producer,"cdr2_producer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("cdr2_producer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1yeKgZ8LMfDUS_N2iUJoBLb-u-SNctnhp"))
 
 
 
@@ -731,4 +739,12 @@ cdr2_consumer <- cdr2_consumer %>%
 
 cdr2_consumer <- cdr2_consumer %>%
   filter(!plot %in% c("11", "21", "27", "32", "40", "44", "47", "76"))
+
+
+write.csv(cdr2_consumer,"cdr2_consumer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("cdr2_consumer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1yeKgZ8LMfDUS_N2iUJoBLb-u-SNctnhp"))
+
+
 
