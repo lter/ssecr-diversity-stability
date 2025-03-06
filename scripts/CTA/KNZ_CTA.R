@@ -1,7 +1,7 @@
 # Project Information ----
 # SSECR: Diversity-Stability Relationships
 # Co-Leads: James Sturges & Dr. Junna Wang
-# Last Updated: March 6th, 2025
+# Last Updated: February 10th, 2024
 
 # Raw Data Availability ----
 
