@@ -1,7 +1,7 @@
 # Project Information ----
 # SSECR: Diversity-Stability Relationships
 # Co-Leads: James Sturges & Dr. Junna Wang
-# Last Updated: February 10th, 2024
+# Last Updated: March 6th, 2025
 
 # Raw Data Availability ----
 
@@ -14,7 +14,7 @@ librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasam
 knz_consumers = read.csv(file = "data/KNZ/knz_consumer.csv")
 knz_producers = read.csv(file = "data/KNZ/knz_producer.csv")
 
-#### Richness Summary Tables ----
+# Richness Summary Tables ----
 
 # Summary data for consumer species richness across sites
 species_n_consumer_site <- knz_consumers %>%
@@ -30,7 +30,7 @@ species_n_producer_site <- knz_producers %>%
 species_n_producer_site
 write.csv(species_n_producer_site, "tables/KNZ/summary/species_n_producer_site.csv",row.names = F)
 
-#### Site Selection & Order ----
+# Site Selection & Order ----
 # remove 4 sites with less than 10 years of data
 unique(knz_consumers$plot)
 site_order = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")
@@ -51,7 +51,7 @@ knz_producers <- knz_producers %>%
   mutate(plot = factor(plot, levels = site_order)) %>%  # Ensure plot matches site_order
   arrange(match(plot, site_order))
 
-#### Survey History Summary Tables ----
+# Survey History Summary Tables ----
 
 # Summary data years of consumer assemblage data per site
 site_years_count_c <- knz_consumers %>%

@@ -298,7 +298,8 @@ plot_nmds_fish <- ggplot(mcr_fish_means, aes(x = MDS1,
   labs(title = "MCR Fish Community by Reef Habitat", x = "NMDS1", y = "NMDS2") +
   scale_color_manual(values = c("#009E73", "#0072B2", "#E69F00")) +
   scale_shape_manual(values = c(15,16,17)) +
-  guides(color = guide_legend(title = "Reef Habitat")) +
+  guides(color = guide_legend(title = "Reef Habitat"),
+         shape = guide_legend(title = "Reef Habitat")) +
   theme_classic()
 
 print(plot_nmds_fish)
@@ -316,7 +317,8 @@ plot_nmds_invertebrate <- ggplot(mcr_invertebrate_means, aes(x = MDS1,
   labs(title = "MCR invertebrate Community by Reef Habitat", x = "NMDS1", y = "NMDS2") +
   scale_color_manual(values = c("#009E73", "#0072B2", "#E69F00")) +
   scale_shape_manual(values = c(15,16,17)) +
-  guides(color = guide_legend(title = "Reef Habitat")) +
+  guides(color = guide_legend(title = "Reef Habitat"),
+         shape = guide_legend(title = "Reef Habitat")) +
   theme_classic()
 
 print(plot_nmds_invertebrate)
@@ -332,9 +334,10 @@ plot_nmds_algae <- ggplot(mcr_algae_means, aes(x = MDS1,
   geom_point(size = 3) +
   geom_text(check_overlap = TRUE, size = 3, color = "black", vjust = 1.5) +
   labs(title = "MCR algae Community by Reef Habitat", x = "NMDS1", y = "NMDS2") +
-  scale_color_manual(values = c("#009E73", "#0072B2", "#E69F00")) +
+  scale_color_manual(values = c("#009E73", "#0072B2", "#E69F00"))+
   scale_shape_manual(values = c(15,16,17)) +
-  guides(color = guide_legend(title = "Reef Habitat")) +
+  guides(color = guide_legend(title = "Reef Habitat"),
+         shape = guide_legend(title = "Reef Habitat")) +
   theme_classic()
 
 print(plot_nmds_algae)
@@ -352,7 +355,8 @@ plot_nmds_macroalgae <- ggplot(mcr_macroalgae_means, aes(x = MDS1,
   labs(title = "MCR macroalgae Community by Reef Habitat", x = "NMDS1", y = "NMDS2") +
   scale_color_manual(values = c("#009E73", "#0072B2", "#E69F00")) +
   scale_shape_manual(values = c(15,16,17)) +
-  guides(color = guide_legend(title = "Reef Habitat")) +
+  guides(color = guide_legend(title = "Reef Habitat"),
+         shape = guide_legend(title = "Reef Habitat")) +
   theme_classic()
 
 print(plot_nmds_macroalgae)
@@ -375,7 +379,7 @@ mcr_fish_means = mcr_fish_means %>%
 
 
 trajectoryPCoA(Dfish, sites = mcr_fish_means$habitat_fine2, surveys = mcr_fish_means$vector_nums, traj.colors = custom_palette, lwd = 1, survey.labels = T) 
-legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0.02, 0), bty="n", legend=c("backreef", "forereef", "fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
+legend(ncol = 1, y.intersp = 0.2, x.intersp = 0.5, "topright", inset = c(0.15, 0),  bty="n", legend=c("Backreef", "Forereef", "Fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
 
 
 # Capture the plot output
@@ -400,7 +404,7 @@ mcr_invertebrate_means = mcr_invertebrate_means %>%
 
 
 trajectoryPCoA(Dinvertebrate, sites = mcr_invertebrate_means$habitat_fine2, surveys = mcr_invertebrate_means$vector_nums, traj.colors = custom_palette, lwd = 1, survey.labels = T) 
-legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0.02, 0), bty="n", legend=c("backreef", "forereef", "fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
+legend(ncol = 1, y.intersp = 0.2, x.intersp = 0.5, "topright", inset = c(0.15, 0),  bty="n", legend=c("Backreef", "Forereef", "Fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
 
 
 # Capture the plot output
@@ -425,7 +429,7 @@ mcr_algae_means = mcr_algae_means %>%
 
 
 trajectoryPCoA(Dalgae, sites = mcr_algae_means$habitat_fine2, surveys = mcr_algae_means$vector_nums, traj.colors = custom_palette, lwd = 1, survey.labels = T) 
-legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0.02, 0), bty="n", legend=c("backreef", "forereef", "fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
+legend(ncol = 1, y.intersp = 0.2, x.intersp = 0.5, "topright", inset = c(0.15, 0),  bty="n", legend=c("Backreef", "Forereef", "Fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
 
 
 # Capture the plot output
@@ -450,8 +454,7 @@ mcr_macroalgae_means = mcr_macroalgae_means %>%
 
 
 trajectoryPCoA(Dmacroalgae, sites = mcr_macroalgae_means$habitat_fine2, surveys = mcr_macroalgae_means$vector_nums, traj.colors = custom_palette, lwd = 1, survey.labels = T) 
-legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0.02, 0), bty="n", legend=c("backreef", "forereef", "fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
-
+legend(ncol = 1, y.intersp = 0.2, x.intersp = 0.5, "topright", inset = c(0.15, 0),  bty="n", legend=c("Backreef", "Forereef", "Fringing"),  col = c("#009E73", "#0072B2", "#E69F00"), lwd=2)
 
 # Capture the plot output
 trajectory_plot <- recordPlot()
