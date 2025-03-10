@@ -1,0 +1,156 @@
+---
+title: "plot_figures_Feb_presentation"
+output: pdf_document
+date: "2025-02-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl, ggpubr, ggplot2)
+rm(list=ls())
+
+```
+
+
+```{r diversity-aggregate-stability relationships of the same trophic level for Konza, fig.width=4, fig.height=3}
+# how to read data from google drive
+# konza
+# folder_url <- "https://drive.google.com/drive/folders/1yMsqocWZf9QxoQCFn0xiYkitdgZedYkh"
+# files_in_folder <- googledrive::drive_ls(path=folder_url)
+#
+knz_agg_dss <- read.csv('/Users/junnawang/courses/SSECR/project_results/plot_results/knz_agg_dss.csv')
+### correlation between richness and shannon
+cor.test(knz_agg_dss$prod_richness, knz_agg_dss$prod_shannon)   
+# strongly correlated; cor 0.970924
+#
+cor.test(knz_agg_dss$con_richness, knz_agg_dss$con_shannon)   # strongly correlated 
+# strongly correlated; cor 0.9549285
+#
+# I will use richness for the plot
+# producer
+ggplot(knz_agg_dss, aes(x=prod_richness, y=prod_stability)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+#  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = ", ")), method = "pearson") + 
+  stat_cor(method = "pearson", label.x = 70, label.y = 7.5, size = 5) +  # add correlation and p-value
+  labs(x='Producer richness', y='Producer aggregated stability', title="Producer diversity-stability relationship") +
+  theme_bw()
+ggsave("../../figures/Feb_present/knz_producer_diversity-stability.png", width = 4, height = 3, dpi = 300)
+
+# consumer
+ggplot(knz_agg_dss, aes(x=con_richness, y=con_stability)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+#  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = ", ")), method = "pearson") + 
+  stat_cor(method = "pearson", label.x = 12, label.y = 2.3, size = 5) +  # add correlation and p-value
+  labs(x='Consumer richness', y='Consumer aggregated stability', title="Consumer diversity-stability relationship") +
+  theme_bw() 
+ggsave("../../figures/Feb_present/knz_consumer_diversity-stability.png", width = 4, height = 3, dpi = 300)
+
+#
+summary(lm(data=knz_agg_dss, scale(prod_richness) ~ scale(prod_stability)))
+summary(lm(data=knz_agg_dss, scale(con_richness) ~ scale(prod_stability)))
+
+#
+summary(lm(data=knz_agg_dss, scale(prod_richness) ~ scale(con_stability)))
+summary(lm(data=knz_agg_dss, scale(con_richness) ~ scale(con_stability)))
+
+```
+
+
+```{r diversity-aggregate-stability relationships across trophic level for konza, fig.width=4, fig.height=3}
+# similar to the same trophic level, because biodiversity cross trophic levels are quite similar. 
+cor.test(knz_agg_dss$prod_richness, knz_agg_dss$con_richness)   
+# strongly correlated, cor: 0.9459966
+#
+cor.test(knz_agg_dss$prod_shannon, knz_agg_dss$con_shannon)   
+# strongly correlated, cor: 0.9711248
+#
+ggplot(knz_agg_dss, aes(x=prod_richness, y=con_richness)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(method = "pearson", label.x = 50, label.y = 18, size = 5) +  # add correlation and p-value
+  labs(x='Producers richness', y='Consumers richness', title="Producer and consumer diversity relationship") +
+  theme_bw()
+ggsave("../../figures/Feb_present/knz_producer_consumer_diversity.png", width = 4, height = 3, dpi = 300)
+
+#
+# producer: overall is more stable than consumer
+ggplot(knz_agg_dss, aes(x=con_richness, y=prod_stability)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(method = "pearson", label.x = 16, label.y = 7.5, size = 5) +  # add correlation and p-value
+  labs(x='Total richness of consumers', y='Producer aggregated stability', title="Consumer diversity-producer stability relationship") +
+  theme_bw()
+
+# consumer
+ggplot(knz_agg_dss, aes(x=prod_richness, y=con_stability)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(method = "pearson", label.x = 60, label.y = 2.3, size = 5) +  # add correlation and p-value
+  labs(x='Total richness of producers', y='Consumer aggregated stability', title="Producer diversity-consumer stability relationship") +
+  theme_bw()
+
+# Average synchrony of producer (higher?) and consumer (lower?).
+#
+# cor.test(knz_agg_dss$con_synchrony, knz_agg_dss$con_stability) strongly negative correlated. 
+
+
+```
+
+```{r correlation between aggregate and compositional stability, fig.width=4, fig.height=3}
+#
+knz_consumer_length <- read.csv('/Users/junnawang/courses/SSECR/project_results/plot_results/knz_consumer_lengths.csv')
+knz_producer_length <- read.csv('/Users/junnawang/courses/SSECR/project_results/plot_results/knz_producer_lengths.csv')
+#
+knz_consumer_length$con_com_stab <- rowMeans(knz_consumer_length[, 1:18])
+#
+knz_producer_length$prod_com_stab <- rowMeans(knz_producer_length[, 1:30], na.rm=T)
+knz_producer_length$prod_com_stab[8] <- NA
+#
+knz_agg_dss <- knz_agg_dss %>% left_join(knz_producer_length[, c('site', "prod_com_stab")], by=c('plot'='site'))
+knz_agg_dss <- knz_agg_dss %>% left_join(knz_consumer_length[, c('site', "con_com_stab")], by=c('plot'='site'))
+
+#
+ggplot(knz_agg_dss, aes(x=prod_stability, y=1/prod_com_stab)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(method = "pearson", label.x = 4.5, label.y = 2.15, size = 5) +  # add correlation and p-value
+  labs(x='Aggregate stability of producers', y='Compositional stability of producers', title="Two stability metrics comparison") +
+  theme_bw()
+ggsave("../../figures/Feb_present/knz_aggregate_compositional_stability_producer.png", width = 4, height = 3, dpi = 300)
+
+
+# we should do some summarization
+ggplot(knz_agg_dss, aes(x=con_stability, y=1/con_com_stab)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  stat_cor(method = "pearson", label.x = 1.3, label.y = 3.55, size = 5) +  # add correlation and p-value
+  labs(x='Aggregate stability of consumers', y='Compositional stability of consumers', title="Two stability metrics comparison") +
+  theme_bw()
+ggsave("../../figures/Feb_present/knz_aggregate_compositional_stability_consumer.png", width = 4, height = 3, dpi = 300)
+#
+
+ggplot(knz_agg_dss, aes(x=prod_richness, y=1/prod_com_stab)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+#  stat_cor(method = "pearson", label.x = 60, label.y = 2.3, size = 5) +  # add correlation and p-value
+#  labs(x='Total richness of producers', y='Consumer aggregated stability', title="Producer diversity-consumer stability relationship") +
+  theme_bw()
+
+#
+ggplot(knz_agg_dss, aes(x=con_richness, y=1/con_com_stab)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+#  stat_cor(method = "pearson", label.x = 60, label.y = 2.3, size = 5) +  # add correlation and p-value
+#  labs(x='Total richness of producers', y='Consumer aggregated stability', title="Producer diversity-consumer stability relationship") +
+  theme_bw()
+
+```
+
+

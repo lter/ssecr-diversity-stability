@@ -42,24 +42,27 @@ data_phyto_trout2005 <- data_phyto_trout2005 %>% group_by(lakeid, year4, sampled
 # for each site, we only have one station and one depth, so we can omit sta and depth: nsta=n_distinct(sta), ndepth=n_distinct(depth_range)
 # output the data that are needed
 # total biomass unit: mg/L; relative total biovolume: %
-data_phyto_trout_out <- data.frame(site=data_phyto_trout2005$lakeid, taxa_type="producer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='plant')
+data_phyto_trout_out <- data.frame(site=data_phyto_trout2005$lakeid, taxa_type="producer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='plant', herbivore='no')
 ##
 data_phyto_trout_out$year  <- data_phyto_trout2005$year4
 data_phyto_trout_out$month <- month(data_phyto_trout2005$sampledate)
 data_phyto_trout_out$day   <- day(data_phyto_trout2005$sampledate)
 ##
 data_phyto_trout_out$plot  <- 1
-data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat, data_phyto_trout_out$plot, sep='_')
+data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat_fine, data_phyto_trout_out$plot, sep='_')
 data_phyto_trout_out$unit_abundance  <- "mg/L"
 data_phyto_trout_out$scale_abundance <- "1L"
-data_phyto_trout_out$species   <- data_phyto_trout2005$taxa_name
+data_phyto_trout_out$taxon_name   <- data_phyto_trout2005$taxa_name
 data_phyto_trout_out$abundance <- data_phyto_trout2005$biomass_conc
 #### if biomass_conc = 0.0000, i used biomass_conc = 0.0001
 data_phyto_trout_out$abundance[data_phyto_trout_out$abundance==0.0000] <- 0.0001
-data_phyto_trout_out$confidence <- TRUE
-data_phyto_trout_out$confidence[data_phyto_trout_out$species=="Miscellaneous"] <- FALSE
+data_phyto_trout_out$id_confidence <- TRUE
+data_phyto_trout_out$id_confidence[data_phyto_trout_out$species=="Miscellaneous"] <- FALSE
 ####
 write.csv(data_phyto_trout_out, 'harmonized_data/phytoplankton_trout_lake_area.csv', row.names = F)
+####
+googledrive::drive_upload(media = file.path("harmonized_data/phytoplankton_trout_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"))
 
 ```
 
@@ -91,36 +94,43 @@ ggplot(data_zoop_trout_year, aes(x=year4, y=num_sample, color=lakeid)) +
   geom_line()  
 
 #### prepare for output datasets
-data_zoop_trout_out <- data.frame(site=data_zoop_trout$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='zooplankton')
+data_zoop_trout_out <- data.frame(site=data_zoop_trout$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='zooplankton', herbivore='yes')
 ####
 data_zoop_trout_out$year  <- data_zoop_trout$year4
 data_zoop_trout_out$month <- month(data_zoop_trout$sample_date)
 data_zoop_trout_out$day   <- day(data_zoop_trout$sample_date)
 ####
 data_zoop_trout_out$plot  <- data_zoop_trout$station
-data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat, data_zoop_trout_out$plot, sep='_')
+data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat_fine, data_zoop_trout_out$plot, sep='_')
 data_zoop_trout_out$unit_abundance  <- "number/L"
 data_zoop_trout_out$scale_abundance <- "1L"
-data_zoop_trout_out$species   <- data_zoop_trout$species_name
-data_zoop_trout_out$abundance <- data_zoop_trout$density
-data_zoop_trout_out$species_code <- data_zoop_trout$species_code
+data_zoop_trout_out$taxon_name <- data_zoop_trout$species_name
+data_zoop_trout_out$abundance  <- data_zoop_trout$density
+data_zoop_trout_out$taxon_code <- data_zoop_trout$species_code
 ###
 ### set the rows without species name as not confident
-data_zoop_trout_out$confidence <- TRUE
-data_zoop_trout_out$confidence[data_zoop_trout_out$species==''] <- FALSE
+data_zoop_trout_out$id_confidence <- TRUE
+data_zoop_trout_out$id_confidence[data_zoop_trout_out$species==''] <- FALSE
 ###
 # ### merge duplicated rows
 # data_zoop_trout_out <- data_zoop_trout_out %>% group_by(site, taxa_type, ecosystem, habitat, biome, guild, year, month, day, plot, unique_ID, unit_abundance, scale_abundance, species) %>% summarise(abundance = sum(abundance))
 
 ####
 write.csv(data_zoop_trout_out, 'harmonized_data/zooplankton_trout_lake_area.csv', row.names = F)
+googledrive::drive_upload(media = file.path("harmonized_data/zooplankton_trout_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"))
 
 ```
 
 
 ```{r benthic macroinvertebrates}
+library(tidyverse)
+rm(list=ls())
 ###
 data_binvert <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.11.38&entityid=64a3def6d4f03ea0ac3e8630b75df453')
+# A: abundant but not counted
+# N: Taxon present but not counted
+# A and N cannot be taken account of. 
 #
 data_binvert_year <- data_binvert %>% group_by(lakeid, site, year4) %>% summarise(num_taxon = n_distinct(taxon_code))
 # most data are from 2011, 3 years in the 1980s,
@@ -144,24 +154,27 @@ unique(tmp$year4)
 data_binvert$lakeid[data_binvert$lakeid=='sp'] <- 'SP'
 # only use the data after 2010; and get the average of multiple replicates
 data_binvert2000 <- data_binvert %>% filter(year4 > 2010) 
-data_binvert2000_avg <- data_binvert2000 %>% group_by(lakeid, year4, site, taxon_code, description) %>% summarise(abundance=sum(number_indiv) / n_distinct(rep)) 
+data_binvert2000_avg <- data_binvert2000 %>% group_by(lakeid, year4, site, taxon_code, description) %>% summarise(abundance=sum(number_indiv) / n_distinct(rep)) %>% filter(abundance > 0)
 ####
 #### present (N) and abundant (A; too many to be counted); data after 2010 does not have this problem;
-data_binvert_out <- data.frame(site=data_binvert2000_avg$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat='lake', biome='temperate', guild='benthic macroinvertebrates')
+data_binvert_out <- data.frame(site=data_binvert2000_avg$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='benthic macroinvertebrates', herbivore='unsure')
 data_binvert_out$year <- data_binvert2000_avg$year4
 data_binvert_out$plot <- data_binvert2000_avg$site
 ####
-data_binvert_out$unique_ID <- paste(data_binvert_out$site, data_binvert_out$habitat, data_binvert_out$plot, sep='_')
+data_binvert_out$unique_ID <- paste(data_binvert_out$site, data_binvert_out$habitat_fine, data_binvert_out$plot, sep='_')
 ####
 data_binvert_out$unit_abundance  <- "number/sampler"
 data_binvert_out$scale_abundance <- "1_modified_Hester-Dendy_sampler"
-data_binvert_out$species    <- data_binvert2000_avg$description
+data_binvert_out$taxon_name <- data_binvert2000_avg$description
 data_binvert_out$abundance  <- data_binvert2000_avg$abundance
 ####
-data_binvert_out$confidence <- TRUE
-data_binvert_out$confidence[data_binvert_out$species==""] <- FALSE
+data_binvert_out$id_confidence <- TRUE
+data_binvert_out$id_confidence[data_binvert_out$species==""] <- FALSE
 #
 write.csv(data_binvert_out, 'harmonized_data/benthic_macroinvertebrates_trout_lake_area.csv', row.names = F)
+#
+googledrive::drive_upload(media = file.path("harmonized_data/benthic_macroinvertebrates_trout_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"))
 
 ###protocols
 ###The modified Hester-Dendy samplers are constructed as a bolted together stack of ten plastic mesh panels and a plastic scrubbing ball between hardboard end panels. They are placed in the lakes early to mid August, and left for approximately four weeks. Each sampling site consists of three dendy samplers spaced 3 meters apart. Shoreline samplers are set in about one meter of water, deep sites at the deepest part of the lake. The shoreline sets are retrieved by a snorkeler who places the sampler in a container before surfacing to avoid loss of invertebrates due to disturbance, while deep sites are pulled up to the surface from a boat.

@@ -315,7 +315,7 @@ googledrive::drive_upload(media = file.path("knz_consumer.csv"), overwrite = T, 
 
 
 
-#### CDR LTER harmonization ####
+#### CDR LTER harmonization: Biodiversity experiment ####
 # producer 
 cdr_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.273.11&entityid=27ddb5d8aebe24db99caa3933e9bc8e2"
 cdr_producer_raw <- read.csv(file = cdr_producer_url)
@@ -583,8 +583,168 @@ googledrive::drive_upload(media = file.path("cdr_consumer.csv"), overwrite = T, 
 
 
 
+#### CDR LTER harmonization: Old field ####
+# producer
+cdr2_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.175.10&entityid=4c63180729356ee5337c5d5672b2143a"
+cdr2_producer_raw <- read.csv(file = cdr2_producer_url)
+
+# one instance of LS is Ls
+#cdr2_producer_raw %>%
+#  count(OldField, Plot, Transect)
+
+cdr2_producer <- cdr2_producer_raw %>%
+  mutate(site = "CDR_oldField",
+         taxa_type = "producer", 
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "plant",
+         unit_abundance = "g/m2",
+         scale_abundance = "3mx4m") %>%
+  mutate(plot = OldField, subplot = Transect, sub_subplot = Plot, abundance = Biomass..g.m.2.,
+         taxon_name = Species, year = Year, month = NA, day = NA) %>%
+  mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>%
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "sub_subplot","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "unit_abundance", "scale_abundance"))
 
 
+cdr2_producer$taxon_name <- str_trim(cdr2_producer$taxon_name, side = "both") # removing white space from strings
+cdr2_producer <- cdr2_producer %>%
+  mutate(taxon_name = dplyr::case_when(
+    taxon_name %in% c("Acer negundo", "Acer rubrum", "Acer saccharum", "Acer sp.") ~ "Acer sp.",
+    taxon_name %in% c("Ambro Art", "Ambrosia artemisiifolia elatior", "Ambrosia elator", "ambrosia artemisiifolia elatior") ~ "Ambrosia artemisiifolia",
+    taxon_name %in% c("Antennaria neglecta", "Antennaria sp.") ~ "Antennaria sp.",
+    taxon_name %in% c("Apocynum androsaemifolium", "Apocynum sp.") ~ "Apocynum sp.",
+    taxon_name %in% c("Arabis divaricarpa", "Arabis glabra", "Arabis sp.", "arabis sp.") ~ "Arabis sp.",
+    taxon_name %in% c("Calamovifla longifolia", "Calamovilfa longifolia") ~ "Calamovilfa longifolia",
+    taxon_name %in% c("Carex muhlenbergii", "Carex sp.", "carex sp.") ~ "Carex sp.",
+    taxon_name %in% c("Ccuta maculata") ~ "Cicuta maculata",
+    taxon_name %in% c("Cirsium arvense", "Cirsium sp.") ~ "Cirsium sp.",
+    taxon_name %in% c("Cornus alternifolia", "Cornus racemosa", "Cornus sp.", "Cornus stolonifera") ~ "Cornus sp.",
+    taxon_name %in% c("Corylus americanus", "Corylus sp") ~ "Corylus sp.",
+    taxon_name %in% c("Cyperus filiculmis", "Cyperus schweinitzii", "Cyperus sp.") ~ "Cyperus sp.",
+    taxon_name %in% c("Digitaria ischaemum", "Digitaria sanguinalis", "Digitaria sp.") ~ "Digitaria sp.",
+    taxon_name %in% c("ERIGERON Strigosus", "Erigeron strigosus") ~ "Erigeron strigosus",
+    taxon_name %in% c("Fescue sp.", "Festuca sp.") ~ "Festuca sp.",
+    taxon_name %in% c("Fragaria sp.", "Fragaria virginiana") ~ "Fragaria sp.",
+    taxon_name %in% c("Fraxinus americana", "Fraxinus pennsylvanica", "Fraxinus sp.") ~ "Fraxinus sp.",
+    taxon_name %in% c("Hieracium aurantiacum", "Hieracium longipilum", "Hieracium sp.") ~ "Hieracium sp.",
+    taxon_name %in% c("Lactuca biennis", "Lactuca canadensis", 
+                      "Lactuca serriola (scariola)", "Lactuca sp.") ~ "Lactuca sp.",
+    taxon_name %in% c("Oenothera biennis", "Oenothera sp.") ~ "Oenothera sp.",
+    taxon_name %in% c("Oxalis sp.", "Oxalis stricta") ~ "Oxalis sp.",
+    taxon_name %in% c("PANICUM Oligosanthes", "Panicum oligosanthes") ~ "Panicum oligosanthes",
+    taxon_name %in% c("Parthenocissus inserta", "Parthenocissus sp.") ~ "Parthenocissus sp.",
+    taxon_name %in% c("Penstemon gracilis", "Penstemon grandiflorus", "Penstemon sp.") ~ "Penstemon sp.",
+    taxon_name %in% c("Physalis viginiana", "Physalis virginiana") ~ "Physalis virginiana",
+    taxon_name %in% c("Pine sp.", "Pinus sp.", "Pinus strobus") ~ "Pinus sp.",
+    taxon_name %in% c("Potentilla argentea", "Potentilla arguta", "Potentilla simplex", "Potentilla sp.", "Potentilla recta") ~ "Potentilla sp.",
+    taxon_name %in% c("Prunus americana", "Prunus pensylvanica", "Prunus sp.", "Prunus virginiana") ~ "Prunus sp.",
+    taxon_name %in% c("Quercus ellipsoidalis", "Quercus macrocarpa", "Quercus palustris",
+                      "Quercus rubra", "Quercus sp.") ~ "Quercus sp.",
+    taxon_name %in% c("Ranunculus rhomboideus", "Ranunculus sp.") ~ "Ranunculus sp.",
+    taxon_name %in% c("Rhamnus cathartica", "Rhamnus frangula", "Rhamnus sp.") ~ "Rhamnus sp.",
+    taxon_name %in% c("Rhus radicans", "Rhus sp.") ~ "Rhus sp.",
+    taxon_name %in% c("Rubus idaeus", "Rubus sp.") ~ "Rubus sp.",
+    taxon_name %in% c("Setaria glauca", "Setaria lutescens (glauca)", "Setaria sp.", "Setaria viridis") ~ "Setaria sp.",
+    taxon_name %in% c("Trifolium arvense", "Trifolium hybridum", "Trifolium repens", "Trifolium sp.") ~ "Trifolium sp.",
+    taxon_name %in% c("Andropogon gerardi", "andropogon gerardi") ~ "Andropogon gerardi",
+    .default = taxon_name
+  )) %>%
+  mutate(id_confidence = dplyr::case_when(
+    taxon_name %in% c("Aristida sp.", "Asclepias sp.", "Bromus sp.", "Calamovilfa sp.",
+                      "Chenopodium sp.", "Corn litter", "Erigeron sp.", "Forb seedlings",
+                      "Forbs", "Fungi", "Grass seedlings", "Helianthus sp.", "Lac Bl",
+                      "Leaves", "Lepidium sp.", "Lichens", "Miscellaneous  woody", 
+                      "Miscellaneous forb", "Miscellaneous forb 1", "Miscellaneous forb 2",
+                      "Miscellaneous grass", "Miscellaneous grasses", "Miscellaneous herbs",
+                      "Miscellaneous herbs 2", "Miscellaneous legumes", "Miscellaneous liter",
+                      "Miscellaneous litter", "Miscellaneous litter (pine)", "Miscellaneous sedges",
+                      "Miscellaneous sp.", "Miscellaneous woody", "Miscellaneous woody 1", "Miscellaneous woody 2",
+                      "Miscellaneous woody litter", "Miscellaneous woody plants", "Miscellaneous woody plants 1",
+                      "Miscellaneous woody plants 2", "Miscellaneous woody tree", "Mosses", "Mosses & lichens",
+                      "Mosses & lichens 2", "Panicum sp.", "Pine cones", "Pine litter", "Pine needles",
+                      "Pine twigs", "Poa sp.", "Rosa sp.", "Rumex sp.", "Solidago sp.", "Sporobolus sp.",
+                      "Stachys sp.", "Tragopogon sp.", "Viola sp.", "Woody", "Woody debris", "moses & lichens",
+                      "pine needles", "woody debris") ~ 0,
+    .default = 1
+  ))
+
+
+cdr2_producer <- cdr2_producer %>%
+  filter(!plot %in% c("LS", "Ls", "10", "600", "601")) %>%
+  mutate(subplot = dplyr::case_when(
+    subplot %in% c("w") ~ "W",
+    subplot %in% c("r") ~ "R",
+    subplot %in% c("g") ~ "G",
+    subplot %in% c("y") ~ "Y",
+    .default = subplot
+  ))
+cdr2_producer$plot <- as.numeric(cdr2_producer$plot)
+
+cdr2_producer %>%
+  count(year, plot, subplot)
+
+
+write.csv(cdr2_producer,"cdr2_producer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("cdr2_producer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1yeKgZ8LMfDUS_N2iUJoBLb-u-SNctnhp"))
+
+
+
+
+ 
+# consumer
+cdr2_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.106.8&entityid=3405c2e271929b0c537492a9ddde102b"
+cdr2_consumer_raw <- read.delim(file = cdr2_consumer_url)
+
+cdr2_consumer <- cdr2_consumer_raw %>%
+  mutate(site = "CDR_oldField", # adding general LTER/dataset info to each row
+         taxa_type = "consumer",
+         ecosystem = "terrestrial",
+         habitat_broad = "grassland",
+         habitat_fine = "grassland",
+         biome = "temperate",
+         guild = "insect", 
+         unit_abundance = "count", 
+         scale_abundance = "200 sweeps") %>%
+  mutate(plot = Field.num, subplot = NA, abundance = X.Specimens,
+         taxon_name = paste(Genus, Specific.epithet, sep = " "), year = Year, month = Month, day = NA) %>% 
+  mutate(abundance = as.numeric(abundance)) %>%
+  mutate(year = as.double(year)) %>%
+  mutate(unique_ID = paste(site, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
+  dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
+                  "plot", "subplot", "year", "month", "unique_ID", "Family","taxon_name", "abundance", 
+                  "unit_abundance", "scale_abundance"))
+
+
+cdr2_consumer$taxon_name <- str_trim(cdr2_consumer$taxon_name, side = "both") # removing white space from strings
+cdr2_consumer <- cdr2_consumer %>%
+  mutate(taxon_name = dplyr::case_when(
+    taxon_name %in% c("Conocephalus brevipennis", "Conocephalus fasciatus", "Conocephalus nigropleurum",
+                      "Conocephalus saltans", "Conocephalus strictus", "Conocephalus undet") ~ "Conocephalus undet",
+    taxon_name %in% c("Scudderia curvicauda", "Scudderia furcata", "Scudderia texensis",
+                      "Scudderia undet") ~ "Scudderia undet",
+    taxon_name %in% c("Tetrix ornata", "Tetrix undet") ~ "Tetrix undet",
+    .default = taxon_name
+  )) %>%
+  mutate(id_confidence = dplyr::case_when(
+    taxon_name %in% c("Melanoplus undet", "Psinidia??") ~ 0,
+    .default = 1
+  )) %>%
+  mutate(herbivore = "herbivore")
+
+cdr2_consumer <- cdr2_consumer %>%
+  filter(!plot %in% c("11", "21", "27", "32", "40", "44", "47", "76"))
+
+
+write.csv(cdr2_consumer,"cdr2_consumer.csv", row.names = FALSE) # exporting csv
+
+googledrive::drive_upload(media = file.path("cdr2_consumer.csv"), overwrite = T, # exporting to google drive
+                          path = googledrive::as_id("https://drive.google.com/drive/u/1/folders/1yeKgZ8LMfDUS_N2iUJoBLb-u-SNctnhp"))
 
 
 
