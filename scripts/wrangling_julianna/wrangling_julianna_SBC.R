@@ -119,7 +119,7 @@ sbc_2 %>%
   mutate(subplot = TRANSECT) %>% 
   mutate(unique_ID = paste0(site, "_", plot)) %>% 
   mutate(unit_abundance = "g") %>% 
-  mutate(scale_abundance = "2x40m") %>% 
+  mutate(scale_abundance = "/m^2") %>% 
   mutate(taxon_name = SCIENTIFIC_NAME_updated) %>% 
   mutate(abundance = biomass) %>% 
   # add a column saying we're confident in all the spp taxonomies

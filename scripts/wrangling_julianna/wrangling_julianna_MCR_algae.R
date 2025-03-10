@@ -1,8 +1,8 @@
 #### Cleaning MCR algae data ----
 
-## Data downloaded from: https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-mcr&identifier=8&revision=36 
-## on November 19, 2024
-## dataset published on 2023-12-12
+## Data downloaded from: https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-mcr&identifier=8&revision=37 
+## on March 7, 2025
+## dataset published on 2024-12-19
 
 ## ------------------------------------------ ##
 #         SSECR Diversity-Stability
@@ -10,7 +10,7 @@
 ## ------------------------------------------ ##
 
 #### Author(s): Julianna Renzi
-#### Last Updated: November 20th, 2024
+#### Last Updated: March 7th, 2025
 
 # Purpose:
 ## Clean the Moorea benthic algal dataset, inspired by code from the Moorea algal 
@@ -35,7 +35,7 @@ librarian::shelf(here, # relative file paths
 #             Load data ----
 ## -------------------------------------------- ##
 
-algae_1 <- read_csv(here("../data/MCR_algal_cover_20231211.csv"))
+algae_1 <- read_csv(here("../data/MCR_algal_cover_20241219.csv"))
 updated_taxonomy <- read_csv(here("../taxa_tables/MCR_algae_taxa_annotated.csv"))
 
 ## -------------------------------------------- ##
@@ -89,7 +89,7 @@ algae_2 %>%
   filter(!((Habitat == "Backreef" | Habitat == "Fringing") & Year == 2020)) %>% 
   filter(Taxonomy_Substrate_Functional_Group == "No data") -> nodata
 
-dim(nodata) # see there are 63 rows with no data
+dim(nodata) # see there are 14 rows with no data
 
 # drop no data rows from analysis, as well as 2020 data
 algae_2 %>% 
@@ -106,10 +106,11 @@ algae_3 %>%
   # create a quadrat ID, so we can exclude these
   mutate(Quad_ID = paste0(Year, "_", Location)) -> incorrect_quads
 
-dim(incorrect_quads) # see there are 13 quadrats of 206,058, which is pretty good!
+dim(incorrect_quads) # see there are 8 quadrats of 216,808, which is pretty good!
 
 # Exclude incorrect quads
 algae_3 %>% 
+  # create a quadrat ID, so we can exclude these
   mutate(Quad_ID = paste0(Year, "_", Location)) %>% 
   # remove incorrect quadrats
   filter(!(Quad_ID %in% incorrect_quads$Quad_ID)) -> algae_4
@@ -118,7 +119,7 @@ algae_3 %>%
 #             SSECR format ----
 ## -------------------------------------------- ##
 
-## Get JUST algae
+## Going to keep everything (not JUST algae), but don't want sand/etc.
 # first get a key of all quadrats 
 algae_4 %>% 
   # list of all quadrats/information
@@ -127,21 +128,27 @@ algae_4 %>%
   # get rid of meaningless column
   select(-n) -> quad_key
 
-# get just algae, but re-join with quad_key to make sure we also have zeros
+# get just organisms we care about, but re-join with quad_key to make sure we also have zeros
 algae_4 %>% 
-  filter(Is_algae == "y") %>% 
+  filter(!is.na(guild)) %>% 
   full_join(quad_key) %>% 
   filter(is.na(Taxonomy_Substrate_Functional_Group)) %>%
   head() # okay great there are no instances of this
 
+# This is because the dataset puts 0's when 0's were observed (e.g., full sand quadrats, like the one below)
+algae_4 %>% 
+  filter(Quad_ID == "2006_LTER 2 Backreef Algae Transect 1 Quad 10") 
+
 # now format in the style we need
 algae_4 %>% 
+  # get just the spp we care about:
+  filter(!is.na(guild)) %>% 
   mutate(site = "mcr") %>% 
   mutate(taxa_type = "producer") %>% 
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "coral_reef") %>% 
   mutate(biome = "tropical") %>% 
-  mutate(guild = "algae") %>% 
+  mutate(guild = guild) %>% 
   mutate(herbivore = "no") %>% 
   mutate(habitat_fine = str_to_lower(Habitat)) %>% 
   mutate(Date = as.Date(Date)) %>% 
@@ -165,20 +172,20 @@ algae_4 %>%
 # also get just MACROALGAE
 # get just algae, but re-join with quad_key to make sure we also have zeros
 algae_4 %>% 
-  filter(Is_macroalgae == "y") %>% 
-  full_join(quad_key) %>% 
-  # replace instances with zero
-  mutate(Percent_Cover = case_when(is.na(Percent_Cover) ~ 0,
+   filter(Is_macroalgae == "y") %>% 
+   full_join(quad_key) %>% 
+   # replace instances with zero
+   mutate(Percent_Cover = case_when(is.na(Percent_Cover) ~ 0,
                                    TRUE ~ Percent_Cover)) -> macroalgae_1
 
 # now format in the style we need
 macroalgae_1 %>% 
   mutate(site = "mcr") %>% 
-  mutate(taxa_type = "producer") %>% 
+  mutate(taxa_type = feeding_type) %>% 
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "coral_reef") %>% 
   mutate(biome = "tropical") %>% 
-  mutate(guild = "algae") %>% 
+  mutate(guild = guild) %>% 
   mutate(herbivore = "no") %>% 
   mutate(habitat_fine = str_to_lower(Habitat)) %>% 
   mutate(Date = as.Date(Date)) %>% 
@@ -211,6 +218,7 @@ algae_5 %>%
 
 # number of taxa
 algae_5 %>% 
+  filter(taxa_type == "producer") %>% 
   select(taxon_name) %>% 
   unique() %>% 
   dim()
@@ -221,6 +229,7 @@ macroalgae_2 %>%
   range()
   
 macroalgae_2 %>% 
+  filter(taxa_type == "producer") %>%
   select(taxon_name) %>% 
   unique() %>% 
   dim()
@@ -230,5 +239,5 @@ macroalgae_2 %>%
 ## -------------------------------------------- ##
 
 write_csv(algae_5, here("../cleaned_data/mcr_algae.csv"))
-write_csv(macroalgae_2, here("../cleaned_data/mcr_macroalgae.csv"))
+# write_csv(macroalgae_2, here("../cleaned_data/mcr_macroalgae.csv"))
           
