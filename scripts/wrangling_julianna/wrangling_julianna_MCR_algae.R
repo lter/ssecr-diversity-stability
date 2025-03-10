@@ -144,7 +144,7 @@ algae_4 %>%
   # get just the spp we care about:
   filter(!is.na(guild)) %>% 
   mutate(site = "mcr") %>% 
-  mutate(taxa_type = "producer") %>% 
+  mutate(taxa_type = feeding_type) %>% 
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "coral_reef") %>% 
   mutate(biome = "tropical") %>% 
@@ -168,45 +168,6 @@ algae_4 %>%
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
          taxon_name, taxon_resolution, abundance) -> algae_5
 
-
-# also get just MACROALGAE
-# get just algae, but re-join with quad_key to make sure we also have zeros
-algae_4 %>% 
-   filter(Is_macroalgae == "y") %>% 
-   full_join(quad_key) %>% 
-   # replace instances with zero
-   mutate(Percent_Cover = case_when(is.na(Percent_Cover) ~ 0,
-                                   TRUE ~ Percent_Cover)) -> macroalgae_1
-
-# now format in the style we need
-macroalgae_1 %>% 
-  mutate(site = "mcr") %>% 
-  mutate(taxa_type = feeding_type) %>% 
-  mutate(ecosystem = "aquatic") %>% 
-  mutate(habitat_broad = "coral_reef") %>% 
-  mutate(biome = "tropical") %>% 
-  mutate(guild = guild) %>% 
-  mutate(herbivore = "no") %>% 
-  mutate(habitat_fine = str_to_lower(Habitat)) %>% 
-  mutate(Date = as.Date(Date)) %>% 
-  rename(year = Year) %>% 
-  mutate(month = month(Date), 
-         day = day(Date)) %>% 
-  mutate(plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", str_split(Site, pattern = " ")[[1]][2]))) %>% 
-  mutate(subplot = paste0(Transect, "_", Quadrat)) %>% 
-  mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
-  mutate(unit_abundance = "percent") %>% 
-  mutate(scale_abundance = "0.25m2") %>% 
-  mutate(taxon_name = Taxonomy_Substrate_Functional_Group) %>% 
-  mutate(abundance = Percent_Cover) %>% 
-  # filter 2005/2006
-  filter(year > 2006) %>% 
-  # add a column saying we're confident in all the spp taxonomies
-  mutate(id_confidence = 1) %>% 
-  select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
-         year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
-         taxon_name, taxon_resolution, abundance, id_confidence) -> macroalgae_2
-
 ## -------------------------------------------- ##
 #             Summary stats ----
 ## -------------------------------------------- ##
@@ -216,20 +177,29 @@ algae_5 %>%
   select(year) %>% 
   range()
 
-# number of taxa
+# number of producer taxa
 algae_5 %>% 
   filter(taxa_type == "producer") %>% 
   select(taxon_name) %>% 
   unique() %>% 
   dim()
   
-# And for macroalgae:
-macroalgae_2 %>% 
-  select(year) %>% 
-  range()
-  
-macroalgae_2 %>% 
-  filter(taxa_type == "producer") %>%
+# number of total taxa
+algae_5 %>% 
+  select(taxon_name) %>% 
+  unique() %>% 
+  dim()
+
+
+# number of suspension feeding taxa
+algae_5 %>% 
+  select(taxon_name) %>% 
+  unique() %>% 
+  dim()
+
+# number of macroalgal taxa  
+algae_5 %>% 
+  filter(taxa_type == "suspension_feeder") %>%
   select(taxon_name) %>% 
   unique() %>% 
   dim()
@@ -239,5 +209,4 @@ macroalgae_2 %>%
 ## -------------------------------------------- ##
 
 write_csv(algae_5, here("../cleaned_data/mcr_algae.csv"))
-# write_csv(macroalgae_2, here("../cleaned_data/mcr_macroalgae.csv"))
           
