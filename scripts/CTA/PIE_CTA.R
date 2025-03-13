@@ -315,8 +315,12 @@ for (site in unique_sites) {
 }
 
 
+
 #producers
-unique_sites_producers <- unique(pie_consumers$plot)
+pie_producers = pie_producers %>% 
+  filter(!plot %in% c("McH", "McH2"))
+
+unique_sites_producers <- unique(pie_producers$plot)
 
 # Loop through each site
 # Define a vector of colors (add more as needed)
@@ -415,6 +419,7 @@ consumer_directionality$site <- consumer_site_order
 write.csv(consumer_directionality, "tables/PIE/consumer/consumer_directionality.csv", row.names = FALSE)
 
 # Extract trajectory metrics for producers
+
 # Calculate trajectory lengths (not relative to initial)
 producer_lengths <- trajectoryLengths(Dd, sites = pie_producer_means$plot, surveys = pie_producer_means$vector_nums)
 producer_lengths <- as.data.frame(producer_lengths)
