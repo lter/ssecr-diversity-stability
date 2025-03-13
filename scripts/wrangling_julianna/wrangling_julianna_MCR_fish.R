@@ -34,7 +34,7 @@ librarian::shelf(here, # relative file paths
 #             Load data ----
 ## -------------------------------------------- ##
 
-fish_1 <- read_csv(here("../data/MCR_fish_taxonomy_update_Hillary_20241203.csv")) %>% 
+fish_1 <- read_csv(here("../data/MCR_fish_abundance_20241204_Hillary.csv")) %>% 
   filter(Swath != 2) # I think this is a typo (just one case of this)
 
 updated_taxonomy <- read_csv(here("../taxa_tables/MCR_fish_taxa_annotated.csv"))
