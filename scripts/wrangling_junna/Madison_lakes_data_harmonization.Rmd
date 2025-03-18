@@ -1,0 +1,177 @@
+---
+title: "Madison_lakes_data_harmonization"
+output: pdf_document
+date: "2025-03-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(librarian)
+shelf('tidyverse', 'vegan', 'ggpubr')
+
+```
+
+
+```{r phytoplankton in Madison Lake area}
+# Phytoplankton samples for the 4 southern Wisconsin LTER lakes (Mendota, Monona, Wingra, Fish) have been collected for analysis by LTER since 1995
+# read data
+data_phyto_madison <- read.csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.88.31&entityid=f2de15b2fff6ae962a04c150c0a1c510")
+#lakeid: "MO" "ME" "FI" "WI"
+
+####data exploration####
+length(unique(data_phyto_madison$taxa_name))
+# 622 taxon
+
+data_phyto_madison$sampledate <- as.Date(data_phyto_madison$sampledate)
+
+# how many sample dates each year? plot a figure to see
+data_phyto_year_madison <- data_phyto_madison %>% group_by(lakeid, year4) %>% 
+  summarise(num_sample = n_distinct(sampledate))
+
+ggplot(data_phyto_year_madison, aes(x=year4, y=num_sample, color=lakeid)) +
+  geom_point() +
+  geom_line()
+# only ME and MO have enough data
+
+# how many sampledate each year? plot a figure to see
+data_phyto_madison %>% mutate(year=as.factor(year(sampledate)), month=month(sampledate)) %>% 
+  group_by(lakeid, year, month) %>% summarise(num_sample=n_distinct(sampledate)) %>% 
+  filter(lakeid=="ME") %>%
+  ggplot(aes(x=month, y=num_sample, color=year)) +
+  geom_point() +
+  geom_line()
+
+#####start to prepare for output data
+# use 1995-2019, 2020 is not used because one site has fewer data this year.
+# use monthly data in April-August
+data_phyto_filter <- data_phyto_madison %>% mutate(month=month(sampledate)) %>%
+  filter(year4>=1995 & year4<=2019) %>% filter(month %in% c(4:8)) 
+# 538 taxon
+
+# for the Miscellaneous division, give it a unique taxon name--Miscellaneous
+data_phyto_filter$taxa_name[data_phyto_filter$taxa_name==''] <- data_phyto_filter$division[data_phyto_filter$taxa_name=='']
+
+# check if there are duplicated rows
+sum(duplicated(data_phyto_filter[,1:7]))  
+# 664 rows
+
+# merge duplicated rows: use the average of them
+data_phyto_filter <- data_phyto_filter %>% group_by(lakeid, year4, sampledate, sta, depth_range, division, taxa_name, genus, month) %>%
+  summarise_all(mean)
+#
+# for each site, we only have one station and one depth, so we can omit sta and depth: nsta=n_distinct(sta), ndepth=n_distinct(depth_range)
+# output the data that are needed
+# total biomass unit: mg/L; relative total biovolume: %
+data_phyto_out <- data.frame(
+  site = data_phyto_filter$lakeid,
+  taxa_type = "producer",
+  ecosystem = "aquatic",
+  habitat_broad = 'lake',
+  habitat_fine = 'lake',
+  biome = 'temperate',
+  guild = 'plant',
+  herbivore = 'no'
+)
+
+data_phyto_out <- data_phyto_out %>% 
+  mutate(year=data_phyto_filter$year4, 
+         month=month(data_phyto_filter$sampledate), 
+         day=day(data_phyto_filter$sampledate),
+         plot=1, 
+         unique_ID=paste(data_phyto_out$site, data_phyto_out$habitat_fine, data_phyto_out$plot, sep='_'), 
+         unit_abundance="mg/L",
+         scale_abundance="1L",
+         taxon_name=data_phyto_filter$taxa_name, 
+         abundance=data_phyto_filter$biomass_conc)
+
+#### if biomass_conc = 0.0000, i used biomass_conc = 0.0001
+data_phyto_out$abundance[data_phyto_out$abundance==0.0000] <- 0.0001
+data_phyto_out$id_confidence <- TRUE
+data_phyto_out$id_confidence[data_phyto_out$species=="Miscellaneous"] <- FALSE
+####
+write.csv(data_phyto_out, 'harmonized_data/phytoplankton_madison_lake_area.csv', row.names = F)
+####
+googledrive::drive_upload(media = file.path("harmonized_data/phytoplankton_madison_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"))
+
+####note: the data is not aggragated to annual average####
+
+```
+
+## cascade experiment data
+# Paul Lake: reference lake: 1984-1999, and 2001-2016; paul lake is the only lake I can use. 
+# Peter lake: 1984-1990; less than 10 years; 1988 planktivore was added. 
+# Tuesday Lake: 1984-1990; less than 10 years
+
+```{r zooplankton in Madison Lake area}
+library(tidyverse)
+rm(list=ls())
+
+data_zoop_madison <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.90.36&entityid=5880c7ba184589e239aec9c55f9d313b')
+
+# uniform lakeid
+unique(data_zoop_madison$lakeid)  # the 4 lakes
+
+# check if there is duplicated rows
+sum(duplicated(data_zoop_madison[, c(1:4, 6)]))  # no duplication; 
+
+# convert sample_date to sample date
+data_zoop_madison$sample_date <- as.Date(data_zoop_madison$sample_date)
+
+# see how samples each year each lake
+data_zoop_madison %>% group_by(lakeid, year4) %>% 
+  summarize(nsta =n_distinct(station), num_sample = n_distinct(sample_date)) %>% 
+  ggplot(aes(x=year4, y=num_sample, color=lakeid)) +
+  geom_point() +
+  geom_line()
+
+# see how many sampledate each year
+data_zoop_madison %>% mutate(year=as.factor(year(sample_date)), month=month(sample_date)) %>% 
+  group_by(lakeid, year, month) %>% summarise(num_sample=n_distinct(sample_date)) %>% 
+  filter(lakeid=="MO") %>%
+  ggplot(aes(x=month, y=num_sample, color=year)) +
+  geom_point() +
+  geom_line()
+
+
+# we only have data from 2 lakes in this area. 
+# use 1995-2018
+# use monthly data in April-August
+data_zoop_filter <- data_zoop_madison %>% mutate(year=year(sample_date), month=month(sample_date)) %>%
+  filter(year4>=1995 & year4<=2018) %>% filter(month %in% c(4:8)) 
+
+#### prepare for output datasets
+data_zoop_out <- data.frame(
+  site = data_zoop_filter$lakeid,
+  taxa_type = "consumer",
+  ecosystem = "aquatic",
+  habitat_broad = 'lake',
+  habitat_fine = 'lake',
+  biome = 'temperate',
+  guild = 'zooplankton',
+  herbivore = 'yes'
+)
+
+data_zoop_out <- data_zoop_out %>% 
+  mutate(year=data_zoop_filter$year4, 
+         month=data_zoop_filter$month,
+         day=day(data_zoop_filter$sample_date),
+         plot=data_zoop_filter$station, 
+         unique_ID=paste(data_zoop_out$site, data_zoop_out$habitat_fine, data_zoop_out$plot, sep='_'), 
+         unit_abundance="number/L",
+         scale_abundance="1L",
+         taxon_name=data_zoop_filter$species_name, 
+         abundance=data_zoop_filter$density,
+         taxon_code=data_zoop_filter$species_code,
+         id_confidence=TRUE
+         )
+data_zoop_out$id_confidence[data_zoop_out$species==''] <- FALSE
+
+# write out
+write.csv(data_zoop_out, 'harmonized_data/zooplankton_madison_lake_area.csv', row.names = F)
+googledrive::drive_upload(media = file.path("harmonized_data/zooplankton_madison_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"))
+
+####in total 32 taxon, that is not a lot####
+
+```
