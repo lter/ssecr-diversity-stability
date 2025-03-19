@@ -44,66 +44,107 @@ unique(ntl_macroinverts$plot)
 unique(ntl_phytoplankton$plot)
 
 
-site_order = c("1","2")
 
-ntl_consumers = ntl_consumers %>% 
-  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
-  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+ntl_zooplankton = ntl_zooplankton %>% 
+  mutate(plot = as_factor(plot))
 
-ntl_producers = ntl_producers %>% 
-  filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
-  mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+ntl_macroinverts = ntl_macroinverts %>% 
+  mutate(plot = as_factor(plot))
 
-#only keep 15 producer sites that match consumer data
-ntl_producers <- ntl_producers %>%
-  filter(plot == site_order)
+ntl_phytoplankton = ntl_phytoplankton %>% 
+  mutate(plot = as_factor(plot))
 
-ntl_producers <- ntl_producers %>%
-  mutate(plot = factor(plot, levels = site_order)) %>%  # Ensure plot matches site_order
-  arrange(match(plot, site_order))
+
+
+site_order_zoo = c("1","2")
+site_order_mac = c("27",   "43",   "6",    "9",    "GILL", "1",    "19",   "21" ,  "24",   "17",   "31" ,  "50",   "56","67" ,  "7"  )
+site_order_phyto = c("1")
+
+
+# ntl_consumers = ntl_consumers %>% 
+#   filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
+#   mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+# 
+# ntl_producers = ntl_producers %>% 
+#   filter(!plot %in% c("004d", "004g", "010d", "n00b", "000b")) %>%
+#   mutate(plot = factor(plot, levels = c("001d","004b" ,"n01b", "n04d", "002d", "004f", "002c", "0sub","020b", "0spb", "n20a", "n20b", "n01a", "n04a")))
+# 
+# #only keep 15 producer sites that match consumer data
+# ntl_producers <- ntl_producers %>%
+#   filter(plot == site_order)
+# 
+# ntl_producers <- ntl_producers %>%
+#   mutate(plot = factor(plot, levels = site_order)) %>%  # Ensure plot matches site_order
+#   arrange(match(plot, site_order))
 
 # Survey History Summary Tables ----
 
 # Summary data years of consumer assemblage data per site
-site_years_count_c <- ntl_consumers %>%
+site_years_count_zooplankton <- ntl_zooplankton %>%
   group_by(plot) %>%
   summarise(years_count = n_distinct(year)) %>%
   arrange(plot)
-site_years_count_c
-write.csv(site_years_count_c, "tables/NTL/summary/site_years_count_c.csv",row.names = F)
+site_years_count_zooplankton
+write.csv(site_years_count_zooplankton, "tables/NTL/summary/site_years_count_zooplankton.csv",row.names = F)
 
-# Summary data years of producer assemblage data per site
-site_years_count_p <- ntl_producers %>%
+
+# Summary data years of consumer assemblage data per site
+site_years_count_phytoplankton <- ntl_phytoplankton %>%
   group_by(plot) %>%
   summarise(years_count = n_distinct(year)) %>%
   arrange(plot)
-site_years_count_p
-write.csv(site_years_count_p, "tables/NTL/summary/site_years_count_p.csv",row.names = F)
+site_years_count_phytoplankton
+write.csv(site_years_count_phytoplankton, "tables/NTL/summary/site_years_count_phytoplankton.csv",row.names = F)
+
+
+# Summary data years of consumer assemblage data per site
+site_years_count_macroinverts <- ntl_macroinverts %>%
+  group_by(plot) %>%
+  summarise(years_count = n_distinct(year)) %>%
+  arrange(plot)
+site_years_count_macroinverts
+write.csv(site_years_count_macroinverts, "tables/NTL/summary/site_years_count_macroinverts.csv",row.names = F)
+
+
+
 
 # Summary data total number of observations of each consumer species
 # and the number of plots that species has been observed in at least once
-site_spp_summary <- ntl_consumers %>%
+site_zooplankton_summary <- ntl_zooplankton %>%
   group_by(taxon_name) %>%
   summarise(
     spp_sum = sum(abundance),  # Total abundance of the species
     unique_plots_detected = n_distinct(plot)  # Count of unique plots
   ) %>%
   arrange(taxon_name)
-site_spp_summary
-write.csv(site_spp_summary, "tables/NTL/summary/site_spp_summary.csv",row.names = F)
+site_zooplankton_summary
+write.csv(site_zooplankton_summary, "tables/NTL/summary/site_zooplankton_summary.csv",row.names = F)
+
+
+site_macroinverts_summary <- ntl_macroinverts %>%
+  group_by(taxon_name) %>%
+  summarise(
+    spp_sum = sum(abundance),  # Total abundance of the species
+    unique_plots_detected = n_distinct(plot)  # Count of unique plots
+  ) %>%
+  arrange(taxon_name)
+site_macroinverts_summary
+write.csv(site_macroinverts_summary, "tables/NTL/summary/site_macroinverts_summary.csv",row.names = F)
+
+
+site_phytoplankton_summary <- ntl_phytoplankton %>%
+  group_by(taxon_name) %>%
+  summarise(
+    spp_sum = sum(abundance),  # Total abundance of the species
+    unique_plots_detected = n_distinct(plot)  # Count of unique plots
+  ) %>%
+  arrange(taxon_name)
+site_phytoplankton_summary
+write.csv(site_phytoplankton_summary, "tables/NTL/summary/site_phytoplankton_summary.csv",row.names = F)
+
 
 # Summary data total number of observations of each producer species
 # and the number of plots that species has been observed in at least once
-site_producer_summary <- ntl_producers %>%
-  group_by(taxon_name) %>%
-  summarise(
-    spp_sum = sum(abundance),  # Total abundance of the species
-    unique_plots_detected = n_distinct(plot)  # Count of unique plots
-  ) %>%
-  arrange(taxon_name)
-site_producer_summary
-write.csv(site_producer_summary, "tables/NTL/summary/site_producer_summary.csv",row.names = F)
-
 
 ntl_consumer_means <- ntl_consumers %>%
   group_by(year, plot, taxon_name) %>%
