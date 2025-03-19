@@ -164,9 +164,11 @@ algae_4 %>%
   mutate(abundance = Percent_Cover) %>% 
   # filter 2005/2006
   filter(year > 2006) %>% 
+  # add a column saying we're confident in all the spp taxonomies
+  mutate(id_confidence = 1) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
-         taxon_name, taxon_resolution, abundance) -> algae_5
+         taxon_name, taxon_resolution, abundance, id_confidence) -> algae_5
 
 ## -------------------------------------------- ##
 #             Summary stats ----
@@ -201,7 +203,7 @@ algae_5 %>%
 algae_5 %>% 
   filter(taxa_type == "suspension_feeder") %>%
   select(taxon_name) %>% 
-  unique() %>% 
+  unique() %>%  
   dim()
 
 ## -------------------------------------------- ##

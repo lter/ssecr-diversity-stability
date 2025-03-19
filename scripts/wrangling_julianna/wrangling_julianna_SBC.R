@@ -10,7 +10,7 @@
 ## ------------------------------------------ ##
 
 #### Author(s): Julianna Renzi
-#### Last Updated: January 5th, 2024
+#### Last Updated: March 10, 2025
 
 # Purpose:
 ## Clean the SBC data and get it into the correct format
@@ -83,7 +83,7 @@ updated_taxonomy <- read_csv(here("../taxa_tables/SBC_taxa_common_annotated.csv"
 sbc_1 %>% 
   # just want post 2008 data
   filter(YEAR > 2007) %>% 
-  # get biomass data - want shell-free dry mass if values are not NA
+  # get biomass data - want shell-free dry mass if values are not NA (-999999)
   # otherwise want dry mass
   mutate(biomass = case_when(SFDM >= 0 ~ SFDM,
                              TRUE ~ DRY_GM2),
@@ -105,7 +105,8 @@ sbc_1 %>%
 sbc_2 %>% 
   mutate(plot = SITE) %>% 
   mutate(site = "sbc") %>% 
-  mutate(guild = str_to_lower(taxa_type)) %>% 
+  mutate(guild = case_when(is_macroalgae == "y" ~ "macroalgae",
+                           TRUE ~ str_to_lower(taxa_type))) %>% 
   mutate(taxa_type = feeding_type) %>% 
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "kelp_forest") %>% 
@@ -122,7 +123,6 @@ sbc_2 %>%
   mutate(scale_abundance = "/m^2") %>% 
   mutate(taxon_name = SCIENTIFIC_NAME_updated) %>% 
   mutate(abundance = biomass) %>% 
-  # add a column saying we're confident in all the spp taxonomies
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, 
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
          taxon_name, taxon_resolution, abundance, id_confidence) -> sbc_3

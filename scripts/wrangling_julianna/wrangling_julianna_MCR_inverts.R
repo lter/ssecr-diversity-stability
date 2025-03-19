@@ -1,8 +1,8 @@
 #### Cleaning MCR invertebrate data ----
 
-## Data downloaded from: https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-mcr&identifier=7&revision=35
-## on November 20, 2024
-## dataset published on 2023-12-20
+## Data downloaded from: https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-mcr&identifier=7&revision=37 
+## on March 7th, 2025
+## dataset published on 2024-12-20
 
 ## ------------------------------------------ ##
 #         SSECR Diversity-Stability
@@ -10,7 +10,7 @@
 ## ------------------------------------------ ##
 
 #### Author(s): Julianna Renzi
-#### Last Updated: November 20th, 2024
+#### Last Updated: March 10th, 2025
 
 # Purpose:
 ## Clean the Moorea herbivore and corallivore dataset
@@ -46,8 +46,11 @@ librarian::shelf(here, # relative file paths
 # The “year one” survey spread between 2005-2006 to cover all locations. Each subsequent year contains a complete survey
 # In 2021 fore reef 10 m and 17 m surveys were not conducted due to COVID border closures in French Polynesia
 
-inverts_1 <- read_csv(here("../data/MCR_invert_abundance_20231220.csv"))
+inverts_1 <- read_csv(here("../data/MCR_invert_abundance_20241219.csv"))
 updated_taxonomy <- read_csv(here("../taxa_tables/MCR_invert_taxa_annotated.csv"))
+
+# get a weird version of this for a small purpose (don't want to fully join until filled in 0's but do want updated nomenclature)
+updated_taxonomy_1 <- updated_taxonomy %>% select(Taxonomy, Taxonomy_updated)
 
 ## -------------------------------------------- ##
 #             Taxa cleaning ----
@@ -64,7 +67,7 @@ updated_taxonomy <- read_csv(here("../taxa_tables/MCR_invert_taxa_annotated.csv"
 
 # update taxonomy and trophic designations (done manually)
 inverts_1 %>% 
-  full_join(updated_taxonomy) %>% 
+  full_join(updated_taxonomy_1) %>% 
   select(-Taxonomy) %>% 
   rename(Taxonomy = 
            Taxonomy_updated) %>% 
@@ -80,37 +83,74 @@ inverts_1 %>%
 #             QA QC ----
 ## -------------------------------------------- ##
 
-# check to see if there's any NA's
-is.na(inverts_2) %>% unique() # looks good
+# See there are some odd missing ones (know this from the metadata):
+inverts_2 %>% 
+  filter(Taxonomy == "No invertebrate observed") 
+  
+# check for any NA's 
+inverts_2 %>% 
+  filter(Taxonomy != "No invertebrate observed") %>% 
+  is.na() %>% 
+  unique()
+
 # check for any weird placeholder values (e.g., -9999)
 inverts_2$Count %>% min() # looks good
+inverts_2$Count %>% max()
 
-# get a list of sites
+## -------------------------------------------- ##
+#             Add zeros ----
+## -------------------------------------------- ##
+
+# need to add zeros for the plots where there was no invertebrate observed
 inverts_2 %>% 
+  # replace with first taxa
+  mutate(Taxonomy = case_when(Taxonomy == "No invertebrate observed" ~ "Acanthaster planci",
+                              TRUE ~ Taxonomy)) -> inverts_3
+
+# can see for most entries they just put zeros for ones where no inverts were observed:
+inverts_1 %>% 
+  filter(Year == 2007 & 
+           Location == "LTER 1 Outer 17 m Invertebrate Herbivores Transect 2 Quad 4")  
+# see some sites are all zeros when no invert is observed (supposed normal entry format for most years)
+
+# get a list of sites so we can be sure we also aren't missing any (from first filtering step)
+inverts_1 %>% 
+  filter(Year > 2006)  %>% 
   group_by(Year, Date, Location, Site, Habitat, Transect, Quadrat) %>% 
   summarize(n = n()) %>% # can see n() varies a ton
   select(-n) -> quad_list
 
-# filter all the relevant trophic groups and then join with quad list
-inverts_2 %>% 
-  filter(Count > 0) %>% 
-  filter(Trophic_role == "primary_consumer" | 
-           Trophic_role == "omnivore" | 
-           Trophic_role == "suspension_feeder") %>% 
-  full_join(quad_list) %>% 
-  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ NA, 
-                              TRUE ~ Taxonomy),
-         Trophic_role = case_when(is.na(Trophic_role) ~ "herbivore_any_type", 
-                                  TRUE ~ Trophic_role),
-         Count = case_when(is.na(Count) ~ 0, 
-                                  TRUE ~ Count)
-         ) -> invert_3
+# join with quad list to make sure we're not missing anything
+inverts_3 %>% 
+  full_join(quad_list) %>% # filter(is.na(Count)) %>% view()
+  # still 63 missing that were in the original dataset--I think this is because there were none "off quad"
+  mutate(Count = case_when(is.na(Taxonomy) ~ 0, 
+                           TRUE ~ Count),
+         Taxonomy = case_when(is.na(Taxonomy) ~ "Acanthaster planci", 
+                              TRUE ~ Taxonomy)
+         ) %>% 
+  # join with metadata
+  left_join(updated_taxonomy) %>% 
+  # fix taxonomy again
+  select(-Taxonomy) %>% 
+  rename(Taxonomy = 
+           Taxonomy_updated) -> invert_4
+  
+# check what the missing 63 are that we replaced in the last step:
+inverts_1 %>% 
+  filter(Year == 2019 & Location == "LTER 4 Outer 17 m Invertebrate Herbivores Transect 1 Quad 1") 
+# yep, these are from a couple weird instances
+
+# check for NA's in new dataset
+invert_4 %>% 
+  is.na() %>% unique()
+
 
 ## -------------------------------------------- ##
 #             SSECR format ----
 ## -------------------------------------------- ##
 
-invert_3 %>% 
+invert_4 %>% 
   mutate(site = "mcr",
          taxa_type = Trophic_role,
          ecosystem = "aquatic",
@@ -135,27 +175,27 @@ invert_3 %>%
   mutate(id_confidence = 1) %>% 
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
-         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> invert_4
+         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> invert_5
 
 ## -------------------------------------------- ##
 #             Summary stats ----
 ## -------------------------------------------- ##
 
 # year range
-invert_4 %>% 
+invert_5 %>% 
   select(year) %>% 
   range()
 
 # number of taxa
-invert_4 %>% 
+invert_5 %>% 
   select(taxon_name) %>% 
-  unique() %>% 
+  unique() %>%
   dim()
 
 ## -------------------------------------------- ##
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(invert_4, here("../cleaned_data/mcr_invertebrate.csv"))
+write_csv(invert_5, here("../cleaned_data/mcr_invertebrate.csv")) 
 
 

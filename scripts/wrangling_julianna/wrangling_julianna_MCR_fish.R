@@ -1,7 +1,7 @@
 #### Cleaning MCR fish data ----
 
 ## Data downloaded from: https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-mcr&identifier=6&revision=63 
-## on November 20, 2024
+## on March 7, 2025
 ## dataset published on 2024-09-27
 
 ## ------------------------------------------ ##
@@ -35,8 +35,6 @@ librarian::shelf(here, # relative file paths
 ## -------------------------------------------- ##
 
 fish_1 <- read_csv(here("../data/MCR_fish_abundance_20241204_Hillary.csv")) %>% 
-# ^ these are cleaned fish data with updated taxonomy from Hillary FRESH
-# off the press (12/4/24) that I think she made for a different working group
   filter(Swath != 2) # I think this is a typo (just one case of this)
 
 updated_taxonomy <- read_csv(here("../taxa_tables/MCR_fish_taxa_annotated.csv"))
@@ -93,10 +91,29 @@ fish_1 %>%
 
 # Need to deal with "CF" records
 fish_1 %>%
-  full_join(updated_taxonomy) %>% 
+  left_join(updated_taxonomy) %>% 
   select(-Taxonomy) %>% 
   # manually changed "cf" entries in Taxonomy updated to be without cf
   rename(Taxonomy = Taxonomy_updated) -> fish_2
+  
+
+## -------------------------------------------- ##
+#             Account for zeros ----
+## -------------------------------------------- ##
+# How many instances of no fish observed?
+fish_2 %>% 
+  filter(Taxonomy == "No fish observed") %>% dim() # just two
+
+# make "no fish observed" zeros
+fish_2 %>% 
+  mutate(Count = case_when(Taxonomy == "No fish observed" ~ 0,
+                           TRUE ~ Count),
+         Biomass = case_when(Taxonomy == "No fish observed" ~ 0,
+                             TRUE ~ Biomass),
+         Taxonomy = case_when(Taxonomy == "No fish observed" ~ "Abudefduf septemfasciatus",
+                              TRUE ~ Taxonomy)) %>% 
+  # filter zero biomass (-1 values)
+  filter(Biomass != -1)  -> fish_3
 
 # Andy says - description for every Blennie spp 6, etc. is unique
 # Unknown Scaridae does not have a unique description
@@ -113,34 +130,24 @@ fish_1 %>%
 ## -------------------------------------------- ##
 
 # get a list of sites
-fish_2 %>% 
+fish_1 %>% 
   group_by(Year, Date, Location, Site, Habitat, Transect, Swath) %>% 
   summarize(n = n()) %>% # can see n() varies a ton
   select(-n) -> transect_list
 
 # Explore na & unknown trophic designations:
-fish_2 %>% 
+fish_3 %>% 
   filter(Fine_Trophic == "na" |
            Fine_Trophic == "Unknown") %>% 
   group_by(Taxonomy) %>% 
   summarize(Sum_count = sum(Count)) # %>% view() # this is extremely rare
 
 # join with quad list
-fish_2 %>% 
-  filter(Count > 0) %>% # two instances where no fish was observed
-  # get rid of negative biomass observations
-  filter(Biomass >= 0) %>% 
-  full_join(transect_list) %>% 
-  # fill in for missing
-  mutate(Taxonomy = case_when(is.na(Taxonomy) ~ NA, 
-                              TRUE ~ Taxonomy),
-         Fine_Trophic = case_when(is.na(Fine_Trophic) ~ NA, 
-                                  TRUE ~ Fine_Trophic),
-         Count = case_when(is.na(Count) ~ 0, 
-                           TRUE ~ Count),
-         Biomass = case_when(is.na(Biomass) ~ 0, 
-                           TRUE ~ Biomass)
-  ) -> fish_3
+fish_3 %>% 
+  full_join(transect_list) %>%  
+  # note this ^ is precautionary--there are no missing ones
+  is.na() %>% 
+  unique() # now no NA's except the two swaths with no fish on them (those are the NA's in id_confidence)
 
 
 ## -------------------------------------------- ##
