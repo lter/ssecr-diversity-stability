@@ -70,15 +70,15 @@ data_phyto_out <- data.frame(
   habitat_fine = 'lake',
   biome = 'temperate',
   guild = 'plant',
-  herbivore = 'no'
+  herbivore = 'no',
+  year=data_phyto_filter$year4, 
+  month=month(data_phyto_filter$sampledate), 
+  day=day(data_phyto_filter$sampledate),
+  plot=1
 )
 
 data_phyto_out <- data_phyto_out %>% 
-  mutate(year=data_phyto_filter$year4, 
-         month=month(data_phyto_filter$sampledate), 
-         day=day(data_phyto_filter$sampledate),
-         plot=1, 
-         unique_ID=paste(data_phyto_out$site, data_phyto_out$habitat_fine, data_phyto_out$plot, sep='_'), 
+  mutate(unique_ID=paste(data_phyto_out$site, data_phyto_out$habitat_fine, data_phyto_out$plot, sep='_'), 
          unit_abundance="mg/L",
          scale_abundance="1L",
          taxon_name=data_phyto_filter$taxa_name, 
@@ -149,15 +149,15 @@ data_zoop_out <- data.frame(
   habitat_fine = 'lake',
   biome = 'temperate',
   guild = 'zooplankton',
-  herbivore = 'yes'
+  herbivore = 'yes',
+  year=data_zoop_filter$year4, 
+  month=data_zoop_filter$month,
+  day=day(data_zoop_filter$sample_date),
+  plot=data_zoop_filter$station
 )
 
 data_zoop_out <- data_zoop_out %>% 
-  mutate(year=data_zoop_filter$year4, 
-         month=data_zoop_filter$month,
-         day=day(data_zoop_filter$sample_date),
-         plot=data_zoop_filter$station, 
-         unique_ID=paste(data_zoop_out$site, data_zoop_out$habitat_fine, data_zoop_out$plot, sep='_'), 
+  mutate(unique_ID=paste(data_zoop_out$site, data_zoop_out$habitat_fine, data_zoop_out$plot, sep='_'), 
          unit_abundance="number/L",
          scale_abundance="1L",
          taxon_name=data_zoop_filter$species_name, 
