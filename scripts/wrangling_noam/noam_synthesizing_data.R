@@ -19,8 +19,9 @@ stability <- function(x){
 
 # dss metadata
 dss_meta <- c("site", "ecosystem", "habitat_broad", "habitat_fine", "biome", "plot")
+#### TERRESTRIAL DATASETS ####
 
-#### KNZ ####
+##### KNZ #####
 # read data
 knz_prod <-  read.csv(here::here("data/KNZ", "knz_producer.csv"))
 knz_con <- read.csv(here::here("data/KNZ", "knz_consumer.csv"))
@@ -172,174 +173,10 @@ knz_comb <- ungroup(
 
 # write.csv(here::here(file = "data/KNZ", "knz_agg_dss.csv"), x = knz_comb, row.names = F)
 
-#### GCE ####
-# read data
-gce_prod <-  read.csv(here::here("data/GCE", "gce_producers.csv"), row.names = 1)
-gce_con <- read.csv(here::here("data/GCE", "gce_consumers.csv"), row.names = 1)
-
-# correct column name
-colnames(gce_prod)[colnames(gce_prod) == "scale_abundnace"] <- "scale_abundance"
-colnames(gce_con)[colnames(gce_con) == "scale_abundnace"] <- "scale_abundance"
-
-# subset confident ids
-gce_prod <- subset(gce_prod, id_confidence == 1)
-gce_con <- subset(gce_con, id_confidence == 1)
-
-# consumers are read in as integers due to ID codes. convert all spp to factors
-gce_con$taxon_name <- as.factor(gce_con$taxon_name)
-gce_prod$taxon_name <- as.factor(gce_prod$taxon_name)
-
-# aggregate to plot level 
-gce_prod_mean <- gce_prod %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-  dplyr::summarise(abundance = mean(abundance)) 
-
-gce_con_mean <- gce_con %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-  dplyr::summarise(abundance = mean(abundance))
-
-# calculate synchrony
-# NOTE - GCE does not have high producer or consumer richness - only 9 species of producers and 5 species of consumers
-# may make DSS relationships problematic and also makes it so synchrony cannot be calculated
-# will replace with NAs for now
-# gce_prod_synch <- codyn::synchrony(gce_prod_mean,
-#                                    abundance.var = "abundance",
-#                                    species.var = "taxon_name",
-#                                    time.var = "year",
-#                                    metric = "Loreau",
-#                                    replicate.var = "plot")
-# colnames(gce_prod_synch) <- c("plot", "prod_synchrony")
-
-# gce_con_synch <- codyn::synchrony(gce_con_mean,
-#                                   abundance.var = "abundance",
-#                                   species.var = "taxon_name",
-#                                   time.var = "year",
-#                                   metric = "Loreau",
-#                                   replicate.var = "plot")
-# colnames(gce_con_synch) <- c("plot", "con_synchrony")
-
-gce_prod_synch <- data.frame(plot = unique(gce_prod_mean$plot),
-                             prod_synchrony = rep(NA, length(unique(gce_prod_mean$plot))))
-
-gce_con_synch <- data.frame(plot = unique(gce_con_mean$plot),
-                             con_synchrony = rep(NA, length(unique(gce_con_mean$plot))))
-
-# pivot wider for diversity
-gce_prod_wide <- gce_prod_mean %>%
-  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
-
-gce_con_wide <- gce_con_mean %>%
-  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
-
-# specify meta columns for diversity calculations
-long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
-                    "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
-
-# calculate diversity
-gce_prod_diversity <- 
-  data.frame(
-    site = gce_prod_wide$site,
-    taxa_type = gce_prod_wide$taxa_type,
-    ecosystem = gce_prod_wide$ecosystem,
-    habitat_broad = gce_prod_wide$habitat_broad,
-    habitat_fine = gce_prod_wide$habitat_fine,
-    biome = gce_prod_wide$biome,
-    guild = gce_prod_wide$guild,
-    plot = gce_prod_wide$plot,
-    year = gce_prod_wide$year,
-    richness = rowSums(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)] > 0),
-    abundance = rowSums(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)]),
-    shannon = vegan::diversity(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)], "shannon")
-  )
-
-gce_con_diversity <- 
-  data.frame(
-    site = gce_con_wide$site,
-    taxa_type = gce_con_wide$taxa_type,
-    ecosystem = gce_con_wide$ecosystem,
-    habitat_broad = gce_con_wide$habitat_broad,
-    habitat_fine = gce_con_wide$habitat_fine,
-    biome = gce_con_wide$biome,
-    guild = gce_con_wide$guild,
-    plot = gce_con_wide$plot,
-    year = gce_con_wide$year,
-    richness = rowSums(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)] > 0),
-    abundance = rowSums(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)]),
-    shannon = vegan::diversity(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)], "shannon")
-  )
-
-# create dss dataframe
-gce_prod_dss <- gce_prod_diversity %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
-  dplyr::summarise(
-    prod_richness = mean(richness, na.rm = T), 
-    prod_shannon = mean(shannon, na.rm = T), 
-    prod_abundance = mean(abundance, na.rm = T),
-    prod_cv = CV(abundance),
-    prod_stability = stability(abundance)) %>%
-  dplyr::left_join(gce_prod_synch, by = "plot")
-
-gce_con_dss <- gce_con_diversity %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
-  dplyr::summarise(
-    con_richness = mean(richness, na.rm = T), 
-    con_shannon = mean(shannon, na.rm = T), 
-    con_abundance = mean(abundance, na.rm = T),
-    con_cv = CV(abundance),
-    con_stability = stability(abundance)) %>%
-  dplyr::left_join(gce_con_synch, by = "plot")
-
-
-# calculate multitrophic stability
-# combine producers and consumers
-gce_multitroph <- merge(gce_prod_wide[,-which(names(gce_prod_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
-                        gce_con_wide[,-which(names(gce_con_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
-                        by = c("site", "ecosystem", "habitat_broad", "habitat_fine", "biome", "plot", "year"))
-
-
-# aggregate to calculate multritophic abundance and diversity
-gce_multitroph_diversity <- 
-  data.frame(
-    site = gce_multitroph$site,
-    taxa_type = rep("multitroph", nrow(gce_multitroph)),
-    ecosystem = gce_multitroph$ecosystem,
-    habitat_broad = gce_multitroph$habitat_broad,
-    habitat_fine = gce_multitroph$habitat_fine,
-    biome = gce_multitroph$biome,
-    guild = rep("multitroph", nrow(gce_multitroph)),
-    plot = gce_multitroph$plot,
-    year = gce_multitroph$year,
-    richness = rowSums(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)] > 0),
-    abundance = rowSums(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)]),
-    shannon = vegan::diversity(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)], "shannon")
-  )
-
-# calculate diversity and stability
-gce_multitroph_dss <- gce_multitroph_diversity %>%
-  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
-  dplyr::summarise(
-    multitroph_richness = mean(richness, na.rm = T), 
-    multitroph_shannon = mean(shannon, na.rm = T), 
-    multitroph_abundance = mean(abundance, na.rm = T),
-    multitroph_cv = CV(abundance),
-    multitroph_stability = stability(abundance))
-
-# combine dfs for SEM
-gce_comb <- ungroup(
-  left_join(gce_prod_dss[,-which(names(gce_prod_dss) %in% c("taxa_type", "guild"))],
-            gce_con_dss[,-which(names(gce_con_dss) %in% c("taxa_type", "guild"))], 
-            by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
-    left_join(gce_multitroph_dss[,-which(names(gce_multitroph_dss) %in% c("taxa_type", "guild"))],
-              by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
-)
-# replace NaNs with NAs to avoid issues down the line
-gce_comb <- gce_comb %>% mutate_all(~ifelse(is.nan(.), NA, .))
-# write.csv(here::here(file = "data/GCE", "gce_agg_dss.csv"), x = gce_comb, row.names = F)
 
 
 
-
-#### kbs ####
+##### KBS #####
 # read data
 kbs_prod <-  read.csv(here::here("data/KBS", "kbs_producer.csv"))
 kbs_con <- read.csv(here::here("data/KBS", "kbs_consumer.csv"))
@@ -490,7 +327,7 @@ kbs_comb <- ungroup(
 
 # write.csv(here::here(file = "data/KBS", "kbs_agg_dss.csv"), x = kbs_comb, row.names = F)
 
-#### CDR biodiversity exp data ####
+##### CDR biodiversity exp data #####
 # read data and subset confident IDs
 cdr_biodiv_prod <-  read.csv(here::here("data/CDR_biodiv", "cdr_producer.csv"))
 cdr_biodiv_prod <- subset(cdr_biodiv_prod, id_confidence == 1)
@@ -688,12 +525,327 @@ cdr_biodiv_comb <- ungroup(
 # write.csv(here::here(file = "data/CDR_biodiv", "cdr_agg_dss.csv"), x = cdr_biodiv_comb, row.names = F)
 
 
-#### Combine terrestrial datasets ####
-terr_comb <- rbind(knz_comb, kbs_comb, gce_comb, cdr_biodiv_comb)
+##### CDR old field exp data #####
+# read data and subset confident IDs
+cdr_of_prod <-  read.csv(here::here("data/CDR_oldfield", "cdr2_producer.csv"))
+cdr_of_prod <- subset(cdr_of_prod, id_confidence == 1)
+
+cdr_of_con <- read.csv(here::here("data/CDR_oldfield", "cdr2_consumer.csv"))
+cdr_of_con <- subset(cdr_of_con, id_confidence == 1)
+
+
+
+# aggregate to plot level 
+cdr_of_prod_mean <- cdr_of_prod %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+  dplyr::summarise(abundance = mean(abundance)) 
+
+cdr_of_con_mean <- cdr_of_con %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+  dplyr::summarise(abundance = mean(abundance))
+
+# calculate synchrony 
+cdr_of_prod_synch <- codyn::synchrony(cdr_of_prod_mean,
+                                          abundance.var = "abundance",
+                                          species.var = "taxon_name",
+                                          time.var = "year",
+                                          metric = "Loreau",
+                                          replicate.var = "plot")
+colnames(cdr_of_prod_synch) <- c("plot", "prod_synchrony")
+
+cdr_of_con_synch <- codyn::synchrony(cdr_of_con_mean,
+                                         abundance.var = "abundance",
+                                         species.var = "taxon_name",
+                                         time.var = "year",
+                                         metric = "Loreau",
+                                         replicate.var = "plot")
+colnames(cdr_of_con_synch) <- c("plot", "con_synchrony")
+
+
+# pivot wider for diversity
+cdr_of_prod_wide <- cdr_of_prod_mean %>%
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
+
+cdr_of_con_wide <- cdr_of_con_mean %>%
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
+
+# specify meta columns for diversity calculations
+long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
+                    "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
+
+# calculate diversity
+cdr_of_prod_diversity <- 
+  data.frame(
+    site = cdr_of_prod_wide$site,
+    taxa_type = cdr_of_prod_wide$taxa_type,
+    ecosystem = cdr_of_prod_wide$ecosystem,
+    habitat_broad = cdr_of_prod_wide$habitat_broad,
+    habitat_fine = cdr_of_prod_wide$habitat_fine,
+    biome = cdr_of_prod_wide$biome,
+    guild = cdr_of_prod_wide$guild,
+    plot = cdr_of_prod_wide$plot,
+    year = cdr_of_prod_wide$year,
+    richness = rowSums(cdr_of_prod_wide[, -which(names(cdr_of_prod_wide) %in% long_meta_cols)] > 0),
+    abundance = rowSums(cdr_of_prod_wide[, -which(names(cdr_of_prod_wide) %in% long_meta_cols)]),
+    shannon = vegan::diversity(cdr_of_prod_wide[, -which(names(cdr_of_prod_wide) %in% long_meta_cols)], "shannon")
+  )
+
+cdr_of_con_diversity <- 
+  data.frame(
+    site = cdr_of_con_wide$site,
+    taxa_type = cdr_of_con_wide$taxa_type,
+    ecosystem = cdr_of_con_wide$ecosystem,
+    habitat_broad = cdr_of_con_wide$habitat_broad,
+    habitat_fine = cdr_of_con_wide$habitat_fine,
+    biome = cdr_of_con_wide$biome,
+    guild = cdr_of_con_wide$guild,
+    plot = cdr_of_con_wide$plot,
+    year = cdr_of_con_wide$year,
+    richness = rowSums(cdr_of_con_wide[, -which(names(cdr_of_con_wide) %in% long_meta_cols)] > 0),
+    abundance = rowSums(cdr_of_con_wide[, -which(names(cdr_of_con_wide) %in% long_meta_cols)]),
+    shannon = vegan::diversity(cdr_of_con_wide[, -which(names(cdr_of_con_wide) %in% long_meta_cols)], "shannon")
+  )
+
+# create dss dataframe
+cdr_of_prod_dss <- cdr_of_prod_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    prod_richness = mean(richness, na.rm = T), 
+    prod_shannon = mean(shannon, na.rm = T), 
+    prod_abundance = mean(abundance, na.rm = T),
+    prod_cv = CV(abundance),
+    prod_stability = stability(abundance)) %>%
+  dplyr::left_join(cdr_of_prod_synch, by = "plot")
+
+cdr_of_con_dss <- cdr_of_con_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    con_richness = mean(richness, na.rm = T), 
+    con_shannon = mean(shannon, na.rm = T), 
+    con_abundance = mean(abundance, na.rm = T),
+    con_cv = CV(abundance),
+    con_stability = stability(abundance)) %>%
+  dplyr::left_join(cdr_of_con_synch, by = "plot")
+
+
+# calculate multitrophic stability
+# combine producers and consumers
+cdr_of_multitroph <- merge(cdr_of_prod_wide[,-which(names(cdr_of_prod_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
+                               cdr_of_con_wide[,-which(names(cdr_of_con_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
+                               by = c("site", "ecosystem", "habitat_broad", "habitat_fine", "biome", "plot", "year"))
+
+
+# aggregate to calculate multritophic abundance and diversity
+cdr_of_multitroph_diversity <- 
+  data.frame(
+    site = cdr_of_multitroph$site,
+    taxa_type = rep("multitroph", nrow(cdr_of_multitroph)),
+    ecosystem = cdr_of_multitroph$ecosystem,
+    habitat_broad = cdr_of_multitroph$habitat_broad,
+    habitat_fine = cdr_of_multitroph$habitat_fine,
+    biome = cdr_of_multitroph$biome,
+    guild = rep("multitroph", nrow(cdr_of_multitroph)),
+    plot = cdr_of_multitroph$plot,
+    year = cdr_of_multitroph$year,
+    richness = rowSums(cdr_of_multitroph[, -which(names(cdr_of_multitroph) %in% long_meta_cols)] > 0),
+    abundance = rowSums(cdr_of_multitroph[, -which(names(cdr_of_multitroph) %in% long_meta_cols)]),
+    shannon = vegan::diversity(cdr_of_multitroph[, -which(names(cdr_of_multitroph) %in% long_meta_cols)], "shannon")
+  )
+
+# calculate diversity and stability
+cdr_of_multitroph_dss <- cdr_of_multitroph_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    multitroph_richness = mean(richness, na.rm = T), 
+    multitroph_shannon = mean(shannon, na.rm = T), 
+    multitroph_abundance = mean(abundance, na.rm = T),
+    multitroph_cv = CV(abundance),
+    multitroph_stability = stability(abundance))
+
+# combine dfs for SEM
+cdr_of_comb <- ungroup(
+  left_join(cdr_of_prod_dss[,-which(names(cdr_of_prod_dss) %in% c("taxa_type", "guild"))],
+            cdr_of_con_dss[,-which(names(cdr_of_con_dss) %in% c("taxa_type", "guild"))], 
+            by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
+    left_join(cdr_of_multitroph_dss[,-which(names(cdr_of_multitroph_dss) %in% c("taxa_type", "guild"))],
+              by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
+)
+
+# write.csv(here::here(file = "data/CDR_oldfield", "cdr_agg_dss.csv"), x = cdr_of_comb, row.names = F)
+
+##### Combine terrestrial datasets #####
+terr_comb <- rbind(knz_comb, kbs_comb, cdr_of_comb, cdr_biodiv_comb)
 # write.csv(here::here(file = "data/synthesized_data", "temp_terrestrial_agg_dss.csv"), x = terr_comb, row.names = F)
 
+#### COASTAL AND AQUATIC DATASETS BELOW ####
 
-#### SBC ####
+##### GCE #####
+# read data
+gce_prod <-  read.csv(here::here("data/GCE", "gce_producers.csv"), row.names = 1)
+gce_con <- read.csv(here::here("data/GCE", "gce_consumers.csv"), row.names = 1)
+
+# correct column name
+colnames(gce_prod)[colnames(gce_prod) == "scale_abundnace"] <- "scale_abundance"
+colnames(gce_con)[colnames(gce_con) == "scale_abundnace"] <- "scale_abundance"
+
+# subset confident ids
+gce_prod <- subset(gce_prod, id_confidence == 1)
+gce_con <- subset(gce_con, id_confidence == 1)
+
+# consumers are read in as integers due to ID codes. convert all spp to factors
+gce_con$taxon_name <- as.factor(gce_con$taxon_name)
+gce_prod$taxon_name <- as.factor(gce_prod$taxon_name)
+
+# aggregate to plot level 
+gce_prod_mean <- gce_prod %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+  dplyr::summarise(abundance = mean(abundance)) 
+
+gce_con_mean <- gce_con %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+  dplyr::summarise(abundance = mean(abundance))
+
+# calculate synchrony
+# NOTE - GCE does not have high producer or consumer richness - only 9 species of producers and 5 species of consumers
+# may make DSS relationships problematic and also makes it so synchrony cannot be calculated
+# will replace with NAs for now
+# gce_prod_synch <- codyn::synchrony(gce_prod_mean,
+#                                    abundance.var = "abundance",
+#                                    species.var = "taxon_name",
+#                                    time.var = "year",
+#                                    metric = "Loreau",
+#                                    replicate.var = "plot")
+# colnames(gce_prod_synch) <- c("plot", "prod_synchrony")
+
+# gce_con_synch <- codyn::synchrony(gce_con_mean,
+#                                   abundance.var = "abundance",
+#                                   species.var = "taxon_name",
+#                                   time.var = "year",
+#                                   metric = "Loreau",
+#                                   replicate.var = "plot")
+# colnames(gce_con_synch) <- c("plot", "con_synchrony")
+
+gce_prod_synch <- data.frame(plot = unique(gce_prod_mean$plot),
+                             prod_synchrony = rep(NA, length(unique(gce_prod_mean$plot))))
+
+gce_con_synch <- data.frame(plot = unique(gce_con_mean$plot),
+                            con_synchrony = rep(NA, length(unique(gce_con_mean$plot))))
+
+# pivot wider for diversity
+gce_prod_wide <- gce_prod_mean %>%
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
+
+gce_con_wide <- gce_con_mean %>%
+  pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
+
+# specify meta columns for diversity calculations
+long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
+                    "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
+
+# calculate diversity
+gce_prod_diversity <- 
+  data.frame(
+    site = gce_prod_wide$site,
+    taxa_type = gce_prod_wide$taxa_type,
+    ecosystem = gce_prod_wide$ecosystem,
+    habitat_broad = gce_prod_wide$habitat_broad,
+    habitat_fine = gce_prod_wide$habitat_fine,
+    biome = gce_prod_wide$biome,
+    guild = gce_prod_wide$guild,
+    plot = gce_prod_wide$plot,
+    year = gce_prod_wide$year,
+    richness = rowSums(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)] > 0),
+    abundance = rowSums(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)]),
+    shannon = vegan::diversity(gce_prod_wide[, -which(names(gce_prod_wide) %in% long_meta_cols)], "shannon")
+  )
+
+gce_con_diversity <- 
+  data.frame(
+    site = gce_con_wide$site,
+    taxa_type = gce_con_wide$taxa_type,
+    ecosystem = gce_con_wide$ecosystem,
+    habitat_broad = gce_con_wide$habitat_broad,
+    habitat_fine = gce_con_wide$habitat_fine,
+    biome = gce_con_wide$biome,
+    guild = gce_con_wide$guild,
+    plot = gce_con_wide$plot,
+    year = gce_con_wide$year,
+    richness = rowSums(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)] > 0),
+    abundance = rowSums(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)]),
+    shannon = vegan::diversity(gce_con_wide[, -which(names(gce_con_wide) %in% long_meta_cols)], "shannon")
+  )
+
+# create dss dataframe
+gce_prod_dss <- gce_prod_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    prod_richness = mean(richness, na.rm = T), 
+    prod_shannon = mean(shannon, na.rm = T), 
+    prod_abundance = mean(abundance, na.rm = T),
+    prod_cv = CV(abundance),
+    prod_stability = stability(abundance)) %>%
+  dplyr::left_join(gce_prod_synch, by = "plot")
+
+gce_con_dss <- gce_con_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    con_richness = mean(richness, na.rm = T), 
+    con_shannon = mean(shannon, na.rm = T), 
+    con_abundance = mean(abundance, na.rm = T),
+    con_cv = CV(abundance),
+    con_stability = stability(abundance)) %>%
+  dplyr::left_join(gce_con_synch, by = "plot")
+
+
+# calculate multitrophic stability
+# combine producers and consumers
+gce_multitroph <- merge(gce_prod_wide[,-which(names(gce_prod_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
+                        gce_con_wide[,-which(names(gce_con_wide) %in% c("guild", "taxa_type", "unit_abundance", "scale_abundance"))],
+                        by = c("site", "ecosystem", "habitat_broad", "habitat_fine", "biome", "plot", "year"))
+
+
+# aggregate to calculate multritophic abundance and diversity
+gce_multitroph_diversity <- 
+  data.frame(
+    site = gce_multitroph$site,
+    taxa_type = rep("multitroph", nrow(gce_multitroph)),
+    ecosystem = gce_multitroph$ecosystem,
+    habitat_broad = gce_multitroph$habitat_broad,
+    habitat_fine = gce_multitroph$habitat_fine,
+    biome = gce_multitroph$biome,
+    guild = rep("multitroph", nrow(gce_multitroph)),
+    plot = gce_multitroph$plot,
+    year = gce_multitroph$year,
+    richness = rowSums(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)] > 0),
+    abundance = rowSums(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)]),
+    shannon = vegan::diversity(gce_multitroph[, -which(names(gce_multitroph) %in% long_meta_cols)], "shannon")
+  )
+
+# calculate diversity and stability
+gce_multitroph_dss <- gce_multitroph_diversity %>%
+  dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+  dplyr::summarise(
+    multitroph_richness = mean(richness, na.rm = T), 
+    multitroph_shannon = mean(shannon, na.rm = T), 
+    multitroph_abundance = mean(abundance, na.rm = T),
+    multitroph_cv = CV(abundance),
+    multitroph_stability = stability(abundance))
+
+# combine dfs for SEM
+gce_comb <- ungroup(
+  left_join(gce_prod_dss[,-which(names(gce_prod_dss) %in% c("taxa_type", "guild"))],
+            gce_con_dss[,-which(names(gce_con_dss) %in% c("taxa_type", "guild"))], 
+            by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
+    left_join(gce_multitroph_dss[,-which(names(gce_multitroph_dss) %in% c("taxa_type", "guild"))],
+              by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
+)
+# replace NaNs with NAs to avoid issues down the line
+gce_comb <- gce_comb %>% mutate_all(~ifelse(is.nan(.), NA, .))
+# write.csv(here::here(file = "data/GCE", "gce_agg_dss.csv"), x = gce_comb, row.names = F)
+
+
+
+##### SBC #####
 # NOTE: NEED TO MAKE GROUP DECISIONS ON HOW TO DEAL WITH CONSUMER DATASET OR ELSE IT WON'T MERGE WITH THE PRODUCERS
 # read data
 sbc_all <- read.csv(here::here("data/SBC", "sbc_all.csv"))
