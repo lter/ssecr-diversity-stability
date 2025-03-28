@@ -401,7 +401,7 @@ googledrive::drive_upload(media = file.path("cdr_producer.csv"), overwrite = T, 
 # consumer
 cdr_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.418.8&entityid=aae64949e1ef41513062633cfb6da7d5"
 cdr_consumer_raw <- read.delim(file = cdr_consumer_url)
-
+cdr_consumer_taxonomy <- read.csv("cdr_consumer_taxonomy.csv")
 # reading in taxonomy info
 # matches old taxonomy to new taxonomy
 #cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/1R1byFNUthmeHypO1gvNslVnW2YwiKlLu1Kaw7hxdvRA/edit?usp=drive_link")
@@ -564,7 +564,7 @@ cdr_consumer <- cdr_consumer %>%
       "Hemiptera Miridae undet undet", "Hemiptera Pentatomidae undet undet", "Hemiptera undet undet undet", "Homoptera Cicadellidae Scleroracus undet",
       "Homoptera Cicadellidae undet undet", "Hymenoptera Braconidae undet undet", "Hymenoptera Eulophidae undet undet", "Hymenoptera Ichneumonidae undet undet",
       "Hymenoptera Pteromalidae undet undet", "Lepidoptera Noctuidae undet undet", "Lepidoptera Pyralidae undet undet", "Lepidoptera undet undet undet",
-      "na na na na", "na? na? na? na? na?", "none none none none none", "unk unk unk unk unk"
+      "na na na na", "na? na? na? na? na?", "none none none none none", "unk unk unk unk unk", "Hemiptera Chrysomelidae Altica chalybea"
     ) ~ 0,
     .default = 1
   ))
@@ -588,9 +588,10 @@ cdr_consumer <- cdr_consumer %>%
                   "plot", "subplot", "treatment_seeding","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance", "id_confidence"))
 
-cdr_consumer_taxonomy <- cdr_consumer %>%
-  count(taxon_name)
-write.csv(cdr_consumer_taxonomy,"cdr_consumer_taxonomy.csv", row.names = FALSE) # exporting csv
+cdr_consumer <- cdr_consumer %>% #adding herbivore classifications
+  left_join(cdr_consumer_taxonomy, by = c("taxon_name")) %>%
+  select(!c("broad_group"))
+
 
 
 write.csv(cdr_consumer,"cdr_consumer.csv", row.names = FALSE) # exporting csv
