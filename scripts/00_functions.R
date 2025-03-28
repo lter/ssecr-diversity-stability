@@ -18,58 +18,76 @@ stability <- function(x){
 }
 
 #### filter_data() - function to streamline and clean datasets for synthesis ####
-filter_data <- function( # site_name, # vector of the site name you are filtering
-                        producer_data, # producer dataset you're filtering (e.g. KNZ_producer.csv)
-                        consumer_data, # consumer dataset you're fileterning (e.g. KNZ_consumer.csv)
-                        mean_sum # do you aggregate subplots by taking the mean or the sum - vector c("mean", "sum")
-                        ){
-
- # aggregate according to year-plot level
- # based on mean_sum for both producers and consumers
+filter_data <- function(site_name, producer_data, consumer_data, mean_sum, write_csv = FALSE) {
+  print("Starting function execution...")
   
-  if(mean_sum == "mean"){
+  # Aggregate data at the year-plot level
+  print("Aggregating data...")
+  if (mean_sum == "mean") {
     producer_agg <- producer_data %>%
-      dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-      dplyr::summarise(abundance = mean(abundance, na.rm = T))
-    consumer_agg <- consumer_data %>%
-      dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-      dplyr::summarise(abundance = mean(abundance, na.rm = T))
-  }else{
-    producer_agg <- producer_data %>%
-      dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-      dplyr::summarise(abundance = sum(abundance, na.rm = T))
+      group_by(plot, year, taxon_name) %>%
+      summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
-      dplyr::summarise(abundance = sum(abundance, na.rm = T))
+      group_by(plot, year, taxon_name) %>%
+      summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
+  } else {
+    producer_agg <- producer_data %>%
+      group_by(plot, year, taxon_name) %>%
+      summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
+    
+    consumer_agg <- consumer_data %>%
+      group_by(plot, year, taxon_name) %>%
+      summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
   }
   
-  # pivot wider
+  print("Pivoting data to wide format...")
   producer_wide <- producer_agg %>%
     pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
-  producer_names <- names(producer_wide)
   
   consumer_wide <- consumer_agg %>%
     pivot_wider(names_from = taxon_name, values_from = abundance, values_fill = list(abundance = 0))
-  consumer_names <- names(consumer_wide)
   
-  # use merge to identify when producers and cosumers are spatio-temporally co-located
-  # CHECK MASTER WIDE RESULTS WITH SUMMARY TABLES
-  master_wide <- merge(producer_wide, consumer_wide, by = c("plot", "year"))
+  print("Checking valid plot-year combinations...")
+  valid_plot_years <- inner_join(producer_wide %>% select(plot, year),
+                                 consumer_wide %>% select(plot, year),
+                                 by = c("plot", "year"))
   
-  # get subset of producers and consumers based on spatio-temporally co-located plots from master_wide
-  producer_wide_sub <- master_wide[,which(names(master_wide) %in% producer_names)]
-  consumer_wide_sub <- master_wide[,which(names(master_wide) %in% consumer_names)]
+  print("Filtering valid data...")
+  producer_wide_sub <- producer_wide %>%
+    inner_join(valid_plot_years, by = c("plot", "year")) %>%
+    mutate(site = site_name)
   
-
-
+  consumer_wide_sub <- consumer_wide %>%
+    inner_join(valid_plot_years, by = c("plot", "year")) %>%
+    mutate(site = site_name)
+  
+  print("Creating final object names...")
+  producer_object_name <- paste0(site_name, "_producers_wide_sub")
+  consumer_object_name <- paste0(site_name, "_consumers_wide_sub")
+  
+  print("Assigning objects to global environment...")
+  assign(producer_object_name, producer_wide_sub, envir = .GlobalEnv)
+  assign(consumer_object_name, consumer_wide_sub, envir = .GlobalEnv)
+  
+  if (write_csv) {
+    print("Writing to CSV...")
+    write_csv(producer_wide_sub, paste0(producer_object_name, ".csv"))
+    write_csv(consumer_wide_sub, paste0(consumer_object_name, ".csv"))
+  }
+  
+  print("Function execution complete. Returning results...")
+  return(setNames(
+    list(producer_wide_sub, consumer_wide_sub),
+    c(producer_object_name, consumer_object_name)
+  ))
 }
 
 #### TEST ####
 knz_prod <-  read.csv(here::here("data/KNZ", "knz_producer.csv"))
 knz_con <- read.csv(here::here("data/KNZ", "knz_consumer.csv"))
 
-x <- filter_data(producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean")
+filter_data(site_name = "knz", producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean", write_csv = FALSE)
 
 # functions to extract ranges of data (from mcr algal working group github)
 # custom functions by Noam - could probably be made more efficient
