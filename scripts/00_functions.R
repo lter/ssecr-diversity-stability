@@ -83,12 +83,12 @@ filter_data <- function(site_name, producer_data, consumer_data, mean_sum, write
   ))
 }
 
-#### TEST ####
-knz_prod <-  read.csv(here::here("data/KNZ", "knz_producer.csv"))
-knz_con <- read.csv(here::here("data/KNZ", "knz_consumer.csv"))
-
-filter_data(site_name = "knz", producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean", write_csv = FALSE)
-
+# #### TEST ####
+# knz_prod <-  read.csv(here::here("data/KNZ", "knz_producer.csv"))
+# knz_con <- read.csv(here::here("data/KNZ", "knz_consumer.csv"))
+# 
+# filter_data(site_name = "knz", producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean", write_csv = FALSE)
+# 
 # functions to extract ranges of data (from mcr algal working group github)
 # custom functions by Noam - could probably be made more efficient
 # function to extract the ranges of the data for plotting
