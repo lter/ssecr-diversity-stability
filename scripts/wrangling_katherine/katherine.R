@@ -156,9 +156,19 @@ googledrive::drive_upload(media = file.path("kbs_producer.csv"), overwrite = T, 
 knz_produce_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-knz.69.24&entityid=63768b48f41e790a40e7fa4f9267c3a2"
 knz_producer_raw <- read.csv(file = knz_produce_url)
 
+knz_siteinfo <- tibble(
+  plot = c("001d", "002c", "002d", "004b", "004f", "020b", "0spb", 
+           "0sub", "n01a", "n01b", "n04a", "n04d", "n20a", "n20b"),
+  grazed = c("ungrazed", "ungrazed", "ungrazed", "ungrazed", "ungrazed", "ungrazed", "ungrazed",
+             "ungrazed", "grazed", "grazed", "grazed", "grazed", "grazed", "grazed"),
+  fire_frequency = c("1", "2", "2", "4", "4", "20", "annual spring burn",
+                     "annual summer burn", "1", "1", "4", "4", "20", "20")
+)
 
 knz_producer <- knz_producer_raw %>%
   filter(SoilType == "f") %>% # only keeping upland (florance) soil types to match consumer
+  filter(WaterShed %in% c("001d", "002c", "002d", "004b", "004f", "020b", "0spb",
+                          "0sub", "n01a", "n01b", "n04a", "n04d", "n20a", "n20b")) %>%
   mutate(site = "KNZ", # adding general LTER/dataset info to each row
          taxa_type = "producer",
          ecosystem = "terrestrial",
@@ -171,9 +181,10 @@ knz_producer <- knz_producer_raw %>%
   mutate(plot = WaterShed, subplot = Transect, sub_subplot = Plot, 
          abundance = Cover, genus = AB_genus, species = AB_species, year = RecYear,
          month = RecMonth, day = RecDay) %>% # renaming columns
+  left_join(knz_siteinfo, by = c("plot")) %>%
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "sub_subplot", "year", "month", "day", "unique_ID", "genus", "species", "abundance", 
+                  "plot", "subplot", "sub_subplot", "grazed", "fire_frequency","year", "month", "day", "unique_ID", "genus", "species", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 # changing cover classes to midpoint of cover class - according to Konza sampling manual https://lter.konza.ksu.edu/sites/default/files/MM_0.pdf
@@ -204,7 +215,10 @@ knz_consumer_raw <- read.csv(file = knz_consume_url)
 
 
 knz_consumer <- knz_consumer_raw %>%
+  mutate(WATERSHED = tolower(WATERSHED)) %>% # lowercasing to be consistent with producer
   filter(SOILTYPE == "fl") %>% # only keeping upland (florance) soil types - others were not sampled long term
+  filter(WATERSHED %in% c("001d", "002c", "002d", "004b", "004f", "020b", "0spb",
+                          "0sub", "n01a", "n01b", "n04a", "n04d", "n20a", "n20b")) %>%
   mutate(site = "KNZ", # adding general LTER/dataset info to each row
          taxa_type = "consumer",
          ecosystem = "terrestrial",
@@ -217,10 +231,10 @@ knz_consumer <- knz_consumer_raw %>%
   mutate(plot = WATERSHED, subplot = REPSITE, 
        abundance = TOTAL, taxon_name = SPECIES, year = RECYEAR,
        month = RECMONTH, day = RECDAY) %>% # renaming columns
-  mutate(plot = tolower(plot)) %>% # lowercasing plot to be consistent with producer
+  left_join(knz_siteinfo, by = c("plot")) %>%
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "grazed", "fire_frequency", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 knz_consumer$abundance <- str_replace(knz_consumer$abundance, "1 01", "101") # fixing abundance typo
@@ -333,11 +347,11 @@ cdr_producer <- cdr_producer_raw %>%
          scale_abundance = "m2") %>%
   mutate(plot = Plot, subplot = Strip, 
          abundance = `Biomass..g.m2.`, taxon_name = Species, year = Year,
-         month = Month) %>% # renaming columns
+         month = Month, treatment_seeding = NumSp) %>% # renaming columns
   separate(Date, c("month_discard", "day", "year_discard"), sep = "/") %>% # separating date components in order to get "day" -- not using month/year from this, discarding those extra columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "treatment_seeding","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 cdr_producer$taxon_name <- str_replace(cdr_producer$taxon_name, "Festuca Sp.", "Festuca sp.") # fixing typo
@@ -387,7 +401,7 @@ googledrive::drive_upload(media = file.path("cdr_producer.csv"), overwrite = T, 
 # consumer
 cdr_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.418.8&entityid=aae64949e1ef41513062633cfb6da7d5"
 cdr_consumer_raw <- read.delim(file = cdr_consumer_url)
-
+cdr_consumer_taxonomy <- read.csv("cdr_consumer_taxonomy.csv")
 # reading in taxonomy info
 # matches old taxonomy to new taxonomy
 #cdr_consumer_taxonomy <- read_sheet("https://docs.google.com/spreadsheets/d/1R1byFNUthmeHypO1gvNslVnW2YwiKlLu1Kaw7hxdvRA/edit?usp=drive_link")
@@ -431,6 +445,7 @@ cdr_consumer <- cdr_consumer %>%
     taxon_name %in% c("Coleoptera Elateridae Ctenicera undet", "Coleoptera Elateridae undet undet (large)") ~ "Coleoptera Elateridae sp.",
     taxon_name %in% c("Coleoptera Helodidae Cyphon obscurus?", "Coleoptera Helodidae Cyphon padi?",
                       "Coleoptera Helodidae Cyphon undet", "Coleoptera Helodidae Cyphon variabilis") ~ "Coleoptera Helodidae Cyphon sp.",
+    taxon_name %in% c("Coleoptera undet Coleoptera undet", "Coleoptera undet undet undet") ~ "Coleoptera undet undet undet",
     taxon_name %in% c("Collembola undet undet undet", "Collembola undet undet undet (black.hunchback)",
                       "Collembola undet undet undet (globular)") ~ "Collembola sp.",
     taxon_name %in% c("Diptera Bombyliidae Phthiria undet", "Diptera Bombyliidae Phthiria undet sp1.(yellow)", 
@@ -549,7 +564,7 @@ cdr_consumer <- cdr_consumer %>%
       "Hemiptera Miridae undet undet", "Hemiptera Pentatomidae undet undet", "Hemiptera undet undet undet", "Homoptera Cicadellidae Scleroracus undet",
       "Homoptera Cicadellidae undet undet", "Hymenoptera Braconidae undet undet", "Hymenoptera Eulophidae undet undet", "Hymenoptera Ichneumonidae undet undet",
       "Hymenoptera Pteromalidae undet undet", "Lepidoptera Noctuidae undet undet", "Lepidoptera Pyralidae undet undet", "Lepidoptera undet undet undet",
-      "na na na na", "na? na? na? na? na?", "none none none none none", "unk unk unk unk unk"
+      "na na na na", "na? na? na? na? na?", "none none none none none", "unk unk unk unk unk", "Hemiptera Chrysomelidae Altica chalybea"
     ) ~ 0,
     .default = 1
   ))
@@ -567,11 +582,16 @@ cdr_consumer <- cdr_consumer %>%
          scale_abundance = "25 sweeps") %>%
   mutate(plot = Plot, subplot = NA, 
          abundance = Count, year = Year,
-         month = Month, day = NA) %>% # renaming columns
+         month = Month, day = NA, treatment_seeding = NumSp) %>% # renaming columns
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "treatment_seeding","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance", "id_confidence"))
+
+cdr_consumer <- cdr_consumer %>% #adding herbivore classifications
+  left_join(cdr_consumer_taxonomy, by = c("taxon_name")) %>%
+  select(!c("broad_group"))
+
 
 
 write.csv(cdr_consumer,"cdr_consumer.csv", row.names = FALSE) # exporting csv
@@ -587,7 +607,8 @@ googledrive::drive_upload(media = file.path("cdr_consumer.csv"), overwrite = T, 
 # producer
 cdr2_producer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.175.10&entityid=4c63180729356ee5337c5d5672b2143a"
 cdr2_producer_raw <- read.csv(file = cdr2_producer_url)
-
+cdr2_producer_raw %>%
+  count(OldField, YearAb)
 # one instance of LS is Ls
 #cdr2_producer_raw %>%
 #  count(OldField, Plot, Transect)
@@ -603,10 +624,10 @@ cdr2_producer <- cdr2_producer_raw %>%
          unit_abundance = "g/m2",
          scale_abundance = "3mx4m") %>%
   mutate(plot = OldField, subplot = Transect, sub_subplot = Plot, abundance = Biomass..g.m.2.,
-         taxon_name = Species, year = Year, month = NA, day = NA) %>%
+         taxon_name = Species, year = Year, month = NA, day = NA, agriculture_abandoned = YearAb) %>%
   mutate(unique_ID = paste(site, habitat_fine, plot, sep = "_")) %>%
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "sub_subplot","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
+                  "plot", "subplot", "sub_subplot", "agriculture_abandoned","year", "month", "day", "unique_ID", "taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 
@@ -684,8 +705,7 @@ cdr2_producer <- cdr2_producer %>%
   ))
 cdr2_producer$plot <- as.numeric(cdr2_producer$plot)
 
-cdr2_producer %>%
-  count(year, plot, subplot)
+
 
 
 write.csv(cdr2_producer,"cdr2_producer.csv", row.names = FALSE) # exporting csv
@@ -701,6 +721,10 @@ googledrive::drive_upload(media = file.path("cdr2_producer.csv"), overwrite = T,
 cdr2_consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-cdr.106.8&entityid=3405c2e271929b0c537492a9ddde102b"
 cdr2_consumer_raw <- read.delim(file = cdr2_consumer_url)
 
+cdr2_siteinfo <- cdr2_producer %>%
+  count(plot, agriculture_abandoned) %>%
+  select(!c("n"))
+
 cdr2_consumer <- cdr2_consumer_raw %>%
   mutate(site = "CDR_oldField", # adding general LTER/dataset info to each row
          taxa_type = "consumer",
@@ -713,11 +737,12 @@ cdr2_consumer <- cdr2_consumer_raw %>%
          scale_abundance = "200 sweeps") %>%
   mutate(plot = Field.num, subplot = NA, abundance = X.Specimens,
          taxon_name = paste(Genus, Specific.epithet, sep = " "), year = Year, month = Month, day = NA) %>% 
+  left_join(cdr2_siteinfo, by = c("plot")) %>%
   mutate(abundance = as.numeric(abundance)) %>%
   mutate(year = as.double(year)) %>%
   mutate(unique_ID = paste(site, plot, sep = "_")) %>% # adding unique ID that matches producer dataset
   dplyr::select(c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", 
-                  "plot", "subplot", "year", "month", "unique_ID", "Family","taxon_name", "abundance", 
+                  "plot", "subplot", "agriculture_abandoned","year", "month", "unique_ID", "Family","taxon_name", "abundance", 
                   "unit_abundance", "scale_abundance"))
 
 

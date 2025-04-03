@@ -39,11 +39,11 @@ benthic_cover_long <- pivot_longer(benthic_cover_annual, cols = -c(SampleYear, S
 # add habitat fine information
 benthic_cover_long <- benthic_cover_long %>% left_join(site_metadata[,c("Location", "ReefComplex")], by='Location')
 #
-benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, site=Location, plot=Transect, habitat_fine=ReefComplex)
-benthic_cover_out  <- benthic_cover_long %>% mutate(taxa_type="producer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='benthic algae', herbivore='no', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE)
+benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, plot=Location, subplot=Transect, habitat_fine=ReefComplex)
+benthic_cover_out  <- benthic_cover_long %>% mutate(site='USVI') %>% mutate(taxa_type="producer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='benthic algae', herbivore='no', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE)
 #
 # change the order of different columns
-benthic_cover_out <- benthic_cover_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence")]
+benthic_cover_out <- benthic_cover_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "subplot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence")]
 #
 write.csv(benthic_cover_out, 'harmonized_data/USVI_benthic_cover_algae.csv', row.names = F)
 #
@@ -85,11 +85,11 @@ benthic_cover_long <- pivot_longer(benthic_cover_annual, cols = -c(SampleYear, S
 # add habitat fine information
 benthic_cover_long <- benthic_cover_long %>% left_join(site_metadata[,c("Location", "ReefComplex")], by='Location')
 #
-benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, site=Location, plot=Transect, habitat_fine=ReefComplex)
-benthic_cover_out  <- benthic_cover_long %>% mutate(taxa_type="filter_feeder", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='benthic consumer', herbivore='unsure', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE)
+benthic_cover_long <- benthic_cover_long %>% rename(year=SampleYear, month=SampleMonth, plot=Location, subplot=Transect, habitat_fine=ReefComplex)
+benthic_cover_out  <- benthic_cover_long %>% mutate(site='USVI', taxa_type="filter_feeder", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='benthic consumer', herbivore='unsure', unit_abundance='%', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE)
 #
 # change the order of different columns
-benthic_cover_out <- benthic_cover_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence")]
+benthic_cover_out <- benthic_cover_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "subplot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence")]
 #
 write.csv(benthic_cover_out, 'harmonized_data/USVI_benthic_cover_filter_feeder.csv', row.names = F)
 #
@@ -122,12 +122,12 @@ fish_data_annual <- fish_data %>% filter(Period=="Annual" & Metric=='Biomass') %
 # add habitat fine information
 fish_data_annual <- fish_data_annual %>% left_join(site_metadata[, c("Location", "ReefComplex")], by='Location')
 #
-fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, site=Location, plot=Transect, habitat_fine=ReefComplex, taxon_name=ScientificName, abundance=Total)
+fish_data_out <- fish_data_annual %>% rename(year=SampleYear, month=Month, plot=Location, subplot=Transect, habitat_fine=ReefComplex, taxon_name=ScientificName, abundance=Total)
 #
-fish_data_out  <- fish_data_out %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='fish', unit_abundance='biomass', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE) %>% mutate(herbivore=case_when(TrophicGroup %in% c("herb", "omni") ~ "yes",
+fish_data_out  <- fish_data_out %>% mutate(site='USVI') %>% mutate(taxa_type="consumer", ecosystem="aquatic", habitat_broad='marine', biome='tropic', guild='fish', unit_abundance='biomass', scale_abundance='per transect', unique_ID=paste(site, habitat_fine, plot, sep='_'), id_confidence=TRUE) %>% mutate(herbivore=case_when(TrophicGroup %in% c("herb", "omni") ~ "yes",
                            TrophicGroup %in% c("plank", "pisc", "inv", "spng", "unk") ~ "no"))
 #
-fish_data_out <- fish_data_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence", "TrophicGroup")]
+fish_data_out <- fish_data_out[,c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "herbivore", "year", "month", "plot", "subplot", "unique_ID", "unit_abundance", "scale_abundance", "taxon_name", "abundance", "id_confidence", "TrophicGroup")]
 #
 write.csv(fish_data_out, 'harmonized_data/USVI_fish_census.csv', row.names = F)
 #
