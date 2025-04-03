@@ -155,7 +155,8 @@ algae_4 %>%
   rename(year = Year) %>% 
   mutate(month = month(Date), 
          day = day(Date)) %>% 
-  mutate(plot = str_to_lower(paste0(str_split(Site, pattern = " ")[[1]][1], "_", str_split(Site, pattern = " ")[[1]][2]))) %>% 
+  mutate(plot = str_to_lower(paste0(str_split(Site, pattern = "_")[[1]][1], "_", 
+                                    str_split(Site, pattern = "_")[[1]][2]))) %>% 
   mutate(subplot = paste0(Transect, "_", Quadrat)) %>% 
   mutate(unique_ID = paste0(site, "_", habitat_fine, "_", plot)) %>% 
   mutate(unit_abundance = "percent") %>% 
