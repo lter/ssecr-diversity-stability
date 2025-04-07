@@ -31,19 +31,19 @@ filter_data <- function(site_name, # site name as string
   print("Aggregating data...")
   if (mean_sum == "mean") {
     producer_agg <- producer_data %>%
-      group_by(plot, year, taxon_name) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(plot, year, taxon_name) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
   } else {
     producer_agg <- producer_data %>%
-      group_by(plot, year, taxon_name) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(plot, year, taxon_name) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
   }
   
@@ -116,13 +116,13 @@ filter_data <- function(site_name, # site name as string
       if (!dir.exists(output_folder)) {
         message("Output path does not exist: ", output_folder)
       } else {
-        write.csv(producer_wide_sub, here::here(output_folder, paste0(producer_object_name, ".csv")))
-        write.csv(consumer_wide_sub, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+        write.csv(row.names = F, producer_wide_sub, here::here(output_folder, paste0(producer_object_name, ".csv")))
+        write.csv(row.names = F, consumer_wide_sub, here::here(output_folder, paste0(consumer_object_name, ".csv")))
       }
     } else {
       # fallback to working directory
-      write.csv(producer_wide_sub, paste0(producer_object_name, ".csv"))
-      write.csv(consumer_wide_sub, paste0(consumer_object_name, ".csv"))
+      write.csv(row.names = F, producer_wide_sub, paste0(producer_object_name, ".csv"))
+      write.csv(row.names = F, consumer_wide_sub, paste0(consumer_object_name, ".csv"))
     }
   
   print("Function execution complete. Returning results...")
@@ -153,8 +153,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
                                     write_csv = FALSE # option to automatically write csv
 ) {
   # Universal metadata columns for subsetting
-  long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
-                      "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
+  meta_cols <- c("site", "plot", "year")
   
   # calculate diversity for producers and consumers
   producer_diversity <- 
@@ -168,9 +167,9 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       guild = producer_data$guild,
       plot = producer_data$plot,
       year = producer_data$year,
-      richness = rowSums(producer_data[, -which(names(producer_data) %in% long_meta_cols)] > 0),
-      abundance = rowSums(producer_data[, -which(names(producer_data) %in% long_meta_cols)]),
-      shannon = vegan::diversity(producer_data[, -which(names(producer_data) %in% long_meta_cols)], "shannon")
+      richness = rowSums(producer_data[, -which(names(producer_data) %in% meta_cols)] > 0),
+      abundance = rowSums(producer_data[, -which(names(producer_data) %in% meta_cols)]),
+      shannon = vegan::diversity(producer_data[, -which(names(producer_data) %in% meta_cols)], "shannon")
     )
   
   consumer_diversity <- 
@@ -184,9 +183,9 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       guild = consumer_data$guild,
       plot = consumer_data$plot,
       year = consumer_data$year,
-      richness = rowSums(consumer_data[, -which(names(consumer_data) %in% long_meta_cols)] > 0),
-      abundance = rowSums(consumer_data[, -which(names(consumer_data) %in% long_meta_cols)]),
-      shannon = vegan::diversity(consumer_data[, -which(names(consumer_data) %in% long_meta_cols)], "shannon")
+      richness = rowSums(consumer_data[, -which(names(consumer_data) %in% meta_cols)] > 0),
+      abundance = rowSums(consumer_data[, -which(names(consumer_data) %in% meta_cols)]),
+      shannon = vegan::diversity(consumer_data[, -which(names(consumer_data) %in% meta_cols)], "shannon")
     )
   
   # create dss dataframes for producers and consumers
@@ -197,8 +196,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       prod_shannon = mean(shannon), 
       prod_abundance = mean(abundance),
       prod_cv = CV(abundance),
-      prod_stability = stability(abundance)) %>%
-    dplyr::left_join(cdr_biodiv_prod_synch, by = "plot")
+      prod_stability = stability(abundance)) 
   
   consumer_dss <- consumer_diversity %>%
     dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
@@ -207,8 +205,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       con_shannon = mean(shannon), 
       con_abundance = mean(abundance),
       con_cv = CV(abundance),
-      con_stability = stability(abundance)) %>%
-    dplyr::left_join(cdr_biodiv_con_synch, by = "plot")
+      con_stability = stability(abundance)) 
   
   # calculate multitrophic stability
   # combine producers and consumers
@@ -228,9 +225,9 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       guild = rep("multitroph", nrow(multitrophic_data)),
       plot = multitrophic_data$plot,
       year = multitrophic_data$year,
-      richness = rowSums(multitrophic_data[, -which(names(multitrophic_data) %in% long_meta_cols)] > 0),
-      abundance = rowSums(multitrophic_data[, -which(names(multitrophic_data) %in% long_meta_cols)]),
-      shannon = vegan::diversity(multitrophic_data[, -which(names(multitrophic_data) %in% long_meta_cols)], "shannon")
+      richness = rowSums(multitrophic_data[, -which(names(multitrophic_data) %in% meta_cols)] > 0),
+      abundance = rowSums(multitrophic_data[, -which(names(multitrophic_data) %in% meta_cols)]),
+      shannon = vegan::diversity(multitrophic_data[, -which(names(multitrophic_data) %in% meta_cols)], "shannon")
     )
   
   # calculate multitrophic diversity and stability
@@ -269,15 +266,15 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       if (!dir.exists(output_folder)) {
         message("Output path does not exist: ", output_folder)
       } else {
-        write.csv(producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
-        write.csv(consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
-        write.csv(multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
+        write.csv(row.names = F, producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
+        write.csv(row.names = F, consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+        write.csv(row.names = F, multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
       }
     } else {
       # fallback to working directory
-      write.csv(producer_dss, paste0(producer_object_name, ".csv"))
-      write.csv(consumer_dss, paste0(consumer_object_name, ".csv"))
-      write.csv(multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
+      write.csv(row.names = F, producer_dss, paste0(producer_object_name, ".csv"))
+      write.csv(row.names = F, consumer_dss, paste0(consumer_object_name, ".csv"))
+      write.csv(row.names = F, multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
     }
   }
 }
