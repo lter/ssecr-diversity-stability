@@ -23,6 +23,7 @@ filter_data <- function(site_name, # site name as string
                         consumer_data, # consumer df
                         mean_sum, # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                         minimize = FALSE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                        output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                         write_csv = FALSE) {
   print("Starting function execution...")
   
@@ -111,16 +112,25 @@ filter_data <- function(site_name, # site name as string
   
   # write csv
   if (write_csv) {
-    print("Writing to CSV...")
-    write_csv(producer_wide_sub, paste0(producer_object_name, ".csv"))
-    write_csv(consumer_wide_sub, paste0(consumer_object_name, ".csv"))
-  }
+    if (!is.null(output_folder)) {
+      if (!dir.exists(output_folder)) {
+        message("Output path does not exist: ", output_folder)
+      } else {
+        write.csv(producer_wide_sub, here::here(output_folder, paste0(producer_object_name, ".csv")))
+        write.csv(consumer_wide_sub, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+      }
+    } else {
+      # fallback to working directory
+      write.csv(producer_wide_sub, paste0(producer_object_name, ".csv"))
+      write.csv(consumer_wide_sub, paste0(consumer_object_name, ".csv"))
+    }
   
   print("Function execution complete. Returning results...")
   return(setNames(
     list(producer_wide_sub, consumer_wide_sub),
     c(producer_object_name, consumer_object_name)
   ))
+  }
 }
 
 # #### TEST ####
@@ -139,6 +149,7 @@ filter_data <- function(site_name, # site name as string
 calculate_agg_stability <- function(producer_data, # synthesized producer data after filtering
                                     consumer_data, # synthesized consumer data after filtering
                                     ecosystem_type, # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                                     write_csv = FALSE # option to automatically write csv
 ) {
   
@@ -248,13 +259,23 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   assign(consumer_object_name, consumer_dss, envir = .GlobalEnv)
   assign(multitrophic_object_name, multitrophic_dss, envir = .GlobalEnv)
   
+
+  # write csv
   if (write_csv) {
-    print("Writing to CSV...")
-    write_csv(producer_dss, paste0(producer_object_name, ".csv"))
-    write_csv(consumer_dss, paste0(consumer_object_name, ".csv"))
-    write_csv(multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
-    
-  }
+    if (!is.null(output_folder)) {
+      if (!dir.exists(output_folder)) {
+        message("Output path does not exist: ", output_folder)
+      } else {
+        write.csv(producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
+        write.csv(consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+        write.csv(multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
+      }
+    } else {
+      # fallback to working directory
+      write.csv(producer_dss, paste0(producer_object_name, ".csv"))
+      write.csv(consumer_dss, paste0(consumer_object_name, ".csv"))
+      write.csv(multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
+    }
 }
 
 extract_ranges <- function(df, # a dataframe
