@@ -152,6 +152,9 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
                                     output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                                     write_csv = FALSE # option to automatically write csv
 ) {
+  # Universal metadata columns for subsetting
+  long_meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome",
+                      "guild", "plot", "year", "taxon_name", "unit_abundance", "scale_abundance")
   
   # calculate diversity for producers and consumers
   producer_diversity <- 
