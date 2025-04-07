@@ -276,6 +276,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       write.csv(consumer_dss, paste0(consumer_object_name, ".csv"))
       write.csv(multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
     }
+  }
 }
 
 extract_ranges <- function(df, # a dataframe
