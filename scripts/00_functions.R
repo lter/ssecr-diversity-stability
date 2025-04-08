@@ -27,23 +27,27 @@ filter_data <- function(site_name, # site name as string
                         write_csv = FALSE) {
   print("Starting function execution...")
   
+  # remove not confident IDs
+  producer_data <- subset(producer_data, id_confidence == 1)
+  consumer_data <- subset(consumer_data, id_confidence == 1)
+  
   # Aggregate data at the year-plot level
   print("Aggregating data...")
   if (mean_sum == "mean") {
     producer_agg <- producer_data %>%
-      group_by(site, plot, year, taxon_name) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, plot, year, taxon_name) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
   } else {
     producer_agg <- producer_data %>%
-      group_by(site, plot, year, taxon_name) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, plot, year, taxon_name) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
   }
   
@@ -153,7 +157,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
                                     write_csv = FALSE # option to automatically write csv
 ) {
   # Universal metadata columns for subsetting
-  meta_cols <- c("site", "plot", "year")
+  meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "unit_abundance", "scale_abundance", "plot", "year")
   
   # calculate diversity for producers and consumers
   producer_diversity <- 
