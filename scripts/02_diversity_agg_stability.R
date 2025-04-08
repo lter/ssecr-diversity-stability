@@ -12,7 +12,7 @@ source(here::here("scripts", "00_functions.r"))
 ###### KNZ ######
 knz_prod_wide <- read.csv(here::here("data/KNZ", "knz_producers_wide_sub.csv"))
 knz_con_wide <- read.csv(here::here("data/KNZ", "knz_consumers_wide_sub.csv"))
-calculate_agg_stability(producer_data = knz_prod_wide, consumer_data = knz_con_wide, "Terrestrial")
+calculate_agg_stability(producer_data = knz_prod_wide, consumer_data = knz_con_wide, "terrestrial")
 
 ###### KBS ######
 kbs_prod_wide <- read.csv(here::here("data/KBS", "kbs_producers_wide_sub.csv"))
