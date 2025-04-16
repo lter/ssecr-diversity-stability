@@ -311,3 +311,12 @@ filter_ranges <- function(trend, # emtrends df created from emmip
     filter(.data[[value]] >= .data[[paste0("min_", value)]] & # filter so emtrend only covers range of actual values
              .data[[value]] <= .data[[paste0("max_", value)]])
 }
+
+#### create preliminary models plots for  stability
+model_stability <- function(df, # aggregate stability df
+                            ecosystem_type, # string c("terrestrial", "marine")
+                            stability_metric, # metric used to measure stability c("aggregate", "compositional")
+                            diversity_metric # metric used to measure richness
+){
+  
+}
