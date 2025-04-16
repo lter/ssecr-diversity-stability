@@ -152,7 +152,7 @@ filter_data <- function(site_name, # site name as string
 ####  create aggregate diversity stability dataframe ####
 calculate_agg_stability <- function(producer_data, # synthesized producer data after filtering
                                     consumer_data, # synthesized consumer data after filtering
-                                    ecosystem_type, # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    site_name, # site name as string
                                     output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                                     write_csv = FALSE # option to automatically write csv
 ) {
@@ -163,7 +163,8 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   producer_diversity <- 
     data.frame(
       site = producer_data$site,
-      taxa_type = producer_data$taxa_type,
+ #     taxa_type = producer_data$taxa_type,
+      taxa_type = rep("producer", nrow(producer_data)),
       ecosystem = producer_data$ecosystem,
       habitat_broad = producer_data$habitat_broad,
       habitat_fine = producer_data$habitat_fine,
@@ -179,7 +180,8 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   consumer_diversity <- 
     data.frame(
       site = consumer_data$site,
-      taxa_type = consumer_data$taxa_type,
+#     taxa_type = producer_data$taxa_type,
+      taxa_type = rep("consumer", nrow(consumer_data)),
       ecosystem = consumer_data$ecosystem,
       habitat_broad = consumer_data$habitat_broad,
       habitat_fine = consumer_data$habitat_fine,
@@ -254,14 +256,16 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   )
   
   # create object names
-  producer_object_name <- paste0(ecosystem_type, "_producer_dss")
-  consumer_object_name <- paste0(ecosystem_type, "_consumer_dss")
-  multitrophic_object_name <- paste0(ecosystem_type, "_multitrophic_dss")
+  producer_object_name <- paste0(site_name, "_producer_dss")
+  consumer_object_name <- paste0(site_name, "_consumer_dss")
+  multitrophic_object_name <- paste0(site_name, "_multitrophic_dss")
+  aggregate_object_name <- paste0(site_name, "_aggregate_dss")
   
   # assign to global environment
   assign(producer_object_name, producer_dss, envir = .GlobalEnv)
   assign(consumer_object_name, consumer_dss, envir = .GlobalEnv)
   assign(multitrophic_object_name, multitrophic_dss, envir = .GlobalEnv)
+  assign(aggregate_object_name, aggregate_dss, envir = .GlobalEnv)
   
 
   # write csv
@@ -273,12 +277,14 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
         write.csv(row.names = F, producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
         write.csv(row.names = F, consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
         write.csv(row.names = F, multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
+        write.csv(row.names = F, aggregate_dss, here::here(output_folder, paste0(aggregate_object_name, ".csv")))
       }
     } else {
       # fallback to working directory
       write.csv(row.names = F, producer_dss, paste0(producer_object_name, ".csv"))
       write.csv(row.names = F, consumer_dss, paste0(consumer_object_name, ".csv"))
       write.csv(row.names = F, multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
+      write.csv(row.names = F, aggregate_dss, paste0(aggregate_object_name, ".csv"))
     }
   }
 }
