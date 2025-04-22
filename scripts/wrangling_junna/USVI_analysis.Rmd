@@ -1,0 +1,176 @@
+---
+title: "USVI_analysis"
+output: html_document
+date: 4/3/2025
+author: "Junna Wang"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r look at PTA of this site}
+librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasampler, supportR, cowplot, summarytools, datacleanr)
+
+# get data from google drive
+usvi_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w")) 
+
+  
+  
+  googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w"), type="csv")
+
+
+
+
+
+
+usvi_consumers = read.csv(file = "harmonized_data/USVI_fish_census.csv")
+usvi_producers = read.csv(file = "harmonized_data/USVI_benthic_cover_algae.csv")
+
+usvi_consumers = usvi_consumers |> 
+  mutate(plot = as_factor(plot))
+
+usvi_producers = usvi_producers |> 
+  mutate(plot = as_factor(plot))
+
+# Richness Summary Tables ----
+# Summary data for producer species richness across sites
+species_n_producer_site <- usvi_producers %>%
+  group_by(plot, year) %>%
+  summarise(num_species = n_distinct(taxon_name))
+species_n_producer_site
+# write.csv(species_n_producer_site, "tables/USVI/summary/species_n_producer_site.csv",row.names = F)
+
+# Summary data for consumer species richness across sites
+species_n_consumer_site <- usvi_consumers %>%
+  group_by(plot, year) %>%
+  summarise(num_species = n_distinct(taxon_name))
+species_n_consumer_site
+# write.csv(species_n_consumer_site, "tables/USVI/summary/species_n_consumer_site.csv",row.names = F)
+
+```
+
+```{r tranform the data}
+usvi_consumer_means <- usvi_consumers %>% filter(!plot %in% c("Meri Shoal", "castle", "lang Bank Red Hind FSA", "Buck Island STX Deep")) %>%
+  group_by(year, plot, taxon_name) %>%
+  summarise(mean_abundance = sqrt(mean(abundance, na.rm = TRUE)), .groups = "drop") %>%
+  mutate(mean_abundance = ifelse(is.na(mean_abundance), 0, mean_abundance))
+
+usvi_producer_means <- usvi_producers %>% filter(!plot %in% c("Buck Island STX Deep")) %>%
+  group_by(year, plot, taxon_name) %>%
+  summarise(mean_abundance = sqrt(mean(abundance, na.rm = TRUE)), .groups = "drop") %>%
+  mutate(mean_abundance = ifelse(is.na(mean_abundance), 0, mean_abundance))
+
+
+usvi_consumer_means <- usvi_consumer_means %>%
+  pivot_wider(names_from = taxon_name, values_from = mean_abundance, values_fill = list(mean_abundance = 0))
+usvi_producer_means <- usvi_producer_means %>%
+  pivot_wider(names_from = taxon_name, values_from = mean_abundance, values_fill = list(mean_abundance = 0))
+
+
+usvi_consumer_means = usvi_consumer_means %>% 
+  mutate(site.year = paste(plot, year, sep = "-"))
+
+usvi_producer_means = usvi_producer_means %>% 
+  mutate(site.year = paste(plot, year, sep = "-"))
+
+usvi_consumer_matrix = usvi_consumer_means %>% 
+  column_to_rownames(var = "site.year")
+
+usvi_producer_matrix = usvi_producer_means %>% 
+  column_to_rownames(var = "site.year")
+
+usvi_consumer_matrix = usvi_consumer_matrix %>%
+  dplyr::select(-plot, -year)
+
+usvi_producer_matrix = usvi_producer_matrix %>%
+  dplyr::select(-plot, -year)
+
+```
+
+
+```{r NMDS}
+nmds_consumer <- metaMDS(usvi_consumer_matrix)
+nmds_producer <- metaMDS(usvi_producer_matrix)
+
+# Extract NMDS coordinates
+nmds_consumer_coords <- nmds_consumer$points
+nmds_producer_coords <- nmds_producer$points
+
+# Add site and year information to NMDS coordinates
+nmds_consumer_data <- data.frame(nmds_consumer_coords, site.year = rownames(usvi_consumer_matrix))
+nmds_prooducer_data <- data.frame(nmds_producer_coords, site.year = rownames(usvi_producer_matrix))
+
+usvi_consumer_means = usvi_consumer_means %>% 
+  left_join(nmds_consumer_data)
+
+usvi_consumer_means = usvi_consumer_means %>% 
+  mutate(site.year = paste0(plot,year))
+
+usvi_producer_means = usvi_producer_means %>% 
+  left_join(nmds_prooducer_data)
+
+usvi_producer_means = usvi_producer_means %>% 
+  mutate(site.year = paste0(plot,year))
+
+# Create NMDS plots for... 
+
+# consumers
+plot_nmds_consumer <- ggplot(usvi_consumer_means, aes(x = MDS1,
+                                                     y = MDS2,
+                                                     color = plot,
+                                                     label = year)) +
+  geom_point(size = 3) +
+  geom_text(check_overlap = TRUE, size = 3, color = "black", vjust = 1.5) +
+  labs(title = "USVI Consumer Community by Site", x = "NMDS1", y = "NMDS2") +
+  # scale_color_manual(values = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+  #                               "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+  #                               "#aec7e8", "#ffbb78", "#98df8a", "#ff9896")) +
+  # scale_shape_manual(values = c(17,15,18,19)) +
+  guides(color = guide_legend(title = "Site")) +
+  theme_classic()
+
+plot_nmds_consumer
+
+
+# for producers
+plot_nmds_producer <- ggplot(usvi_producer_means, aes(x = MDS1,
+                                                     y = MDS2,
+                                                     color = plot,
+                                                     label = year)) +
+  geom_point(size = 3) +
+  geom_text(check_overlap = TRUE, size = 3, color = "black", vjust = 1.5) +
+  labs(title = "USVI Producer Community by Site", x = "NMDS1", y = "NMDS2") +
+  # scale_color_manual(values = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+  #                               "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+  #                               "#aec7e8", "#ffbb78", "#98df8a", "#ff9896", "#c5b0d5")) +
+  # scale_shape_manual(values = c(17,15,18,19)) +
+  guides(color = guide_legend(title = "Site")) +
+  theme_classic()
+
+print(plot_nmds_producer)
+
+```
+
+```{r community trajectory}
+# we do not need customed colors. 
+
+usvi_consumer_means = usvi_consumer_means %>% 
+  mutate(vector_nums = year - min(year) + 1)
+
+
+trajectoryPCoA(D, sites = usvi_consumer_means$plot, surveys = usvi_consumer_means$vector_nums, lwd = 1, survey.labels = T) 
+legend(ncol = 1, y.intersp = 0.5, "topright", inset = c(0.02, 0), bty="n", legend=c("1","2" ,"3", "4", "5", "6", "7", "8","9", "10", "11"),  col = c( "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                                                                                                                                                                                                               "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+                                                                                                                                                                                                               "#aec7e8", "#ffbb78", "#98df8a", "#ff9896"), lwd=2)
+
+
+
+
+
+```
+
+
+

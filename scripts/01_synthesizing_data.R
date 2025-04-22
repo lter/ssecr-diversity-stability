@@ -20,7 +20,7 @@ knz_con <- subset(knz_con, id_confidence == 1)
 knz_con$taxon_name <- as.factor(knz_con$taxon_name)
 knz_prod$taxon_name <- as.factor(knz_prod$taxon_name)
 
-filter_data(site_name = "knz", producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean", write_csv = FALSE)
+filter_data(site_name = "knz", producer_data = knz_prod, consumer_data = knz_con, mean_sum = "mean", output_folder = "data/KNZ", write_csv = TRUE)
 
 ###### KBS ######
 # read data
@@ -31,7 +31,7 @@ kbs_con <- read.csv(here::here("data/KBS", "kbs_consumer.csv"))
 kbs_prod <- subset(kbs_prod, id_confidence == 1)
 kbs_con <- subset(kbs_con, id_confidence == 1)
 
-filter_data(site_name = "kbs", producer_data = kbs_prod, consumer_data = kbs_con, mean_sum = "sum", write_csv = FALSE)
+filter_data(site_name = "kbs", producer_data = kbs_prod, consumer_data = kbs_con, mean_sum = "sum", output_folder = "data/KBS", write_csv = TRUE)
 
 ###### CDR OLD FIELD ######
 # read data and subset confident IDs
@@ -43,7 +43,7 @@ cdr_of_con <- subset(cdr_of_con, id_confidence == 1)
 # only one family sampled in years 1992 and 1993 --> remove
 cdr_of_con <- cdr_of_con[!cdr_of_con$year %in% c(1992, 1993),]
 
-filter_data(site_name = "cdr_of", producer_data = cdr_of_prod, consumer_data = cdr_of_con, mean_sum = "mean", write_csv = FALSE)
+filter_data(site_name = "cdr_of", producer_data = cdr_of_prod, consumer_data = cdr_of_con, mean_sum = "mean", output_folder = "data/CDR_oldfield", write_csv = TRUE)
 
 ###### CDR BIODIVERSITY ######
 # read data and subset confident IDs
@@ -64,9 +64,47 @@ cdr_split_prod <- split(cdr_biodiv_prod, cdr_biodiv_prod$treatment_seeding)
 cdr_split_con <- split(cdr_biodiv_con, cdr_biodiv_con$treatment_seeding)
 
 # Assign each subset to a variable
-list2env(setNames(cdr_split_prod, paste0(names(cdr_split_prod), "_cdr_biodiv_prod")), envir = .GlobalEnv)
-list2env(setNames(cdr_split_con, paste0(names(cdr_split_con), "_cdr_biodiv_con")), envir = .GlobalEnv)
 
-# filter data for each treatment
+# Modify each split to update 'site' and assign to global environment
+list2env(
+  setNames(
+    lapply(names(cdr_split_prod), function(treatment) {
+      df_split <- cdr_split_prod[[treatment]]
+      df_split$site <- paste0(df_split$site, "_", treatment)
+      return(df_split)
+    }),
+    paste0("cdr_biodiv_prod_", names(cdr_split_prod))
+  ),
+  envir = .GlobalEnv
+)
+
+list2env(
+  setNames(
+    lapply(names(cdr_split_con), function(treatment) {
+      df_split <- cdr_split_con[[treatment]]
+      df_split$site <- paste0(df_split$site, "_", treatment)
+      return(df_split)
+    }),
+    paste0("cdr_biodiv_con_", names(cdr_split_con))
+  ),
+  envir = .GlobalEnv
+)
+
+# filter data for each treatment - there's probably a better way to do this
+filter_data(site_name = "cdr_biodiv_1", producer_data = cdr_biodiv_prod_1, consumer_data = cdr_biodiv_con_1,
+            mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
+
+filter_data(site_name = "cdr_biodiv_2", producer_data = cdr_biodiv_prod_2, consumer_data = cdr_biodiv_con_2,
+            mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
+
+filter_data(site_name = "cdr_biodiv_4", producer_data = cdr_biodiv_prod_4, consumer_data = cdr_biodiv_con_4,
+            mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
+
+filter_data(site_name = "cdr_biodiv_8", producer_data = cdr_biodiv_prod_8, consumer_data = cdr_biodiv_con_8,
+            mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
+
+filter_data(site_name = "cdr_biodiv_16", producer_data = cdr_biodiv_prod_16, consumer_data = cdr_biodiv_con_16,
+            mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
+
 
 

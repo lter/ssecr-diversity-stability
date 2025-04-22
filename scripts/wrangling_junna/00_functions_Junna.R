@@ -1,4 +1,4 @@
-rm(list = ls())
+# rm(list = ls())          comment out this, Junna
 librarian::shelf(googledrive, dplyr, tidyr, summarytools, here, codyn)
 
 
@@ -27,27 +27,29 @@ filter_data <- function(site_name, # site name as string
                         write_csv = FALSE) {
   print("Starting function execution...")
   
-  # remove not confident IDs
-  producer_data <- subset(producer_data, id_confidence == 1)
-  consumer_data <- subset(consumer_data, id_confidence == 1)
+  # filter out unconfident identification; Junna added
+  print("filtering unconfident identification...")
+  producer_data <- producer_data %>% filter(id_confidence)
+  consumer_data <- consumer_data %>% filter(id_confidence)
   
+  # browser()
   # Aggregate data at the year-plot level
   print("Aggregating data...")
   if (mean_sum == "mean") {
     producer_agg <- producer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
   } else {
     producer_agg <- producer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, plot, year, taxon_name) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
   }
   
@@ -65,14 +67,43 @@ filter_data <- function(site_name, # site name as string
                                  consumer_wide %>% select(plot, year),
                                  by = c("plot", "year"))
   
+  # creat plot year table; Junna added
+  valid_plot_years$year <- as.factor(valid_plot_years$year)
+  valid_plot_years_check <- table(valid_plot_years)
+  
+  # identify years when each site is sampled
+  # sites sampled per year
+  nsites_1year <- colSums(valid_plot_years_check) 
+  overlap_years <- colnames(valid_plot_years_check)[nsites_1year == nrow(valid_plot_years_check)]
+  while (length(overlap_years) < 10 & nrow(valid_plot_years_check) >=5) {
+    # find the year column we need to move the least number of sites
+    nonoverlap_year <- order(nsites_1year, decreasing = T)[length(overlap_years) + 1]
+    
+    # remove sites with least number of overlapping years    
+    valid_plot_years_check <- valid_plot_years_check[-which(valid_plot_years_check[, nonoverlap_year] == 0), ]
+    
+    # recalculate overlapping years
+    nsites_1year <- colSums(valid_plot_years_check)
+    overlap_years <- colnames(valid_plot_years_check)[nsites_1year == nrow(valid_plot_years_check)]
+  }
+  
+  if (nrow(valid_plot_years_check) < 5) {
+    print('Warning: we do not have enough plots with > 10 overlapping years!!')
+  } else {
+    print(cat("Number of effective plots: ", nrow(valid_plot_years_check), '; plot names: ', paste(rownames(valid_plot_years_check), collapse = ", "), "\n"))
+    print(cat("Number of sampling years: ", length(overlap_years), '; sampling years: ', paste(overlap_years, collapse = ", "), "\n"))
+  }
+  
   print("Filtering valid data...")
   producer_wide_sub <- producer_wide %>%
-    inner_join(valid_plot_years, by = c("plot", "year")) %>%
-    mutate(site = site_name)
+    filter(year %in% as.numeric(overlap_years)) %>%
+    filter(plot %in% rownames(valid_plot_years_check))
   
   consumer_wide_sub <- consumer_wide %>%
-    inner_join(valid_plot_years, by = c("plot", "year")) %>%
-    mutate(site = site_name)
+    filter(year %in% as.numeric(overlap_years)) %>%
+    filter(plot %in% rownames(valid_plot_years_check))
+# end of Junna's addition  
+  
   
   # Minimize — remove plots with < 10 years of data and then standardize remaining plots by shortest time series possible
   if (minimize) {
@@ -152,19 +183,18 @@ filter_data <- function(site_name, # site name as string
 ####  create aggregate diversity stability dataframe ####
 calculate_agg_stability <- function(producer_data, # synthesized producer data after filtering
                                     consumer_data, # synthesized consumer data after filtering
-                                    site_name, # site name as string
+                                    ecosystem_type, # vector c("Terrestrial", "Marine") indictaing ecosystem type
                                     output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                                     write_csv = FALSE # option to automatically write csv
 ) {
   # Universal metadata columns for subsetting
-  meta_cols <- c("site", "taxa_type", "ecosystem", "habitat_broad", "habitat_fine", "biome", "guild", "unit_abundance", "scale_abundance", "plot", "year")
+  meta_cols <- c("site", "plot", "year")
   
   # calculate diversity for producers and consumers
   producer_diversity <- 
     data.frame(
       site = producer_data$site,
- #     taxa_type = producer_data$taxa_type,
-      taxa_type = rep("producer", nrow(producer_data)),
+      taxa_type = producer_data$taxa_type,
       ecosystem = producer_data$ecosystem,
       habitat_broad = producer_data$habitat_broad,
       habitat_fine = producer_data$habitat_fine,
@@ -180,8 +210,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   consumer_diversity <- 
     data.frame(
       site = consumer_data$site,
-#     taxa_type = producer_data$taxa_type,
-      taxa_type = rep("consumer", nrow(consumer_data)),
+      taxa_type = consumer_data$taxa_type,
       ecosystem = consumer_data$ecosystem,
       habitat_broad = consumer_data$habitat_broad,
       habitat_fine = consumer_data$habitat_fine,
@@ -256,16 +285,14 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   )
   
   # create object names
-  producer_object_name <- paste0(site_name, "_producer_dss")
-  consumer_object_name <- paste0(site_name, "_consumer_dss")
-  multitrophic_object_name <- paste0(site_name, "_multitrophic_dss")
-  aggregate_object_name <- paste0(site_name, "_aggregate_dss")
+  producer_object_name <- paste0(ecosystem_type, "_producer_dss")
+  consumer_object_name <- paste0(ecosystem_type, "_consumer_dss")
+  multitrophic_object_name <- paste0(ecosystem_type, "_multitrophic_dss")
   
   # assign to global environment
   assign(producer_object_name, producer_dss, envir = .GlobalEnv)
   assign(consumer_object_name, consumer_dss, envir = .GlobalEnv)
   assign(multitrophic_object_name, multitrophic_dss, envir = .GlobalEnv)
-  assign(aggregate_object_name, aggregate_dss, envir = .GlobalEnv)
   
 
   # write csv
@@ -277,14 +304,12 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
         write.csv(row.names = F, producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
         write.csv(row.names = F, consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
         write.csv(row.names = F, multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
-        write.csv(row.names = F, aggregate_dss, here::here(output_folder, paste0(aggregate_object_name, ".csv")))
       }
     } else {
       # fallback to working directory
       write.csv(row.names = F, producer_dss, paste0(producer_object_name, ".csv"))
       write.csv(row.names = F, consumer_dss, paste0(consumer_object_name, ".csv"))
       write.csv(row.names = F, multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
-      write.csv(row.names = F, aggregate_dss, paste0(aggregate_object_name, ".csv"))
     }
   }
 }
@@ -310,13 +335,4 @@ filter_ranges <- function(trend, # emtrends df created from emmip
     left_join(range_obj, by = group) %>% # join with range object
     filter(.data[[value]] >= .data[[paste0("min_", value)]] & # filter so emtrend only covers range of actual values
              .data[[value]] <= .data[[paste0("max_", value)]])
-}
-
-#### create preliminary models plots for  stability
-model_stability <- function(df, # aggregate stability df
-                            ecosystem_type, # string c("terrestrial", "marine")
-                            stability_metric, # metric used to measure stability c("aggregate", "compositional")
-                            diversity_metric # metric used to measure richness
-){
-  
 }
