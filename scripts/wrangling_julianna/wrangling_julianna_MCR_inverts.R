@@ -151,6 +151,7 @@ invert_4 %>%
 ## -------------------------------------------- ##
 
 invert_4 %>% 
+  rowwise() %>% 
   mutate(site = "mcr",
          taxa_type = Trophic_role,
          ecosystem = "aquatic",
@@ -162,10 +163,11 @@ invert_4 %>%
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
-         plot = str_to_lower(paste0(str_split(Site, pattern = "_")[[1]][1], "_", 
-                                    str_split(Site, pattern = "_")[[1]][2])), 
+         plot = paste0(site, "_", habitat_fine, "_", 
+                       str_to_lower(paste0(str_split(Site, pattern = "_")[[1]][1], "_", 
+                                    str_split(Site, pattern = "_")[[1]][2]))), 
          subplot = paste0(Transect, "_", Quadrat),
-         unique_ID = paste0(site, "_", habitat_fine, "_", plot),
+         unique_ID = plot,
          unit_abundance = "count",
          scale_abundance = "1m2",
          taxon_name = Taxonomy,

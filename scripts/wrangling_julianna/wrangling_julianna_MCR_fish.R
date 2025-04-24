@@ -155,6 +155,7 @@ fish_3 %>%
 ## -------------------------------------------- ##
 
 fish_3 %>% 
+  rowwise() %>% 
   mutate(site = "mcr",
          taxa_type = str_to_lower(Fine_Trophic),
          ecosystem = "aquatic",
@@ -166,9 +167,9 @@ fish_3 %>%
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
-         plot = paste0("lter_", Site), 
+         plot = paste0(site, "_", habitat_fine, "_", "lter_", Site), 
          subplot = paste0(Transect, "_", Swath, "m"),
-         unique_ID = paste0(site, "_", habitat_fine, "_", plot),
+         unique_ID = plot,
          unit_abundance = "g",
          scale_abundance = case_when(Swath == 5 ~ "5x50m",
                                      Swath == 1 ~ "1x50m",

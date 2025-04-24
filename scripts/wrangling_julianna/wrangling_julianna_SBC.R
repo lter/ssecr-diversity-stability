@@ -127,22 +127,43 @@ sbc_2 %>%
          year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, 
          taxon_name, taxon_resolution, abundance, id_confidence) -> sbc_3
 
+
+# Deal with missing values
+# Styela montereyensis at GOLB has 2 instances of -99999 but they're BOTH 2010 (subplot 1 & 2)
+# Want to fill 2010 with the average value of S. montereyensis at that site:
+sbc_3 %>% 
+  # get rid of negative values
+  filter(abundance > -1) %>% 
+  # then get average for GOLB
+  filter(plot == "GOLB" &
+           taxon_name == "Styela montereyensis") %>% 
+  summarize(mean_abundance = mean(abundance)) %>% 
+  as.numeric() -> mean_s_montereyensis
+
+
+# Fill it in
+sbc_3 %>% 
+  mutate(abundance = case_when(abundance < -1 &
+                                 taxon_name == "Styela montereyensis" &
+                                 plot == "GOLB" ~ mean_s_montereyensis,
+                               TRUE ~ abundance)) -> sbc_4
+
 ## -------------------------------------------- ##
 #             Summary stats ----
 ## -------------------------------------------- ##
 
 # year range
-range(as.numeric(sbc_3$year))
+range(as.numeric(sbc_4$year))
 
 # number of taxa
-sbc_3 %>% 
+sbc_4 %>% 
   group_by(guild) %>% 
   summarize(unique(taxon_name)) %>% 
   group_by(guild) %>% 
   summarize(count = n()) 
 
 # And for sites/transect:
-sbc_3 %>% 
+sbc_4 %>% 
   group_by(plot, subplot, year) %>% 
   # arbitrary summary thing here to get 1 value per entry
   summarize(total = sum(abundance)) %>% 
@@ -157,7 +178,7 @@ sbc_3 %>%
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(sbc_3, here("../cleaned_data/sbc_all.csv"))
+write_csv(sbc_4, here("../cleaned_data/sbc_all.csv"))
 write_csv(transect_reps, here("../cleaned_data/sbc_transect_reps.csv"))
 
   
