@@ -58,3 +58,49 @@ terrestrial_agg_stability <- rbind(
 )
 
 # write.csv(row.names = F, terrestrial_agg_stability, here::here("data/synthesized_data", "terrestrial_agg_dss.csv"))
+
+#### MARINE DATA ####
+##### read in and create agg dss dataframes #####
+
+###### GCE ######
+gce_prod_wide <- read.csv(here::here("data/GCE", "gce_producers_wide_sub.csv"))
+gce_con_wide <- read.csv(here::here("data/GCE", "gce_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = gce_prod_wide, consumer_data = gce_con_wide, "gce")
+
+###### USVI ######
+usvi_prod_wide <- read.csv(here::here("data/USVI", "usvi_producers_wide_sub.csv"))
+usvi_con_wide <- read.csv(here::here("data/USVI", "usvi_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = usvi_prod_wide, consumer_data = usvi_con_wide, "usvi")
+
+###### SBC ######
+sbc_invert_prod_wide <- read.csv(here::here("data/SBC", "sbc_invert_producers_wide_sub.csv"))
+sbc_invert_wide <- read.csv(here::here("data/SBC", "sbc_invert_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = sbc_invert_prod_wide, consumer_data = sbc_invert_wide, "sbc_invert")
+
+sbc_fish_prod_wide <- read.csv(here::here("data/SBC", "sbc_fish_producers_wide_sub.csv"))
+sbc_fish_wide <- read.csv(here::here("data/SBC", "sbc_fish_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = sbc_fish_prod_wide, consumer_data = sbc_fish_wide, "sbc_fish")
+
+###### MCR ######
+mcr_invert_prod_wide <- read.csv(here::here("data/MCR", "mcr_invert_producers_wide_sub.csv"))
+mcr_invert_wide <- read.csv(here::here("data/MCR", "mcr_invert_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = mcr_invert_prod_wide, consumer_data = mcr_invert_wide, "mcr_invert")
+
+mcr_fish_prod_wide <- read.csv(here::here("data/MCR", "mcr_fish_producers_wide_sub.csv"))
+mcr_fish_wide <- read.csv(here::here("data/MCR", "mcr_fish_consumers_wide_sub.csv"))
+calculate_agg_stability(producer_data = mcr_fish_prod_wide, consumer_data = mcr_fish_wide, "mcr_fish")
+
+###### COMBINE MARINE AGGREGATE DFS ######
+marine_agg_stability <- rbind(
+  gce_aggregate_dss,
+  usvi_aggregate_dss,
+  sbc_invert_aggregate_dss,
+  sbc_fish_aggregate_dss,
+  mcr_invert_aggregate_dss,
+  mcr_fish_aggregate_dss
+)
+
+# write.csv(row.names = F, marine_agg_stability, here::here("data/synthesized_data", "marine_agg_dss.csv"))
+
+
+
