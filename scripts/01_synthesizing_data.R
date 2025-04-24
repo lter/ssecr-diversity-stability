@@ -107,4 +107,105 @@ filter_data(site_name = "cdr_biodiv_16", producer_data = cdr_biodiv_prod_16, con
             mean_sum = "mean", output_folder = "data/CDR_biodiv", write_csv = TRUE, minimize = FALSE)
 
 
+#### AQUATIC DATA ####
+
+###### GCE ######
+gce_prod <-  read.csv(here::here("data/GCE", "gce_producers.csv"))
+gce_con <- read.csv(here::here("data/GCE", "gce_consumers.csv"))
+
+
+# correct column name
+colnames(gce_prod)[colnames(gce_prod) == "scale_abundnace"] <- "scale_abundance"
+colnames(gce_con)[colnames(gce_con) == "scale_abundnace"] <- "scale_abundance"
+
+# subset confident ids
+gce_prod <- subset(gce_prod, id_confidence == 1)
+gce_con <- subset(gce_con, id_confidence == 1)
+
+
+# gce_prod has a -1 instead of a 1 in one of the habitat_fine --> correct to 1?
+gce_prod <- gce_prod %>%
+  mutate(habitat_fine = ifelse(habitat_fine == -1, 1, habitat_fine))
+
+# NOTE: each plot can belong to 1 of 3 zones - should we re-factor plot to paste0(gce_prod$plot, "-", gce_prod$habitat_fine)?
+# moving ahead with this approach - delete these lines if this is incorrect
+# filtering seems to not work properly if we don't do this because of spatial co-location issues
+gce_prod_mutated <- gce_prod %>%
+  mutate(plot = paste0(gce_prod$plot, "-", gce_prod$habitat_fine))
+
+gce_con_mutated <- gce_con %>%
+  mutate(plot = paste0(gce_con$plot, "-", gce_con$habitat_fine))
+
+filter_data(site_name = "gce", producer_data = gce_prod_mutated, consumer_data = gce_con_mutated, mean_sum = "mean", output_folder = "data/gce", write_csv = TRUE)
+
+##### USVI #####
+usvi_prod <-  read.csv(here::here("data/USVI", "usvi_benthic_cover_algae.csv"))
+usvi_con <- read.csv(here::here("data/USVI", "usvi_fish_census.csv"))
+
+# subset confident ids
+usvi_prod <- subset(usvi_prod, id_confidence == 1)
+usvi_con <- subset(usvi_con, id_confidence == 1)
+
+# MUTATING PLOT AS ABOVE FOR FILTERING - RETURN HERE PENDING JUNNA'S DATA EXPLORATION
+usvi_prod_mutated <- usvi_prod %>%
+  mutate(plot = paste0(usvi_prod$plot, "-", usvi_prod$habitat_fine))
+
+usvi_con_mutated <- usvi_con %>%
+  mutate(plot = paste0(usvi_con$plot, "-", usvi_con$habitat_fine))
+
+filter_data(site_name = "usvi", producer_data = usvi_prod_mutated, consumer_data = usvi_con_mutated, mean_sum = "mean", output_folder = "data/USVI", write_csv = TRUE)
+
+##### SBC #####
+sbc_all <-  read.csv(here::here("data/SBC", "sbc_all.csv"))
+
+# subset producers
+sbc_prod <- subset(sbc_all, taxa_type == "producer")
+
+# coerce macroalge = algae, as we do not make that distinction in our protocol anymore
+sbc_prod <- sbc_prod %>%
+  mutate(guild = ifelse(guild == "algae", "macroalgae", guild))
+
+
+sbc_prod <- subset(sbc_prod, id_confidence == 1)
+
+# subset out invert and fish as unique consumer guilds
+sbc_invert <- subset(sbc_all, guild == "invert")
+sbc_fish <- subset(sbc_all, guild == "fish")
+sbc_fish <- subset(sbc_fish, id_confidence == 1)
+
+# remove suspension feeders from inverts --> don't interact with the benthos/primary producers at all as consumers
+sbc_invert <- sbc_invert[!(sbc_invert$taxa_type %in% c("suspension_feeder_detritivore", "suspension_feeder")),]
+sbc_invert <- subset(sbc_invert, id_confidence == 1)
+
+# create the two sets of data
+filter_data(site_name = "sbc_fish", producer_data = sbc_prod, consumer_data = sbc_fish, mean_sum = "mean", output_folder = "data/sbc", write_csv = TRUE)
+
+filter_data(site_name = "sbc_invert", producer_data = sbc_prod, consumer_data = sbc_invert, mean_sum = "mean", output_folder = "data/sbc", write_csv = TRUE)
+
+##### MCR #####
+mcr_prod <-  read.csv(here::here("data/MCR", "mcr_algae.csv"))
+
+# coerce macroalge = algae, as we do not make that distinction in our protocol anymore
+# remove filter feeders
+mcr_prod <- subset(mcr_prod, taxa_type == "producer") %>%
+  mutate(guild = ifelse(guild == "algae", "macroalgae", guild))
+
+mcr_prod <- subset(mcr_prod, id_confidence == 1)
+
+# fish
+mcr_fish <- read.csv(here::here("data/MCR", "mcr_fish.csv"))
+mcr_fish <- subset(mcr_fish, id_confidence == 1)
+# fish transects have two different sizes which makes the merge break
+# coercing into a single value BUT WE WILL PROBABLY HAVE TO FIND A WAY TO ADDRESS THIS AT SOMEPOINT
+mcr_fish$scale_abundance <- rep("transect", nrow(mcr_fish))
+
+# inverts - remove suspension feeders for reasons stated above
+mcr_invert <- read.csv(here::here("data/MCR", "mcr_invertebrate.csv"))
+mcr_invert <- mcr_invert[!(mcr_invert$taxa_type %in% c("suspension_feeder")),]
+mcr_invert <- subset(mcr_invert, id_confidence == 1)
+
+filter_data(site_name = "mcr_fish", producer_data = mcr_prod, consumer_data = mcr_fish, mean_sum = "mean", output_folder = "data/MCR", write_csv = TRUE)
+
+
+filter_data(site_name = "mcr_invert", producer_data = mcr_prod, consumer_data = mcr_invert, mean_sum = "mean", output_folder = "data/MCR", write_csv = TRUE)
 
