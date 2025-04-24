@@ -313,10 +313,314 @@ filter_ranges <- function(trend, # emtrends df created from emmip
 }
 
 #### create preliminary models plots for  stability
-model_stability <- function(df, # aggregate stability df
+model_stability <- function(df, # stability df
                             ecosystem_type, # string c("terrestrial", "marine")
                             stability_metric, # metric used to measure stability c("aggregate", "compositional")
-                            diversity_metric # metric used to measure richness
+                            diversity_metric, # metric used to measure diversity
+                            prod_diversity_col, # column name that contains producer diversity
+                            con_diversity_col, # column name that contains consumer stability
+                            prod_stability_col, # column name that contains producer diversity
+                            con_stability_col, # column name that contains consumer stability
+                            multi_stability_col, # column name that contains multitrophic stability
+                            z_standard = FALSE # should we z_score the metrics
 ){
+  # set names of relevant dataframes based on diversity and stability metrics
+  prod_site_results_name <- paste0(ecosystem_type, "_prod_", diversity_metric, "_", stability_metric, "_site_results")
+  con_site_results_name <- paste0(ecosystem_type, "_con_", diversity_metric, "_", stability_metric, "_site_results")
+  multitrophic_site_results_name <- paste0(ecosystem_type, "_multi_", diversity_metric, "_", stability_metric, "_site_results")
+  combined_lmer_results_name <- paste0(ecosystem_type, "_", diversity_metric, "_", stability_metric, "_combined_lmer_results")
   
+  #### SITE LEVEL ANALYSES #####
+  
+  ##### PRODUCER STABILITY #####
+  prod_stability_results_list <- list()
+  
+  for (s in unique(df$site)) {
+    site_data <- subset(df, site == s)
+    
+    if (z_standard) {
+      # build formulas for all of the models used in this function as a string
+      producer_formula_str <- paste0(
+        "z_standard(", prod_stability_col, ") ~ ",
+        "z_standard(", prod_diversity_col, ") + ",
+        "z_standard(", con_diversity_col, ")"
+      )
+      producer_model_formula <- as.formula(producer_formula_str)
+    } else {
+      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! SEE ABOVE FOR HOW TO DO THIS
+      # BRIEFLY - CREATE A FORMULA STRING AND THEN APPLY IS TO THE FORMULA OBJECTI WITH as.formula()
+      producer_model_formula <- as.formula(paste0(
+        prod_stability_col, " ~ ",
+        prod_diversity_col, " + ",
+        con_diversity_col
+      ))
+    }
+    
+    # Fit the model
+    producer_model <- lm(producer_model_formula, data = site_data)
+    
+    # Get coefficients
+    coefs <- coef(producer_model)
+    
+    # Get ANOVA results
+    anova_results <- Anova(producer_model)
+    prod_f_statistic <- anova_results$`F value`[1]
+    con_f_statistic <- anova_results$`F value`[2]
+    prod_p_value <- anova_results$`Pr(>F)`[1]
+    con_p_value <- anova_results$`Pr(>F)`[2]
+    
+    # Dynamically get correct coefficient names
+    coef_names <- names(coefs)
+    prod_name <- if (z_standard) paste0("z_standard(", prod_diversity_col, ")") else prod_diversity_col
+    con_name  <- if (z_standard) paste0("z_standard(", con_diversity_col, ")") else con_diversity_col
+    
+    # Store results
+    prod_stability_results_list[[s]] <- data.frame(
+      site = s,
+      intercept = unname(coefs["(Intercept)"]),
+      prod_diversity_coef = unname(coefs[prod_name]),
+      con_diversity_coef = unname(coefs[con_name]),
+      prod_f_statistic = prod_f_statistic,
+      con_f_statistic = con_f_statistic,
+      prod_p_value = prod_p_value,
+      con_p_value = con_p_value,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  
+  ##### CONSUMER STABILITY #####
+  con_stability_results_list <- list()
+  
+  for (s in unique(df$site)) {
+    site_data <- subset(df, site == s)
+    
+    if (z_standard) {
+      # build formulas for all of the models used in this function as a string
+      consumer_formula_str <- paste0(
+        "z_standard(", con_stability_col, ") ~ ",
+        "z_standard(", prod_diversity_col, ") + ",
+        "z_standard(", con_diversity_col, ")"
+      )
+      consumer_model_formula <- as.formula(consumer_formula_str)
+    } else {
+      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
+      consumer_model_formula <- as.formula(paste0(
+        con_stability_col, " ~ ",
+        prod_diversity_col, " + ",
+        con_diversity_col
+      ))
+    }
+    
+    # Fit the model
+    consumer_model <- lm(consumer_model_formula, data = site_data)
+    
+    # Get coefficients
+    consumer_coefs <- coef(consumer_model)
+    
+    # Get ANOVA results
+    anova_results <- Anova(consumer_model)
+    prod_f_statistic <- anova_results$`F value`[1]
+    con_f_statistic <- anova_results$`F value`[2]
+    prod_p_value <- anova_results$`Pr(>F)`[1]
+    con_p_value <- anova_results$`Pr(>F)`[2]
+    
+    # Dynamically get correct coefficient names
+    consumer_coef_names <- names(consumer_coefs)
+    prod_name <- if (z_standard) paste0("z_standard(", prod_diversity_col, ")") else prod_diversity_col
+    con_name  <- if (z_standard) paste0("z_standard(", con_diversity_col, ")") else con_diversity_col
+    
+    # Store results
+    con_stability_results_list[[s]] <- data.frame(
+      site = s,
+      intercept = unname(consumer_coefs["(Intercept)"]),
+      prod_diversity_coef = unname(consumer_coefs[prod_name]),
+      con_diversity_coef = unname(consumer_coefs[con_name]),
+      prod_f_statistic = prod_f_statistic,
+      con_f_statistic = con_f_statistic,
+      prod_p_value = prod_p_value,
+      con_p_value = con_p_value,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  ##### MULTITROPHIC STABILITY #####
+  multitrophic_stability_results_list <- list()
+  
+  for (s in unique(df$site)) {
+    site_data <- subset(df, site == s)
+    
+    if (z_standard) {
+      # build formulas for all of the models used in this function as a string
+      multitrophic_formula_str <- paste0(
+        "z_standard(", multi_stability_col, ") ~ ",
+        "z_standard(", prod_stability_col, ") + ",
+        "z_standard(", con_stability_col, ")"
+      )
+      multitrophic_model_formula <- as.formula(multitrophic_formula_str)
+    } else {
+      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
+      multitrophic_model_formula <- as.formula(paste0(
+        multi_stability_col, " ~ ",
+        prod_stability_col, " + ",
+        con_stability_col
+      ))
+    }
+    
+    # Fit the model
+    multitrophic_model <- lm(multitrophic_model_formula, data = site_data)
+    
+    # Get coefficients
+    coefs <- coef(multitrophic_model)
+    
+    # Get ANOVA results
+    anova_results <- Anova(multitrophic_model)
+    prod_f_statistic <- anova_results$`F value`[1]
+    con_f_statistic <- anova_results$`F value`[2]
+    prod_p_value <- anova_results$`Pr(>F)`[1]
+    con_p_value <- anova_results$`Pr(>F)`[2]
+    
+    # Dynamically get correct coefficient names
+    coef_names <- names(coefs)
+    prod_name <- if (z_standard) paste0("z_standard(", prod_stability_col, ")") else prod_stability_col
+    con_name  <- if (z_standard) paste0("z_standard(", con_stability_col, ")") else con_stability_col
+    
+    # Store results
+    multitrophic_stability_results_list[[s]] <- data.frame(
+      site = s,
+      intercept = unname(coefs["(Intercept)"]),
+      prod_stability_coef = unname(coefs[prod_name]),
+      con_stability_coef = unname(coefs[con_name]),
+      prod_f_statistic = prod_f_statistic,
+      con_f_statistic = con_f_statistic,
+      prod_p_value = prod_p_value,
+      con_p_value = con_p_value,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  prod_stability_results <- do.call(rbind, prod_stability_results_list)
+  con_stability_results <- do.call(rbind, con_stability_results_list)
+  multitrophic_stability_results <- do.call(rbind, multitrophic_stability_results_list)
+  
+  # assign objects to global environment
+  assign(prod_site_results_name, prod_stability_results, envir = .GlobalEnv)
+  assign(con_site_results_name, con_stability_results, envir = .GlobalEnv)
+  assign(multitrophic_site_results_name, multitrophic_stability_results, envir = .GlobalEnv)
+  
+  #### SITE AS RANDOM EFFECT ####
+  
+  if (z_standard) {
+      # build formulas for all of the models used in this function as a string
+      producer_comb_formula_str <- paste0(
+        "z_standard(", prod_stability_col, ") ~ ",
+        "z_standard(", prod_diversity_col, ") + ",
+        "z_standard(", con_diversity_col, ") + (1|site)"
+      )
+      producer_combined_model_formula <- as.formula(producer_comb_formula_str)
+      
+      consumer_comb_formula_str <- paste0(
+        "z_standard(", con_stability_col, ") ~ ",
+        "z_standard(", prod_diversity_col, ") + ",
+        "z_standard(", con_diversity_col, ") + (1|site)"
+      )
+      consumer_combined_model_formula <- as.formula(consumer_comb_formula_str)
+      
+      multitrophic_comb_formula_str <- paste0(
+        "z_standard(", multi_stability_col, ") ~ ",
+        "z_standard(", prod_stability_col, ") + ",
+        "z_standard(", con_stability_col, ") + (1|site)"
+      )
+      multitrophic_combined_model_formula <- as.formula(multitrophic_comb_formula_str)
+      
+    } else {
+      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
+      producer_combined_model_formula <- as.formula(paste0(
+        prod_stability_col, " ~ ",
+        prod_diversity_col, " + ",
+        con_diversity_col, "+ (1|site)"
+      ))
+      
+      consumer_combined_model_formula <- as.formula(paste0(
+        con_stability_col, " ~ ",
+        prod_diversity_col, " + ",
+        con_diversity_col, "+ (1|site)"
+      ))
+      
+      multitrophic_combined_model_formula <- as.formula(paste0(
+        multi_stability_col, " ~ ",
+        prod_stability_col, " + ",
+        con_stability_col, "+ (1|site)"
+      ))
+    }
+
+#   # Fit the models - BRUTE FORCE METHOD
+#   
+#   producer_combined_model <- lmer(producer_combined_model_formula, data = site_data)
+#   consumer_combined_model <- lmer(consumer_combined_model_formula, data = site_data)
+#   multitrophic_combined_model <- lmer(multitrophic_combined_model_formula, data = site_data)
+#   
+#   
+#   # Get coefficients
+#   producer_coefs <- coef(producer_combined_model)
+#   consumer_coefs <- coef(consumer_combined_model)
+#   multitrophic_coefs <- coef(multitrophic_combined_model)
+#   
+#   # Get ANOVA results
+#   producer_combined_anova_results <- Anova(producer_combined_model)
+#   producer_mod_prod_chisq_statistic <- producer_combined_anova_results$Chisq[1]
+#   producer_mod_con_f_statistic <- producer_combined_anova_results$Chisq[2]
+#   producer_mod_prod_p_value <- producer_combined_anova_results$`Pr(>Chisq)`[1]
+#   producer_mod_con_p_value <- producer_combined_anova_results$`Pr(>Chisq)`[2]
+#   
+#   consumer_combined_anova_results <- Anova(consumer_combined_model)
+#   consumer_mod_prod_chisq_statistic <- consumer_combined_anova_results$Chisq[1]
+#   consumer_mod_con_f_statistic <- consumer_combined_anova_results$Chisq[2]
+#   consumer_mod_prod_p_value <- consumer_combined_anova_results$`Pr(>Chisq)`[1]
+#   consumer_mod_con_p_value <- consumer_combined_anova_results$`Pr(>Chisq)`[2]
+#   
+#   multitrophic_combined_anova_results <- Anova(multitrophic_combined_model)
+#   multitrophic_mod_prod_chisq_statistic <- multitrophic_combined_anova_results$Chisq[1]
+#   multitrophic_mod_con_f_statistic <- multitrophic_combined_anova_results$Chisq[2]
+#   multitrophic_mod_prod_p_value <- multitrophic_combined_anova_results$`Pr(>Chisq)`[1]
+#   multitrophic_mod_con_p_value <- multitrophic_combined_anova_results$`Pr(>Chisq)`[2]
+  
+  # Fit the models - LOOP METHOD
+  # Store models in a named list
+  combined_models <- list(
+    producer = lmer(producer_combined_model_formula, data = df),
+    consumer = lmer(consumer_combined_model_formula, data = df),
+    multitrophic = lmer(multitrophic_combined_model_formula, data = df)
+  )
+  
+  # Initialize list to collect results
+  combined_model_results_list <- list()
+  
+  # Loop through models to extract statistics
+  for (model_name in names(combined_models)) {
+    model <- combined_models[[model_name]]
+    anova_res <- Anova(model)
+    coefs <- fixef(model)  # Get fixed effects
+    r2 <- performance::r2(model)
+    
+    # Create a row of results for this model
+    combined_model_results_list[[model_name]] <- data.frame(
+      model = model_name,
+      intercept = unname(coefs["(Intercept)"]),
+      prod_coef = unname(coefs[2]),
+      con_coef = unname(coefs[3]),
+      prod_chisq = anova_res$Chisq[1],
+      con_chisq = anova_res$Chisq[2],
+      prod_p_value = anova_res$`Pr(>Chisq)`[1],
+      con_p_value = anova_res$`Pr(>Chisq)`[2],
+      R2_marginal = unname(r2$R2_marginal),
+      R2_conditional = unname(r2$R2_conditional),
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  # Combine into a final dataframe
+  combined_model_results <- do.call(rbind, combined_model_results_list)
+  rownames(combined_model_results) <- combined_model_results$model
+  assign(combined_lmer_results_name, combined_model_results, envir = .GlobalEnv)
 }
