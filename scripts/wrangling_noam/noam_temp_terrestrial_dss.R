@@ -4,37 +4,25 @@ librarian::shelf(googledrive, vegan, lme4, car, dplyr, tidyr, lattice, lavaan,
 
 
 
-# functions to extract ranges of data (from mcr algal working group github)
-# custom functions by Noam - could probably be made more efficient
-# function to extract the ranges of the data for plotting
-extract_ranges <- function(df, # a dataframe
-                           group, # grouping variable (e.g. habitat)
-                           columns # columns you want to summarize (e.g. richness, cover, synchrony)
-){
-  df %>% # in your dataframe
-    dplyr::group_by(across(all_of(group))) %>% 
-    dplyr::summarise(across(all_of(columns), # summarize the columns in your group
-                            list(min = ~min(.x, na.rm = TRUE), max = ~max(.x, na.rm = TRUE)), # by taking the min/max of them
-                            .names = "{.fn}_{.col}")) # and assigning them to the columns name "min/max_value"
-}
-
-# function for filtering ranges of emtrends to only fit range of actual data
-filter_ranges <- function(trend, # emtrends df created from emmip
-                          range_obj, # output df from extract_ranges() custom function
-                          group, # group over which to summarize (e.g. habitat)
-                          value # value to filter range (e.g. richness)
-){
-  trend %>% # take emtrend
-    left_join(range_obj, by = group) %>% # join with range object
-    filter(.data[[value]] >= .data[[paste0("min_", value)]] & # filter so emtrend only covers range of actual values
-             .data[[value]] <= .data[[paste0("max_", value)]])
-}
-
+# retrieve functions from 00_functions.r
+source(here::here("scripts", "00_functions.r"))
 
 # read temp terrestrial comb data
 
 terr_comb <- read.csv(here::here(file = "data/synthesized_data", "terrestrial_agg_dss.csv"))
-
+# test function
+model_stability(df = terr_comb,
+                ecosystem_type = "terrestrial",
+                stability_metric = "aggregate",
+                diversity_metric = "richness",
+                prod_diversity_col = "prod_richness",
+                con_diversity_col = "con_richness",
+                prod_stability_col = "prod_stability",
+                con_stability_col = "con_stability",
+                multi_stability_col = "multitroph_stability",
+                z_standard = FALSE)
+# terrestrial_richness_aggregate_sem_results
+### SCRATCH PAPER BELOW
 # create individual models for each site
 
 #### Producer stability ####
@@ -55,7 +43,7 @@ for (s in unique(terr_comb$site)) {
   site_data <- subset(terr_comb, site == s)
   
   # Fit linear model
-  model <- glm(prod_stability ~ prod_richness + con_richness, family = Gamma("log"), data = site_data)
+  model <- lm(prod_stability ~ prod_richness + con_richness, , data = site_data)
   
   # Extract coefficients
   coefs <- coef(model)
@@ -80,10 +68,15 @@ for (s in unique(terr_comb$site)) {
 
 
 # run as lmer with site as random effect
-comb_prod_mod <- glmer(prod_stability  ~ prod_richness + con_richness + (1|site), family = Gamma("log"), data = terr_comb)
+comb_prod_mod <- lmer(prod_stability  ~ prod_richness + con_richness + (1|site),  data = terr_comb)
 summary(comb_prod_mod)
 Anova(comb_prod_mod) # producer X2 = 0.5, P = 0.47, consumer X2 = 14.7, P = 0.0001
-performance::r2(comb_prod_mod) # 0.06, 0.79
+x <- Anova(comb_prod_mod)
+x$Chisq
+x$`Pr(>Chisq)`
+y <- performance::r2(comb_prod_mod) # 0.06, 0.79
+unname(y$R2_conditional)
+y$R2_marginal
 
 # basic plots
 (prod_stab_prod_div_plot <- 
@@ -129,7 +122,7 @@ for (s in unique(terr_comb$site)) {
   site_data <- subset(terr_comb, site == s)
   
   # Fit linear model
-  model <- glm(con_stability ~ prod_richness + con_richness, family = Gamma("log"), data = site_data)
+  model <- lm(con_stability ~ prod_richness + con_richness, , data = site_data)
   
   # Extract coefficients
   coefs <- coef(model)
@@ -154,7 +147,7 @@ for (s in unique(terr_comb$site)) {
 
 
 # run as lmer with site as random effect
-comb_con_mod <- glmer(con_stability  ~ prod_richness + con_richness + (1|site), family = Gamma("log"), data = terr_comb)
+comb_con_mod <- lmer(con_stability  ~ prod_richness + con_richness + (1|site), , data = terr_comb)
 summary(comb_con_mod)
 Anova(comb_con_mod) # prod richness X2 = 3,1, P = 0.08; con richness X2 = 003, P = 0.96
 performance::r2(comb_con_mod) # 0.05, 0.53
@@ -204,7 +197,7 @@ for (s in unique(terr_comb$site)) {
   site_data <- subset(terr_comb, site == s)
   
   # Fit linear model
-  model <- glm(multitroph_stability ~ prod_stability + con_stability, family = Gamma("log"), data = site_data)
+  model <- lm(multitroph_stability ~ prod_stability + con_stability, , data = site_data)
   
   # Extract coefficients
   coefs <- coef(model)
@@ -229,7 +222,7 @@ for (s in unique(terr_comb$site)) {
 
 
 # run as lmer with site as random effect
-comb_multitroph_mod <- glmer(multitroph_stability ~ prod_stability + con_stability + (1|site), family = Gamma("log"), data = terr_comb)
+comb_multitroph_mod <- lmer(multitroph_stability ~ prod_stability + con_stability + (1|site), , data = terr_comb)
 summary(comb_multitroph_mod)
 Anova(comb_multitroph_mod)
 performance::r2(comb_multitroph_mod) 
@@ -314,4 +307,6 @@ modelList <- psem(comb_prod_mod, comb_con_mod, comb_multitroph_mod,
                   prod_stability %~~% con_stability,
                   prod_richness %~~% con_richness,
                   terr_comb)
-summary(modelList)
+z <- summary(modelList)
+z
+plot(modelList)
