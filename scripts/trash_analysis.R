@@ -8,7 +8,7 @@ librarian::shelf(tidyverse, stringr, piecewiseSEM, glmmTMB, DHARMa, performance,
 #### loading data #### 
 setwd("~/Documents/SSECR/data")
 terrestrial_agg_dss <- read.csv("terrestrial_agg_dss.csv") # reading in scripts manually for now -- downloaded from google drive
-
+marine_agg_dss <- read.csv("marine_agg_dss.csv")
 
 #### Assigining treatments ####
 ## CDR biodiversity experiment
@@ -58,76 +58,55 @@ terrestrial_agg_dss2 <- terrestrial_agg_dss %>%
   mutate(site = if_else(str_detect(site, "cdr_biodiv"), "cdr_biodiv", site)) %>% ### making all the CDR biodiversity experiment plots one site again
   left_join(treatment_info, by = c("site", "plot")) # joining treatment data
 
+marine_agg_dss2 <- marine_agg_dss %>% # doing it for marine also
+  mutate(treatment = if_else(is.na(habitat_fine), "none", habitat_fine))
+
 
 #### FROM NOAM's SCRIPT: z_standard() - function for z standardization ####
 z_standard <- function(x){
   (x - mean(x))/sd(x)
 }
+# adding function to easily apply and rename to columns I want
+z_standard_columns <- function(df) {
+  df_z_score <- df %>%
+    mutate(z_prod_rich = z_standard(prod_richness)) %>%
+    mutate(z_prod_stability = z_standard(prod_stability)) %>%
+    mutate(z_con_rich = z_standard(con_richness)) %>%
+    mutate(z_con_stability = z_standard(con_stability)) %>%
+    mutate(z_multitroph_richness = z_standard(multitroph_richness)) %>%
+    mutate(z_multitroph_stability = z_standard(multitroph_stability)) %>%
+  return(df_z_score)
+}
 
-## checking distributions of reponse variables
-hist(terrestrial_agg_dss2$prod_stability)
-hist(terrestrial_agg_dss2$prod_richness)
-hist(z_standard(terrestrial_agg_dss2$con_stability))
-hist(terrestrial_agg_dss2$con_stability)
-hist(terrestrial_agg_dss2$con_richness)
-hist(z_standard(terrestrial_agg_dss2$multitroph_stability))
-hist((terrestrial_agg_dss2$multitroph_stability))
+### z standardize within each site 
+terrestrial_agg_dss3 <- terrestrial_agg_dss2 %>%
+  group_by(site) %>%
+  group_split() %>%
+  lapply(z_standard_columns) %>%
+  bind_rows()
 
+marine_agg_dss3 <- marine_agg_dss2 %>%
+  group_by(site) %>%
+  group_split() %>%
+  lapply(z_standard_columns) %>%
+  bind_rows()
 
-terrestrial_agg_dss2 %>%
-  count(site, treatment)
+total_agg_dss3 <- rbind( # combining terrestrial and aquatic -- not doing anything with this yet
+  terrestrial_agg_dss3,
+  marine_agg_dss3
+)
 
+### histograms
+hist(terrestrial_agg_dss3$z_multitroph_stability)
+hist(terrestrial_agg_dss3$z_prod_stability)
+hist(terrestrial_agg_dss3$z_con_stability)
+hist(terrestrial_agg_dss3$z_prod_rich)
+hist(terrestrial_agg_dss3$z_con_rich)
 
-#### lmer models: Similar to Noam's SEM models ####
+#### glmmTMB models: gaussian, z transformed ####
 # producer stability
-m1 <- lmer(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
-           data = terrestrial_agg_dss2)
-summary(m1)
-plot(simulateResiduals(m1))
-check_model(m1)
-
-
-# consumer stability
-m2 <- lmer(con_stability ~ prod_richness + con_richness + (1|site/treatment),
-           data = terrestrial_agg_dss2)
-summary(m2)
-plot(simulateResiduals(m2))
-check_model(m2)
-
-
-# multitrophic stability
-m3 <- lmer(multitroph_stability ~ prod_stability + con_stability  + (1|site/treatment),
-           data = terrestrial_agg_dss2)
-summary(m3)
-plot(simulateResiduals(m3))
-check_model(m3)
-
-
-
-#### z-standardizing lmer models ####
-m1b <- lmer(z_standard(prod_stability) ~ z_standard(prod_richness) + z_standard(con_richness) + (1|site/treatment),
-            data = terrestrial_agg_dss2)
-summary(m1b)
-plot(simulateResiduals(m1b))
-
-# consumer stability
-m2b <- lmer(z_standard(con_stability) ~ z_standard(prod_richness) + z_standard(con_richness) + (1|site/treatment),
-            data = terrestrial_agg_dss2)
-summary(m2b)
-plot(simulateResiduals(m2b))
-
-# multitrophic stability
-m3b <- lmer(z_standard(multitroph_stability) ~ z_standard(prod_stability) + z_standard(con_stability)  + (1|site/treatment),
-            data = terrestrial_agg_dss2)
-summary(m3b)
-plot(simulateResiduals(m3b))
-
-
-
-#### glmmTMB models: gaussian ####
-# producer stability
-m4 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
-              data = terrestrial_agg_dss2,
+m4 <- glmmTMB(z_prod_stability ~ z_prod_rich + z_con_rich + (1|site/treatment),
+              data = terrestrial_agg_dss3,
               family = "gaussian")
 summary(m4)
 plot(simulateResiduals(m4))
@@ -135,107 +114,78 @@ check_model(m4)
 
 
 # consumer stability
-m5 <- glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
-              data = terrestrial_agg_dss2,
+m5 <- glmmTMB(z_con_stability ~ z_prod_rich + z_con_rich + (1|site/treatment),
+              data = terrestrial_agg_dss3,
               family = "gaussian")
 summary(m5)
 plot(simulateResiduals(m5))
 
 
 # multitrophic stability
-m6 <- glmmTMB(multitroph_stability ~ prod_stability + con_stability  + (1|site/treatment),
-              data = terrestrial_agg_dss2,
-              family = "gaussian")
+m6 <- glmmTMB(z_multitroph_stability ~ z_prod_stability + z_con_stability + (1|site/treatment),
+              data = terrestrial_agg_dss3,
+              family = t_family()) # student t distribution is the best fit, but not supported by piecewiseSEM
 summary(m6)
 plot(simulateResiduals(m6))
-
-
-
-
-#### glmmTMB models: Gamma ####
-# producer stability
-m7 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
-              data = terrestrial_agg_dss2,
-              family = Gamma(link = "log"))
-summary(m7)
-plot(simulateResiduals(m7))
-check_model(m7)
-
-
-# consumer stability
-m8 <- glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
-              data = terrestrial_agg_dss2,
-              family = Gamma(link = "log"))
-summary(m8)
-plot(simulateResiduals(m8))
-check_model(m8)
-
-# multitrophic stability
-m9 <- glmmTMB(multitroph_stability ~ prod_stability + con_stability + (1|site/treatment),
-              data = terrestrial_agg_dss2,
-              family = Gamma(link = "log"))
-summary(m9)
-plot(simulateResiduals(m9))
-check_model(m9)
-
-
-#### REMOVING KONZA #####
-no_knz_aggregated <- terrestrial_agg_dss2 %>%
-  filter(site != "knz")
-m10 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
-              data = no_knz_aggregated,
-              family = Gamma(link = "log"))
-summary(m10) # effect of producer richness is very sensitive to konza
-plot(simulateResiduals(m10))
-check_model(m10)
+check_model(m6)
 
 
 #### SEM ####
 stability_sem <- psem(
-  glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
-          data = terrestrial_agg_dss2,
-          family = gaussian),
-  glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
-          data = terrestrial_agg_dss2,
-          family = gaussian),
-  glmmTMB(multitroph_stability ~ prod_stability + con_stability + (1|site/treatment),
-          data = terrestrial_agg_dss2,
-          family = gaussian),
-  prod_richness %~~% con_richness,
-  prod_stability %~~% con_stability
+  glmmTMB(z_prod_stability ~ z_prod_rich + z_con_rich + (1|site/treatment),
+          data = terrestrial_agg_dss3,
+          family = "gaussian"),
+  glmmTMB(z_con_stability ~ z_prod_rich + z_con_rich + (1|site/treatment),
+          data = terrestrial_agg_dss3,
+          family = "gaussian"),
+  glmmTMB(z_multitroph_stability ~ z_prod_stability + z_con_stability + (1|site/treatment),
+          data = terrestrial_agg_dss3,
+          family = "gaussian"), # using gaussian for now -- not best fit, probably don't want to use 
+  z_prod_rich %~~% z_con_rich,
+  z_prod_stability %~~% z_con_stability
 )
 summary(stability_sem)
-
+plot(stability_sem)
 
 
 
 #### plotting ####
-predictm7 <- ggpredict(m7, terms = "prod_richness", back_transform = TRUE)
-predictm7 %>%
+predictm4 <- ggpredict(m4, terms = c("z_prod_rich"), back_transform = TRUE)
+predictm4 %>%
   ggplot() +
-  geom_point(aes(prod_richness, prod_stability, color = site), data = terrestrial_agg_dss2) +
+  geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3) +
   geom_line(aes(x, predicted), linewidth = 2) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
   theme_classic() +
   scale_color_brewer(palette = "Set2")
 
-predictm7 <- ggpredict(m7, terms = "con_richness", back_transform = TRUE)
-predictm7 %>%
+predictm4 <- ggpredict(m4, terms = "z_con_rich", back_transform = TRUE)
+predictm4 %>%
   ggplot() +
-  geom_point(aes(con_richness, prod_stability, color = site), data = terrestrial_agg_dss2) +
+  geom_point(aes(z_con_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3) +
   geom_line(aes(x, predicted), linewidth = 2) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
   theme_classic() +
   scale_color_brewer(palette = "Set2") 
 
-predictm9 <- ggpredict(m9, terms = "prod_stability", back_transform = TRUE)
-predictm9 %>%
+predictm6 <- ggpredict(m6, terms = "z_prod_stability", back_transform = TRUE)
+predictm6 %>%
   ggplot() +
-  geom_point(aes(prod_stability, multitroph_stability, color = site), data = terrestrial_agg_dss2) +
+  geom_point(aes(z_prod_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3) +
   geom_line(aes(x, predicted), linewidth = 2) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
   theme_classic() +
   scale_color_brewer(palette = "Set2")
+
+predictm6 <- ggpredict(m6, terms = "z_con_stability", back_transform = TRUE)
+predictm6 %>%
+  ggplot() +
+  geom_point(aes(z_con_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3) +
+  geom_line(aes(x, predicted), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic() +
+  scale_color_brewer(palette = "Set2")
+
 
 
 
