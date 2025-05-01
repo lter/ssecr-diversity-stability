@@ -59,6 +59,11 @@ terrestrial_agg_dss <- terrestrial_agg_dss %>%
   left_join(treatment_info, by = c("site", "plot")) # joining treatment data
 
 
+#### FROM NOAM's SCRIPT: z_standard() - function for z standardization ####
+z_standard <- function(x){
+  (x - mean(x))/sd(x)
+}
+
 ## checking distributions of reponse variables
 hist(terrestrial_agg_dss$prod_stability)
 hist(terrestrial_agg_dss$prod_richness)
@@ -68,10 +73,7 @@ hist(terrestrial_agg_dss$con_richness)
 hist(z_standard(terrestrial_agg_dss$multitroph_stability))
 hist((terrestrial_agg_dss$multitroph_stability))
 
-#### FROM NOAM's SCRIPT: z_standard() - function for z standardization ####
-z_standard <- function(x){
-  (x - mean(x))/sd(x)
-}
+
 
 
 
@@ -81,18 +83,23 @@ m1 <- lmer(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
            data = terrestrial_agg_dss)
 summary(m1)
 plot(simulateResiduals(m1))
+check_model(m1)
+
 
 # consumer stability
 m2 <- lmer(con_stability ~ prod_richness + con_richness + (1|site/treatment),
            data = terrestrial_agg_dss)
 summary(m2)
 plot(simulateResiduals(m2))
+check_model(m2)
+
 
 # multitrophic stability
 m3 <- lmer(multitroph_stability ~ prod_stability + con_stability  + (1|site/treatment),
            data = terrestrial_agg_dss)
 summary(m3)
 plot(simulateResiduals(m3))
+check_model(m3)
 
 
 
@@ -123,6 +130,8 @@ m4 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment)
               family = "gaussian")
 summary(m4)
 plot(simulateResiduals(m4))
+check_model(m4)
+
 
 # consumer stability
 m5 <- glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
@@ -130,6 +139,7 @@ m5 <- glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
               family = "gaussian")
 summary(m5)
 plot(simulateResiduals(m5))
+
 
 # multitrophic stability
 m6 <- glmmTMB(multitroph_stability ~ prod_stability + con_stability  + (1|site/treatment),
@@ -148,6 +158,7 @@ m7 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment)
               family = Gamma(link = "log"))
 summary(m7)
 plot(simulateResiduals(m7))
+check_model(m7)
 
 
 # consumer stability
@@ -156,6 +167,7 @@ m8 <- glmmTMB(con_stability ~ prod_richness + con_richness + (1|site/treatment),
               family = Gamma(link = "log"))
 summary(m8)
 plot(simulateResiduals(m8))
+check_model(m8)
 
 # multitrophic stability
 m9 <- glmmTMB(multitroph_stability ~ prod_stability + con_stability + (1|site/treatment),
@@ -163,8 +175,18 @@ m9 <- glmmTMB(multitroph_stability ~ prod_stability + con_stability + (1|site/tr
               family = Gamma(link = "log"))
 summary(m9)
 plot(simulateResiduals(m9))
+check_model(m9)
 
 
+#### REMOVING KONZA #####
+no_knz_aggregated <- terrestrial_agg_dss %>%
+  filter(site != "knz")
+m10 <- glmmTMB(prod_stability ~ prod_richness + con_richness + (1|site/treatment),
+              data = no_knz_aggregated,
+              family = Gamma(link = "log"))
+summary(m10) # effect of producer richness is very sensitive to konza
+plot(simulateResiduals(m10))
+check_model(m10)
 
 
 #### SEM ####
