@@ -1,0 +1,1 @@
+#### Katherine trash script for playing around with glmms
