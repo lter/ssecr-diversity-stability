@@ -145,48 +145,83 @@ stability_sem <- psem(
   z_prod_stability %~~% z_con_stability
 )
 summary(stability_sem)
-plot(stability_sem)
+plot(stability_sem) # plotting values
 
 
 
 #### plotting ####
+
+### producer stability ~ producer richness
+# using model predictions
 predictm4 <- ggpredict(m4, terms = c("z_prod_rich"), back_transform = TRUE)
 predictm4 %>%
   ggplot() +
-  geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3) +
-  geom_line(aes(x, predicted), linewidth = 2) +
+  geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
+  geom_line(aes(x, predicted), linewidth = 2.5, linetype = 2) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
-  theme_classic() +
-  scale_color_brewer(palette = "Set2")
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR Biodiversity Experiment", "CDR Old Field", "KBS", "KNZ")) +
+  xlab("Producer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "inside", legend.position.inside = c(0.8, 0.85),
+        legend.box.background = element_rect(color="black", linewidth=1),
+        legend.text = element_text(size = 16))
 
+
+### producer stability ~ consumer richness
+# using model predictions
 predictm4 <- ggpredict(m4, terms = "z_con_rich", back_transform = TRUE)
 predictm4 %>%
   ggplot() +
-  geom_point(aes(z_con_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3) +
-  geom_line(aes(x, predicted), linewidth = 2) +
+  geom_point(aes(z_con_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
+  geom_line(aes(x, predicted), linewidth = 3) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
-  theme_classic() +
-  scale_color_brewer(palette = "Set2") 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR Biodiversity Experiment", "CDR Old Field", "KBS", "KNZ")) +
+  xlab("Consumer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "inside", legend.position.inside = c(0.8, 0.85),
+        legend.box.background = element_rect(color="black", linewidth=1),
+        legend.text = element_text(size = 16))
 
+
+### multitrophic stability ~ producer stability
+# using model predictions
 predictm6 <- ggpredict(m6, terms = "z_prod_stability", back_transform = TRUE)
 predictm6 %>%
   ggplot() +
-  geom_point(aes(z_prod_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3) +
-  geom_line(aes(x, predicted), linewidth = 2) +
+  geom_point(aes(z_prod_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
+  geom_line(aes(x, predicted), linewidth = 3) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
-  theme_classic() +
-  scale_color_brewer(palette = "Set2")
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR Biodiversity Experiment", "CDR Old Field", "KBS", "KNZ")) +
+  xlab("Producer Stability (z-standardized)") +
+  ylab("Multitrophic Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "inside", legend.position.inside = c(0.25, 0.85),
+        legend.box.background = element_rect(color="black", linewidth=1),
+        legend.text = element_text(size = 16))
 
-predictm6 <- ggpredict(m6, terms = "z_con_stability", back_transform = TRUE)
+
+
+### multitrophic stability ~ consumer stability
+# using model predictions
+predictm6 <- ggpredict(m6, terms = "z_con_stability", back_transform = TRUE, type = "random")
 predictm6 %>%
   ggplot() +
-  geom_point(aes(z_con_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3) +
-  geom_line(aes(x, predicted), linewidth = 2) +
+  geom_point(aes(z_con_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
+  geom_line(aes(x, predicted), linewidth = 3) +
   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
-  theme_classic() +
-  scale_color_brewer(palette = "Set2")
-
-
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR Biodiversity Experiment", "CDR Old Field", "KBS", "KNZ")) +
+  xlab("Consumer Stability (z-standardized)") +
+  ylab("Multitrophic Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "inside", legend.position.inside = c(0.25, 0.85),
+        legend.box.background = element_rect(color="black", linewidth=1),
+        legend.text = element_text(size = 16))
 
 
 
