@@ -153,7 +153,7 @@ plot(stability_sem) # plotting values
 
 ### producer stability ~ producer richness
 # using model predictions
-predictm4 <- ggpredict(m4, terms = c("z_prod_rich"), back_transform = TRUE)
+predictm4 <- ggpredict(m4, terms = c("z_prod_rich"), back_transform = TRUE, type = "random")
 predictm4 %>%
   ggplot() +
   geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
@@ -164,6 +164,7 @@ predictm4 %>%
   xlab("Producer Richness (z-standardized)") +
   ylab("Producer Stability (z-standardized)") +
   guides(color=guide_legend(title="Site")) +
+  ylim(-3.7, 6) +
   theme(legend.position = "inside", legend.position.inside = c(0.8, 0.85),
         legend.box.background = element_rect(color="black", linewidth=1),
         legend.text = element_text(size = 16))
@@ -171,7 +172,7 @@ predictm4 %>%
 
 ### producer stability ~ consumer richness
 # using model predictions
-predictm4 <- ggpredict(m4, terms = "z_con_rich", back_transform = TRUE)
+predictm4 <- ggpredict(m4, terms = "z_con_rich", back_transform = TRUE, type = "random")
 predictm4 %>%
   ggplot() +
   geom_point(aes(z_con_rich, z_prod_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
@@ -182,6 +183,7 @@ predictm4 %>%
   xlab("Consumer Richness (z-standardized)") +
   ylab("Producer Stability (z-standardized)") +
   guides(color=guide_legend(title="Site")) +
+  ylim(-3.7, 6) +
   theme(legend.position = "inside", legend.position.inside = c(0.8, 0.85),
         legend.box.background = element_rect(color="black", linewidth=1),
         legend.text = element_text(size = 16))
@@ -189,7 +191,7 @@ predictm4 %>%
 
 ### multitrophic stability ~ producer stability
 # using model predictions
-predictm6 <- ggpredict(m6, terms = "z_prod_stability", back_transform = TRUE)
+predictm6 <- ggpredict(m6, terms = "z_prod_stability", back_transform = TRUE, type = "random")
 predictm6 %>%
   ggplot() +
   geom_point(aes(z_prod_stability, z_multitroph_stability, color = site), data = terrestrial_agg_dss3, size = 3) +
