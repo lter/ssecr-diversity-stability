@@ -352,3 +352,329 @@ googledrive::drive_upload(media = file.path("pie_consumers_taxa_list.csv"), over
 #pie_consumers_site<-pie_producers_raw %>% distinct(Site)
 
 
+## ------------------------------------------ ##
+#         GCE Producers Dataset Harmonization
+# 
+## ------------------------------------------ ##
+
+#############Notes about this dataset######################
+##URL:https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-gce.590.32
+
+
+
+
+######Main table harmonization
+
+##Define URL as an object
+#dt_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-gce.590.32&entityid=466b210ffd2be96ad3f97aeda2fd553b"
+dt_url<- "https://pasta.lternet.edu/package/data/eml/knb-lter-gce/590/32/466b210ffd2be96ad3f97aeda2fd553b"
+
+##Read data into R 
+gce_producers_raw <- read.csv(file = dt_url, row.names = NULL)
+
+##Removing rows that are blank or have metadata
+gce_producers_edited <- gce_producers_raw[-c(1, 3, 4), ]
+
+##Setting top row to column names
+colnames(gce_producers_edited) <- as.character(unlist(gce_producers_edited[1, ]))
+
+##Removing first row with column names
+gce_producers_edited <- gce_producers_edited[-1, ]  
+
+##Average replications across subplots
+#gce_producers_summary <-aggregate(Plant_Biomass~Species+Date+Site_Name+Transect+Distance,data=pie_producers_long,mean)
+
+##Manually removing column 24 becuase it is blank
+gce_producers_edited <- gce_producers_edited[, -24]  # Removes column 24
+
+##Renaming column titles 
+gce_producers2 <- gce_producers_edited  %>% 
+  rename("habitat_fine"="Zone",
+         "plot"="Site",
+         "subplot"="Plot",
+         "taxon_name"="Species",
+         "abundance"="Plant_Biomass"
+  )
+
+##habitat_fine is marked as "-1" if that plot has been relocated within the creek bank zone. Because are all creek bank zone, I am converting "-1" to "1"
+gce_producers2 <- gce_producers2 %>%
+  mutate(habitat_fine = ifelse(habitat_fine== -1, 1, habitat_fine))
+
+##Adding columns for harmonization
+gce_producers2$site="GCE"
+gce_producers2$taxa_type="producer"
+gce_producers2$ecosystem="aquatic"
+gce_producers2$habitat_broad="saltmarsh"
+gce_producers2$biome="temperate"
+gce_producers2$guild="plant"
+gce_producers2$herbivore="no"
+gce_producers2$unit_abundance="g"
+gce_producers2$scale_abundnace="1m2"  
+
+#Date columns
+gce_producers2$year <- format(as.Date(gce_producers2$Date, format = "%Y-%m-%d"), "%Y")
+gce_producers2$month <- format(as.Date(gce_producers2$Date, format = "%Y-%m-%d"), "%m")
+gce_producers2$day <- format(as.Date(gce_producers2$Date, format = "%Y-%m-%d"), "%d")
+
+##unique_ID column
+gce_producers2$unique_ID<- paste(gce_producers2$site, 
+                                 gce_producers2$habitat_fine,
+                                 gce_producers2$plot,
+                                         sep = "_")
+
+##Removing rows where there is no taxon name
+gce_producers2 <- gce_producers2 %>%
+  filter(taxon_name != "" & !is.na(taxon_name))
+
+
+######Taxa table creation
+
+##Creating dataframe for taxon_name for taxa table
+#column taxon_name only
+gce_producers_taxa_list<- gce_producers2 %>% distinct(taxon_name)
+
+
+##Creating id_confidence column
+gce_producers_taxa_list$id_confidence<-"1"
+
+##Marking id_confidence as "0" for taxa where ID is not confident
+gce_producers_taxa_list$id_confidence[gce_producers_taxa_list$taxon_name == "Unidentified rush"] <- 0
+
+##Creating taxon_resolution column
+gce_producers_taxa_list$taxon_resolution<-"species"
+
+##Marking taxon_resolution as "genus" for taxa IDed only to genus
+gce_producers_taxa_list$taxon_resolution[gce_producers_taxa_list$taxon_name   == "Scirpus spp."] <- "genus"
+gce_producers_taxa_list$taxon_resolution[gce_producers_taxa_list$taxon_name   == "Panicum spp."] <- "genus"
+gce_producers_taxa_list$taxon_resolution[gce_producers_taxa_list$taxon_name   == "Typha spp."] <- "genus"
+gce_producers_taxa_list$taxon_resolution[gce_producers_taxa_list$taxon_name   == "Unidentified rush"] <- "family"
+
+
+
+
+######Main table harmonization part 2
+
+##Merging taxa table with main table
+gce_producers3<-merge(gce_producers2, gce_producers_taxa_list, by="taxon_name")
+
+
+##Deleting rows with an abundance value >1
+#pie_producers_summary4<- pie_producers_summary3 %>%
+ # filter(abundance <= 1)
+
+##Rearrange columns to harmonized order
+gce_producers <-gce_producers3 %>% 
+                    select(site, 
+                           taxa_type, 
+                           ecosystem,
+                           habitat_broad,
+                           habitat_fine,
+                           biome,
+                           guild,
+                           herbivore,
+                           year,
+                           month,
+                           day,
+                           plot,
+                           subplot,
+                           unique_ID,
+                           unit_abundance,
+                           scale_abundnace,
+                           taxon_name,
+                           taxon_resolution,
+                           abundance,
+                           id_confidence)
+
+
+
+#####Writing csv files
+
+##Main table
+write.csv(gce_producers, "gce_producers.csv")
+
+##Taxa table
+write.csv(gce_producers_taxa_list, "gce_producers_taxa_list.csv")
+
+
+
+######Uploading to google drive
+
+##Main table
+googledrive::drive_upload(media = file.path("gce_producers.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1Qyt03OzxgAW2LVgCuuWWaB6-UN9uUEgP"))
+
+##Taxa table
+googledrive::drive_upload(media = file.path("gce_producers_taxa_list.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1ZWkb3MZzxYUjTcopPECEeWLjA1H-sLWn"))
+
+
+
+######Looking at data
+summarytools::view(summarytools::dfSummary(gce_producers), footnote = NA)
+
+
+
+
+
+
+
+## ------------------------------------------ ##
+#         GCE Consumers Dataset Harmonization
+# 
+## ------------------------------------------ ##
+
+#############Notes about this dataset######################
+##Using molluscs bc crabs have no ID, just abundance
+##Data pacakge URL: https://portal.edirepository.org/nis/mapbrowse?packageid=knb-lter-gce.605.14
+
+######Main table#######
+##Define URL as an object
+#consumer_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-gce.605.14&entityid=97c09b8ba676a1a750665d2ff1908b9e"
+consumer_url <-"https://pasta.lternet.edu/package/data/eml/knb-lter-gce/605/14/97c09b8ba676a1a750665d2ff1908b9e"
+
+##Read data into R 
+gce_consumers_raw <- read.csv(file = consumer_url, row.names = NULL)
+
+##Removing rows that are blank or have metadata
+gce_consumers_edited <- gce_consumers_raw[-c(1, 3, 4), ]
+
+##Setting top row to column names
+colnames(gce_consumers_edited) <- as.character(unlist(gce_consumers_edited[1, ]))
+
+##Removing first row with column names
+gce_consumers_edited <- gce_consumers_edited[-1, ]  
+
+##Manually removing column 19 because it is blank
+gce_consumers_edited <- gce_consumers_edited[, -19]  
+
+##Renaming column titles 
+gce_consumers2 <- gce_consumers_edited  %>% 
+  rename("habitat_fine"="Zone",
+         "plot"="Site",
+         "subplot"="Plot",
+         "taxon_name"="Species",
+         "abundance"="Mollusc_Density"
+  )
+
+##Adding columns for harmonization
+gce_consumers2$site="GCE"
+gce_consumers2$taxa_type="consumer"
+gce_consumers2$ecosystem="aquatic"
+gce_consumers2$habitat_broad="saltmarsh"
+gce_consumers2$biome="temperate"
+gce_consumers2$guild="mollusc"
+gce_consumers2$unit_abundance="count"
+gce_consumers2$scale_abundnace="1m2"  
+
+#Date columns
+gce_consumers2$year <- format(as.Date(gce_consumers2$Date, format = "%Y-%m-%d"), "%Y")
+gce_consumers2$month <- format(as.Date(gce_consumers2$Date, format = "%Y-%m-%d"), "%m")
+gce_consumers2$day <- format(as.Date(gce_consumers2$Date, format = "%Y-%m-%d"), "%d")
+
+##unique_ID column
+gce_consumers2$unique_ID<- paste(gce_consumers2$site, 
+                                 gce_consumers2$habitat_fine,
+                                 gce_consumers2$plot,
+                                 sep = "_")
+
+##Removing rows where there is no taxon name
+#gce_consumers2 <- gce_consumers2 %>%
+ # filter(taxon_name != "" & !is.na(taxon_name))
+
+
+######Taxa table creation
+
+##Creating dataframe for taxon_name for taxa table
+#column taxon_name only
+gce_consumers_taxa_list<- gce_consumers2 %>% distinct(taxon_name)
+
+
+##Creating id_confidence column
+gce_consumers_taxa_list$id_confidence<-"1"
+
+##Marking id_confidence as "0" for taxa where ID is not confident
+#gce_consumers_taxa_list$id_confidence[gce_consumers_taxa_list$taxon_name == "Unidentified rush"] <- 0
+
+##Creating taxon_resolution column
+gce_consumers_taxa_list$taxon_resolution<-"genus"
+
+##Marking taxon_resolution as "genus" for taxa IDed only to genus
+gce_consumers_taxa_list$taxon_resolution[gce_consumers_taxa_list$taxon_name   == "Succineidae"] <- "family"
+gce_consumers_taxa_list$taxon_resolution[gce_consumers_taxa_list$taxon_name   == "Slug"] <- "class"
+
+##Creating herbivore column
+gce_consumers_taxa_list$herbivore<-"no"
+
+##Marking herbivore as "no" for taxa that are omnivores
+gce_consumers_taxa_list$herbivore[gce_consumers_taxa_list$taxon_name   == "Littoraria "] <- "yes" #herbivorous
+gce_consumers_taxa_list$herbivore[gce_consumers_taxa_list$taxon_name   == "Melampus"] <- "yes" #detritivore and herbivores
+gce_consumers_taxa_list$herbivore[gce_consumers_taxa_list$taxon_name   == "Succineidae"] <- "yes" #Many are herbivorous
+##the rest are carniorous or filter feeeders or detritivores
+
+
+
+######Main table harmonization part 2
+
+##Merging taxa table with main table
+gce_consumers3<-merge(gce_consumers2, gce_consumers_taxa_list, by="taxon_name")
+
+
+##Deleting rows with an abundance value >1
+#pie_producers_summary4<- pie_producers_summary3 %>%
+# filter(abundance <= 1)
+
+##Rearrange columns to harmonized order
+gce_consumers <-gce_consumers3 %>% 
+  select(site, 
+         taxa_type, 
+         ecosystem,
+         habitat_broad,
+         habitat_fine,
+         biome,
+         guild,
+         herbivore,
+         year,
+         month,
+         day,
+         plot,
+         subplot,
+         unique_ID,
+         unit_abundance,
+         scale_abundnace,
+         taxon_name,
+         taxon_resolution,
+         abundance,
+         id_confidence)
+
+
+
+#####Writing csv files
+
+##Main table
+write.csv(gce_consumers, "gce_consumers.csv")
+
+##Taxa table
+write.csv(gce_consumers_taxa_list, "gce_consumers_taxa_list.csv")
+
+
+
+######Uploading to google drive
+
+##Main table
+googledrive::drive_upload(media = file.path("gce_consumers.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1Qyt03OzxgAW2LVgCuuWWaB6-UN9uUEgP"))
+
+##Taxa table
+googledrive::drive_upload(media = file.path("gce_consumers_taxa_list.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1ZWkb3MZzxYUjTcopPECEeWLjA1H-sLWn"))
+
+
+
+######Looking at data
+summarytools::view(summarytools::dfSummary(gce_consumers), footnote = NA)
+
+gce_cosumers_years<-gce_consumers %>% group_by(year) %>% slice_sample(n=1) ##Combined dataset, 1 line per site = 606 sites total
+
+
+
+

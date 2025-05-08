@@ -11,6 +11,55 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+```{r calculate diversity metrics}
+source('../00_functions_minimize.R')
+# read filtered data
+usvi_con_wide <- read.csv(file = "filtered_data/USVI_consumers_wide_sub.csv")
+usvi_prod_wide <- read.csv(file = "filtered_data/USVI_producers_wide_sub.csv")
+
+calculate_agg_stability(producer_data = usvi_prod_wide, consumer_data = usvi_con_wide, "usvi")
+
+plot(usvi_aggregate_dss$prod_richness, usvi_aggregate_dss$prod_stability)
+
+plot(usvi_aggregate_dss$con_richness, usvi_aggregate_dss$con_stability)
+
+# adding habitat fine information
+ggplot(usvi_aggregate_dss, aes(x=prod_richness, y=prod_stability, col=habitat_fine)) +
+  geom_point() + 
+  geom_smooth(method=lm)
+
+ggplot(usvi_aggregate_dss, aes(x=con_richness, y=con_stability, col=habitat_fine)) +
+  geom_point() + 
+  geom_smooth(method=lm)
+
+# little relationship between cross-trophic level diversity
+ggplot(usvi_aggregate_dss, aes(x=prod_richness, y=con_richness, col=habitat_fine)) +
+  geom_point() + 
+  geom_smooth(method=lm)
+
+
+
+
+# try the linear mixed models
+
+
+
+
+
+
+```
+
+
+```{r run the linear mixed models for this site}
+
+
+
+
+```
+
+
+
+
 ```{r look at PTA of this site}
 librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasampler, supportR, cowplot, summarytools, datacleanr)
 
@@ -18,12 +67,7 @@ librarian::shelf(tidyverse, googledrive, data.table, ecotraj, vegan, lterdatasam
 usvi_ids <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w")) 
 
   
-  
   googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1d4uwv5Eq5u5hFw22po_7sK-_Uwisc65w"), type="csv")
-
-
-
-
 
 
 usvi_consumers = read.csv(file = "harmonized_data/USVI_fish_census.csv")

@@ -29,8 +29,9 @@ filter_data <- function(site_name, # site name as string
   
   # filter out unconfident identification; Junna added
   print("filtering unconfident identification...")
-  producer_data <- producer_data %>% filter(id_confidence)
-  consumer_data <- consumer_data %>% filter(id_confidence)
+  producer_data$id_confidence <- as.numeric(producer_data$id_confidence)
+  producer_data <- producer_data %>% filter(id_confidence==1)
+  consumer_data <- consumer_data %>% filter(id_confidence==1)
   
   # browser()
   # Aggregate data at the year-plot level
@@ -67,9 +68,10 @@ filter_data <- function(site_name, # site name as string
                                  consumer_wide %>% select(plot, year),
                                  by = c("plot", "year"))
   
-  # creat plot year table; Junna added
+  # create plot year table; Junna added
   valid_plot_years$year <- as.factor(valid_plot_years$year)
   valid_plot_years_check <- table(valid_plot_years)
+  browser()
   
   # identify years when each site is sampled
   # sites sampled per year

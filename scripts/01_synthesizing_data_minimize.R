@@ -25,12 +25,12 @@ drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
 invert_data <- read_csv(tmp)
 
 result <- filter_data(site_name = 'usvi_fish', # site name as string
-            producer_data = producer_data, # producer df
-            consumer_data = fish_data, # consumer df
-            mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
-            minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-            output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
-            write_csv = TRUE)
+                      producer_data = producer_data, # producer df
+                      consumer_data = fish_data, # consumer df
+                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      write_csv = TRUE)
 
 # write data to google drive
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_producers_wide_sub.csv"), overwrite = T,
