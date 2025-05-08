@@ -64,5 +64,9 @@ j_data %>%
   dplyr::summarize(CoVar = mean(abundance)) %>% view()
 
 
-filter_data()
+mcr_filter <- filter_data(site_name = "mcr", 
+            producer_data = mcr_benthic, 
+            consumer_data = mcr_fish, 
+            mean_sum = "mean", 
+            minimize = FALSE)
 
