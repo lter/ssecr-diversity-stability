@@ -127,7 +127,7 @@ write_csv(AIMS_producer, here("../AIMS/AIMS_clean_data/aims_algae.csv"))
 ## -------------------------------------------- ##
 
 FishComm <- read_csv(here("../AIMS/AIMS_raw_data/AIMS_fish.csv"))
-Fish_taxonomy <- read_csv(here("../AIMS/taxa_tables/AIMS_FISH_TAXA_TABLE4.csv"))
+Fish_taxonomy <- read_csv(here("../AIMS/taxa_tables/AIMS_FISH_TAXA_TABLE.csv"))
 
 ### From AIMS IM (Mike): please be aware that until 2021, we surveyed a restricted set of ~240 spp. 
 ### After 2021 the list was expanded to include all non-cryptic reef associated fishes. 
