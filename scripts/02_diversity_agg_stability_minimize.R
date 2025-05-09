@@ -117,6 +117,15 @@ mcr_fish_con_wide <- read_csv(tmp)
 
 calculate_agg_stability(producer_data = mcr_fish_prod_wide, consumer_data = mcr_fish_con_wide, "mcr_fish")
 
+###### AIMS ######
+drive_download(drive_folder[grepl('aims_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+aims_prod_wide <- read_csv(tmp)
+#
+drive_download(drive_folder[grepl('aims_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+aims_con_wide <- read_csv(tmp)
+#
+calculate_agg_stability(producer_data = aims_prod_wide, consumer_data = aims_con_wide, "aims")
+
 ###### COMBINE MARINE AGGREGATE DFS ######
 # add one more column, because some marine sites have two sets of producer-consumer data
 gce_aggregate_dss <- gce_aggregate_dss %>% mutate(site_new = 'gce_invert')
@@ -126,6 +135,7 @@ sbc_invert_aggregate_dss <- sbc_invert_aggregate_dss %>% mutate(site_new = 'sbc_
 sbc_fish_aggregate_dss <- sbc_fish_aggregate_dss %>% mutate(site_new = 'sbc_fish')
 mcr_invert_aggregate_dss <- mcr_invert_aggregate_dss %>% mutate(site_new = 'mcr_invert')
 mcr_fish_aggregate_dss <- mcr_fish_aggregate_dss %>% mutate(site_new = 'mcr_fish')
+aims_aggregate_dss <- aims_aggregate_dss %>% mutate(site_new = 'aims_fish')
 
 marine_agg_stability <- rbind(
   gce_aggregate_dss,
@@ -134,7 +144,8 @@ marine_agg_stability <- rbind(
   sbc_invert_aggregate_dss,
   sbc_fish_aggregate_dss,
   mcr_invert_aggregate_dss,
-  mcr_fish_aggregate_dss
+  mcr_fish_aggregate_dss, 
+  aims_aggregate_dss
 )
 
 write.csv(row.names = F, marine_agg_stability, 'scripts/wrangling_junna/synthesized_data/marine_agg_dss.csv')

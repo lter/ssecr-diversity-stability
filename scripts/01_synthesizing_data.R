@@ -206,6 +206,15 @@ mcr_invert <- subset(mcr_invert, id_confidence == 1)
 
 filter_data(site_name = "mcr_fish", producer_data = mcr_prod, consumer_data = mcr_fish, mean_sum = "mean", output_folder = "data/MCR", write_csv = TRUE)
 
+##### AIMS #####
+
+
+
+
+
+
+
+
 
 filter_data(site_name = "mcr_invert", producer_data = mcr_prod, consumer_data = mcr_invert, mean_sum = "mean", output_folder = "data/MCR", write_csv = TRUE)
 

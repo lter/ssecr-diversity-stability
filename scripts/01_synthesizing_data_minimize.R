@@ -233,12 +233,17 @@ aims_prod <- read_csv(tmp)
 
 drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
 aims_fish <- read_csv(tmp)
-# it has so many plots 310
+# merge the fish data of scale abundance 250m2 and 50m2
+
+aims_fish$abundance[aims_fish$scale_abundance == "50m2"] <- aims_fish$abundance[aims_fish$scale_abundance == "50m2"] * 5
+aims_fish$scale_abundance <- "250m2"
+
+# group by the data using sum
+aims_fish <- aims_fish %>% group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore, year, month, day, plot, subplot, unique_ID, unit_abundance, scale_abundance, taxon_name, id_confidence) %>%
+  summarise(abundance = sum(abundance), .groups = "drop")
 
 aims_prod <- subset(aims_prod, id_confidence == 1)
 aims_fish <- subset(aims_fish, id_confidence == 1)
-
-aims_fish <- subset(aims_fish, scale_abundance == '250m2')
 
 result <- filter_data(site_name = 'aims', # site name as string
                       producer_data = aims_prod, # producer df
@@ -247,7 +252,13 @@ result <- filter_data(site_name = 'aims', # site name as string
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
                       output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
-# we have 104 plots and 14 years of data
+# we have 104 plots and 16 years of data
+googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_producers_wide_sub.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+
+googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_consumers_wide_sub.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # # PIE
 # drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/16oEmL7Vf4WgjQCw4QacSa5Bl_wfVRCgH"), type='csv')
