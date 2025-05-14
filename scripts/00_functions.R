@@ -78,33 +78,49 @@ filter_data <- function(site_name, # site name as string
   
   # Minimize — remove plots with < 10 years of data and then standardize remaining plots by shortest time series possible
   if (minimize) {
-    # Remove plots with <10 years of data
-    plot_year_counts <- producer_wide_sub %>%
-      group_by(plot) %>%
-      summarise(n_years = n_distinct(year), .groups = "drop") %>%
-      filter(n_years >= 10)
+    # create plot year table
+    valid_plot_years$year <- as.factor(valid_plot_years$year)
+    valid_plot_years_check <- table(valid_plot_years)
+    #    browser()
     
-    valid_plots <- plot_year_counts$plot
+    # identify years when each site is sampled
+    # sites sampled per year
+    nsites_1year <- colSums(valid_plot_years_check) 
+    overlap_years <- colnames(valid_plot_years_check)[nsites_1year == nrow(valid_plot_years_check)]
+    while (length(overlap_years) < 10 & nrow(valid_plot_years_check) >=5) {
+      # find the year column we need to move the least number of sites
+      nonoverlap_year <- order(nsites_1year, decreasing = T)[length(overlap_years) + 1]
+      
+      # remove sites with least number of overlapping years    
+      valid_plot_years_check <- valid_plot_years_check[-which(valid_plot_years_check[, nonoverlap_year] == 0), ]
+      
+      # recalculate overlapping years
+      nsites_1year <- colSums(valid_plot_years_check)
+      overlap_years <- colnames(valid_plot_years_check)[nsites_1year == nrow(valid_plot_years_check)]
+    }
     
-    producer_wide_sub <- producer_wide_sub %>%
-      filter(plot %in% valid_plots)
+    if (nrow(valid_plot_years_check) < 5) {
+      print('Warning: we do not have enough plots with > 10 overlapping years!!')
+    } else {
+      print(cat("Number of effective plots: ", nrow(valid_plot_years_check), '; plot names: ', paste(rownames(valid_plot_years_check), collapse = ", "), "\n"))
+      print(cat("Number of sampling years: ", length(overlap_years), '; sampling years: ', paste(overlap_years, collapse = ", "), "\n"))
+    }
     
-    consumer_wide_sub <- consumer_wide_sub %>%
-      filter(plot %in% valid_plots)
+    producer_wide_sub <- producer_wide %>%
+      filter(year %in% as.numeric(overlap_years)) %>%
+      filter(plot %in% rownames(valid_plot_years_check))
     
-    # Determine overlapping year range
-    year_ranges <- producer_wide_sub %>%
-      group_by(plot) %>%
-      summarise(min_year = min(year), max_year = max(year), .groups = "drop")
+    consumer_wide_sub <- consumer_wide %>%
+      filter(year %in% as.numeric(overlap_years)) %>%
+      filter(plot %in% rownames(valid_plot_years_check))      
+  } else {
+    producer_wide_sub <- producer_wide %>%
+      inner_join(valid_plot_years, by = c("plot", "year")) %>%
+      mutate(site = site_name)
     
-    min_range_start <- max(year_ranges$min_year)
-    max_range_end <- min(year_ranges$max_year)
-    
-    producer_wide_sub <- producer_wide_sub %>%
-      filter(year >= min_range_start, year <= max_range_end)
-    
-    consumer_wide_sub <- consumer_wide_sub %>%
-      filter(year >= min_range_start, year <= max_range_end)
+    consumer_wide_sub <- consumer_wide %>%
+      inner_join(valid_plot_years, by = c("plot", "year")) %>%
+      mutate(site = site_name)
   }
   
   # assign created dataframes to global environment
