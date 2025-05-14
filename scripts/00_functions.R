@@ -330,7 +330,7 @@ filter_ranges <- function(trend, # emtrends df created from emmip
              .data[[value]] <= .data[[paste0("max_", value)]])
 }
 
-#### create preliminary models plots for  stability
+#### create preliminary models plots for  stability ####
 model_stability <- function(df, # stability df
                             ecosystem_type, # string c("terrestrial", "marine")
                             stability_metric, # metric used to measure stability c("aggregate", "compositional")
@@ -340,8 +340,28 @@ model_stability <- function(df, # stability df
                             prod_stability_col, # column name that contains producer diversity
                             con_stability_col, # column name that contains consumer stability
                             multi_stability_col, # column name that contains multitrophic stability
-                            z_standard = FALSE # should we z_score the metrics
-){
+                            transformation = c("none", "log", "z")) { # what kind of transformation do you want?
+  # check transformation
+  transformation <- match.arg(transformation)
+  
+  # create temporary vector with the relevant numeric variables - add multitrophic stability if present
+  all_cols <- c(prod_diversity_col, con_diversity_col, prod_stability_col, con_stability_col)
+  if (!is.null(multi_stability_col)) {
+    all_cols <- c(all_cols, multi_stability_col)
+  }
+  
+  # Transformation logic
+  if (transformation == "log") {
+    df <- df %>%
+      mutate(across(all_of(all_cols), ~ log(.x + 1)))
+    
+  } else if (transformation == "z") {
+    df <- df %>%
+      group_by(site) %>%
+      mutate(across(all_of(all_cols), ~ as.numeric(z_standard(.x)))) %>%
+      ungroup()
+  }
+  
   # set names of relevant dataframes based on diversity and stability metrics
   prod_site_results_name <- paste0("site_results_", ecosystem_type, "_prod_", stability_metric, "_", diversity_metric)
   con_site_results_name <- paste0("site_results_", ecosystem_type, "_con_", stability_metric, "_", diversity_metric)
@@ -357,23 +377,14 @@ model_stability <- function(df, # stability df
   for (s in unique(df$site)) {
     site_data <- subset(df, site == s)
     
-    if (z_standard) {
-      # build formulas for all of the models used in this function as a string
-      producer_formula_str <- paste0(
-        "z_standard(", prod_stability_col, ") ~ ",
-        "z_standard(", prod_diversity_col, ") + ",
-        "z_standard(", con_diversity_col, ")"
-      )
-      producer_model_formula <- as.formula(producer_formula_str)
-    } else {
-      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! SEE ABOVE FOR HOW TO DO THIS
-      # BRIEFLY - CREATE A FORMULA STRING AND THEN APPLY IS TO THE FORMULA OBJECTI WITH as.formula()
-      producer_model_formula <- as.formula(paste0(
-        prod_stability_col, " ~ ",
-        prod_diversity_col, " + ",
-        con_diversity_col
-      ))
-    }
+
+     #  CREATE A FORMULA STRING AND THEN APPLY IS TO THE FORMULA OBJECTI WITH as.formula()
+     producer_model_formula <- as.formula(paste0(
+       prod_stability_col, " ~ ",
+       prod_diversity_col, " + ",
+       con_diversity_col)
+       )
+
     
     # Fit the model
     producer_model <- lm(producer_model_formula, data = site_data)
@@ -390,8 +401,8 @@ model_stability <- function(df, # stability df
     
     # Dynamically get correct coefficient names
     coef_names <- names(coefs)
-    prod_name <- if (z_standard) paste0("z_standard(", prod_diversity_col, ")") else prod_diversity_col
-    con_name  <- if (z_standard) paste0("z_standard(", con_diversity_col, ")") else con_diversity_col
+    prod_name <-  prod_diversity_col
+    con_name  <-  con_diversity_col
     
     # Store results
     prod_stability_results_list[[s]] <- data.frame(
@@ -414,22 +425,14 @@ model_stability <- function(df, # stability df
   for (s in unique(df$site)) {
     site_data <- subset(df, site == s)
     
-    if (z_standard) {
-      # build formulas for all of the models used in this function as a string
-      consumer_formula_str <- paste0(
-        "z_standard(", con_stability_col, ") ~ ",
-        "z_standard(", prod_diversity_col, ") + ",
-        "z_standard(", con_diversity_col, ")"
-      )
-      consumer_model_formula <- as.formula(consumer_formula_str)
-    } else {
-      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
+
+      # model formula
       consumer_model_formula <- as.formula(paste0(
         con_stability_col, " ~ ",
         prod_diversity_col, " + ",
         con_diversity_col
       ))
-    }
+    
     
     # Fit the model
     consumer_model <- lm(consumer_model_formula, data = site_data)
@@ -446,8 +449,8 @@ model_stability <- function(df, # stability df
     
     # Dynamically get correct coefficient names
     consumer_coef_names <- names(consumer_coefs)
-    prod_name <- if (z_standard) paste0("z_standard(", prod_diversity_col, ")") else prod_diversity_col
-    con_name  <- if (z_standard) paste0("z_standard(", con_diversity_col, ")") else con_diversity_col
+    prod_name <-  prod_diversity_col
+    con_name  <-  con_diversity_col
     
     # Store results
     con_stability_results_list[[s]] <- data.frame(
@@ -464,27 +467,19 @@ model_stability <- function(df, # stability df
   }
   
   ##### MULTITROPHIC STABILITY #####
+  if (!is.null(multi_stability_col)) {
   multitrophic_stability_results_list <- list()
   
   for (s in unique(df$site)) {
     site_data <- subset(df, site == s)
     
-    if (z_standard) {
-      # build formulas for all of the models used in this function as a string
-      multitrophic_formula_str <- paste0(
-        "z_standard(", multi_stability_col, ") ~ ",
-        "z_standard(", prod_stability_col, ") + ",
-        "z_standard(", con_stability_col, ")"
-      )
-      multitrophic_model_formula <- as.formula(multitrophic_formula_str)
-    } else {
-      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
+      # model formula 
       multitrophic_model_formula <- as.formula(paste0(
         multi_stability_col, " ~ ",
         prod_stability_col, " + ",
         con_stability_col
       ))
-    }
+    
     
     # Fit the model
     multitrophic_model <- lm(multitrophic_model_formula, data = site_data)
@@ -501,8 +496,8 @@ model_stability <- function(df, # stability df
     
     # Dynamically get correct coefficient names
     coef_names <- names(coefs)
-    prod_name <- if (z_standard) paste0("z_standard(", prod_stability_col, ")") else prod_stability_col
-    con_name  <- if (z_standard) paste0("z_standard(", con_stability_col, ")") else con_stability_col
+    prod_name <-  prod_stability_col
+    con_name  <-  con_stability_col
     
     # Store results
     multitrophic_stability_results_list[[s]] <- data.frame(
@@ -517,69 +512,54 @@ model_stability <- function(df, # stability df
       stringsAsFactors = FALSE
     )
   }
+  }
   
   prod_stability_results <- do.call(rbind, prod_stability_results_list)
   con_stability_results <- do.call(rbind, con_stability_results_list)
-  multitrophic_stability_results <- do.call(rbind, multitrophic_stability_results_list)
+
   
   # assign objects to global environment
   assign(prod_site_results_name, prod_stability_results, envir = .GlobalEnv)
   assign(con_site_results_name, con_stability_results, envir = .GlobalEnv)
-  assign(multitrophic_site_results_name, multitrophic_stability_results, envir = .GlobalEnv)
+  
+  # do the same for multitrophic stability if the column is present
+  if (!is.null(multi_stability_col)) {
+    multitrophic_stability_results <- do.call(rbind, multitrophic_stability_results_list)
+    assign(multitrophic_site_results_name, multitrophic_stability_results, envir = .GlobalEnv)
+  }
   
   #### SITE AS RANDOM EFFECT ####
   
-  if (z_standard) {
-      # build formulas for all of the models used in this function as a string
-      producer_comb_formula_str <- paste0(
-        "z_standard(", prod_stability_col, ") ~ ",
-        "z_standard(", prod_diversity_col, ") + ",
-        "z_standard(", con_diversity_col, ") + (1|site)"
-      )
-      producer_combined_model_formula <- as.formula(producer_comb_formula_str)
-      
-      consumer_comb_formula_str <- paste0(
-        "z_standard(", con_stability_col, ") ~ ",
-        "z_standard(", prod_diversity_col, ") + ",
-        "z_standard(", con_diversity_col, ") + (1|site)"
-      )
-      consumer_combined_model_formula <- as.formula(consumer_comb_formula_str)
-      
-      multitrophic_comb_formula_str <- paste0(
-        "z_standard(", multi_stability_col, ") ~ ",
-        "z_standard(", prod_stability_col, ") + ",
-        "z_standard(", con_stability_col, ") + (1|site)"
-      )
-      multitrophic_combined_model_formula <- as.formula(multitrophic_comb_formula_str)
-      
-    } else {
-      # raw predictors - ADD TRANFORMATIONS HERE IF THAT IS WHAT YOU WANT!!! 
-      producer_combined_model_formula <- as.formula(paste0(
-        prod_stability_col, " ~ ",
-        prod_diversity_col, " + ",
-        con_diversity_col, "+ (1|site)"
-      ))
-      
-      consumer_combined_model_formula <- as.formula(paste0(
-        con_stability_col, " ~ ",
-        prod_diversity_col, " + ",
-        con_diversity_col, "+ (1|site)"
-      ))
-      
-      multitrophic_combined_model_formula <- as.formula(paste0(
-        multi_stability_col, " ~ ",
-        prod_stability_col, " + ",
-        con_stability_col, "+ (1|site)"
-      ))
-    }
+    
+  # model formulas
+  producer_combined_model_formula <- as.formula(paste0(
+    prod_stability_col, " ~ ",
+    prod_diversity_col, " + ",
+    con_diversity_col, "+ (1|site)"
+  ))
+  
+  consumer_combined_model_formula <- as.formula(paste0(
+    con_stability_col, " ~ ",
+    prod_diversity_col, " + ",
+    con_diversity_col, "+ (1|site)"
+  ))
+  
+
 
   # Fit the models - LOOP METHOD
   # Store models in a named list
   combined_models <- list(
     producer = lmer(producer_combined_model_formula, data = df),
-    consumer = lmer(consumer_combined_model_formula, data = df),
-    multitrophic = lmer(multitrophic_combined_model_formula, data = df)
+    consumer = lmer(consumer_combined_model_formula, data = df)
   )
+  if (!is.null(multi_stability_col)) {
+    multitrophic_combined_model_formula <- as.formula(paste0(
+      multi_stability_col, " ~ ",
+      prod_stability_col, " + ",
+      con_stability_col, "+ (1|site)"
+    ))
+    combined_models$multitrophic <- lmer(multitrophic_combined_model_formula, data = df)
+  }
   
   # Initialize list to collect results
   combined_model_results_list <- list()
@@ -615,21 +595,7 @@ model_stability <- function(df, # stability df
   ##### CREATE PLOTS #####
   # NOTE: USED CHATGPT TO STREAMLINE THIS PROCESS
   # NOTE: COULD PROBABLY DO THIS EARLIER AND REMOVE THE CONDITIONAL FROM THE MODEL STRUCTURE STEP?
-  # Create wrapper function - if z_standard = true, z_standardize the columns. Otherwise leave them be.
-  transform_plot_var <- function(df, col_name, z_standard) {
-    if (z_standard) {
-      return(z_standard(df[[col_name]]))
-    } else {
-      return(df[[col_name]])  # UPDATE HERE IF WE WANT TO LOG TRANSFORM if no log
-    }
-  }
-  
-  # Replace diversity and stability columns based on whether z_standard = TRUE
-  df$prod_diversity_col <- transform_plot_var(df, prod_diversity_col, z_standard)
-  df$con_diversity_col <- transform_plot_var(df, con_diversity_col, z_standard)
-  df$prod_stability_col <- transform_plot_var(df, prod_stability_col, z_standard)
-  df$con_stability_col  <- transform_plot_var(df, con_stability_col, z_standard)
-  df$multi_stability_col <- transform_plot_var(df, multi_stability_col, z_standard)
+ 
   
   # BASIC PLOTS
   # NOTE: I WANT TO CREATE A SECOND WRAPPER THAT EXPLICITLY DRAWS TRENDLINES FROM MODEL COEFFICIENTS
@@ -653,32 +619,35 @@ model_stability <- function(df, # stability df
   correlation_plot_name <- paste0("plot_", ecosystem_type,"_", stability_metric, "_stability_", diversity_metric,  "_correlations")
   
   # Producer stability
-  prod_stab_prod_div_plot <- basic_plot(df, xcol = "prod_diversity_col", ycol = "prod_stability_col")
-  prod_stab_con_div_plot <- basic_plot(df, xcol = "con_diversity_col", ycol = "prod_stability_col")
+  prod_stab_prod_div_plot <- basic_plot(df, xcol = prod_diversity_col, ycol = prod_stability_col)
+  prod_stab_con_div_plot <- basic_plot(df, xcol = con_diversity_col, ycol = prod_stability_col)
   producer_stability_plot <- ggpubr::ggarrange(prod_stab_prod_div_plot, prod_stab_con_div_plot,
                                                nrow = 1, ncol = 2, common.legend = TRUE)
   
-  con_stab_prod_div_plot <- basic_plot(df, xcol = "prod_diversity_col", ycol = "con_stability_col")
-  con_stab_con_div_plot <- basic_plot(df, xcol = "con_diversity_col", ycol = "con_stability_col")
+  con_stab_prod_div_plot <- basic_plot(df, xcol = prod_diversity_col, ycol = con_stability_col)
+  con_stab_con_div_plot <- basic_plot(df, xcol = con_diversity_col, ycol = con_stability_col)
   consumer_stability_plot <- ggpubr::ggarrange(con_stab_prod_div_plot, con_stab_con_div_plot,
                                                nrow = 1, ncol = 2, common.legend = TRUE)
-  
-  multi_stab_prod_div_plot <- basic_plot(df, xcol = "prod_stability_col", ycol = "multi_stability_col")
-  multi_stab_con_div_plot <- basic_plot(df, xcol = "con_stability_col", ycol = "multi_stability_col")
-  multitrophic_stability_plot <- ggpubr::ggarrange(multi_stab_prod_div_plot, multi_stab_con_div_plot,
-                                               nrow = 1, ncol = 2, common.legend = TRUE)
-  
-  diversity_corr_plot <- basic_plot(df, xcol = "prod_diversity_col", ycol = "con_diversity_col")
-  stability_corr_plot <- basic_plot(df, xcol = "prod_stability_col", ycol = "con_stability_col")
+
+  diversity_corr_plot <- basic_plot(df, xcol = prod_diversity_col, ycol = con_diversity_col)
+  stability_corr_plot <- basic_plot(df, xcol = prod_stability_col, ycol = con_stability_col)
   correlation_plot <- ggpubr::ggarrange(diversity_corr_plot, stability_corr_plot,
                                                nrow = 1, ncol = 2, common.legend = TRUE)
   
   # assign plots to environment
   assign(producer_stability_plot_name, producer_stability_plot, envir = .GlobalEnv)
   assign(consumer_stability_plot_name, consumer_stability_plot, envir = .GlobalEnv)
-  assign(multitrophic_stability_plot_name, multitrophic_stability_plot, envir = .GlobalEnv)
   assign(correlation_plot_name, correlation_plot, envir = .GlobalEnv)
-
+  
+  # handle multitrophic plot if variable is present
+  if (!is.null(multi_stability_col)) {
+    multi_stab_prod_div_plot <- basic_plot(df, xcol = prod_stability_col, ycol = multi_stability_col)
+    multi_stab_con_div_plot <- basic_plot(df, xcol = con_stability_col, ycol = multi_stability_col)
+    multitrophic_stability_plot <- ggpubr::ggarrange(multi_stab_prod_div_plot, multi_stab_con_div_plot,
+                                                     nrow = 1, ncol = 2, common.legend = TRUE)
+    assign(multitrophic_stability_plot_name, multitrophic_stability_plot, envir = .GlobalEnv)
+  }
+  
 
   
   
@@ -688,14 +657,42 @@ model_stability <- function(df, # stability df
   piecewise_results_name <- paste0("sem_results_", ecosystem_type, "_", diversity_metric, "_", stability_metric)
   sem_plot_name <- paste0("basic_sem_plot_", ecosystem_type, "_", diversity_metric, "_", stability_metric)
   
-  modelList <- psem(producer_combined_model <- lmer(producer_combined_model_formula, data = df),
-                    consumer_combined_model <- lmer(consumer_combined_model_formula, data = df),
-                    multitrophic_combined_model <- lmer(multitrophic_combined_model_formula, data = df),
-                    prod_stability_col %~~% multi_stability_col,
-                    prod_diversity_col %~~% con_diversity_col,
-                    df)
+  
+  # Define correlated errors
+  cor1 <- eval(parse(text = paste0(prod_stability_col, " %~~% ", con_stability_col)))
+  cor2 <- eval(parse(text = paste0(prod_diversity_col, " %~~% ", con_diversity_col)))
+  
+  # build the list of psem() arguments
+  psem_args <- list(
+    lmer(producer_combined_model_formula, data = df),
+    lmer(consumer_combined_model_formula, data = df),
+    cor1,
+    cor2
+  )
+  
+  # add multitrophic model only if it exists
+  if (!is.null(multi_stability_col)) {
+    multitrophic_combined_model <- lmer(multitrophic_combined_model_formula, data = df)
+    psem_args <- append(psem_args, list(multitrophic_combined_model))
+  }
+  
+  # add the data argument last 
+  psem_args <- append(psem_args, list(data = df))
+  
+  # run the SEM
+  modelList <- do.call(psem, psem_args)
   piecewise_summary <- summary(modelList)
   basic_sem_plot <- plot(modelList)
+  
+  # Assign results
+  assign(piecewise_results_name, piecewise_summary, envir = .GlobalEnv)
+  assign(sem_plot_name, basic_sem_plot, envir = .GlobalEnv)
+  
+  
+  # Assign results
+  assign(piecewise_results_name, piecewise_summary, envir = .GlobalEnv)
+  assign(sem_plot_name, basic_sem_plot, envir = .GlobalEnv)
+  
   
   assign(piecewise_results_name, piecewise_summary, envir = .GlobalEnv)
   assign(sem_plot_name, basic_sem_plot, envir = .GlobalEnv)
