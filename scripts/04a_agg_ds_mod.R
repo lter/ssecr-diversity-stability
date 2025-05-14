@@ -19,8 +19,8 @@ model_stability(df = terr,
                 con_diversity_col = "con_richness",
                 prod_stability_col = "prod_stability",
                 con_stability_col = "con_stability",
-                multi_stability_col = "multitroph_stability",
-                z_standard = FALSE)
+                multi_stability_col = NULL,
+                transformation = "log")
 # view figures
 basic_sem_plot_terrestrial_richness_aggregate
 plot_terrestrial_aggregate_prod_richness_stability
