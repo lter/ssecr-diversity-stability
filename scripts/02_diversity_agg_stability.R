@@ -13,16 +13,19 @@ source(here::here("scripts", "00_functions.r"))
 knz_prod_wide <- read.csv(here::here("data/KNZ", "knz_producers_wide_sub.csv"))
 knz_con_wide <- read.csv(here::here("data/KNZ", "knz_consumers_wide_sub.csv"))
 calculate_agg_stability(producer_data = knz_prod_wide, consumer_data = knz_con_wide, "knz")
+knz_aggregate_dss$site <- rep("knz", nrow(knz_aggregate_dss))
 
 ###### KBS ######
 kbs_prod_wide <- read.csv(here::here("data/KBS", "kbs_producers_wide_sub.csv"))
 kbs_con_wide <- read.csv(here::here("data/KBS", "kbs_consumers_wide_sub.csv"))
 calculate_agg_stability(producer_data = kbs_prod_wide, consumer_data = kbs_con_wide, "kbs")
+kbs_aggregate_dss$site <- rep("kbs", nrow(kbs_aggregate_dss))
 
 ###### CDR OLD FIELD ######
 cdr_of_prod_wide <- read.csv(here::here("data/CDR_oldfield", "cdr_of_producers_wide_sub.csv"))
 cdr_of_con_wide <- read.csv(here::here("data/CDR_oldfield", "cdr_of_consumers_wide_sub.csv"))
 calculate_agg_stability(producer_data = cdr_of_prod_wide, consumer_data = cdr_of_con_wide, "cdr_of")
+cdr_of_aggregate_dss$site <- rep("cdr_of", nrow(cdr_of_aggregate_dss))
 
 ###### CDR BIODIVERSITY ######
 # cdr_biodiv_1_prod_wide <- read.csv(here::here("data/CDR_biodiv", "cdr_biodiv_1_producers_wide_sub.csv"))
@@ -66,11 +69,13 @@ calculate_agg_stability(producer_data = gce_prod_wide, consumer_data = gce_con_w
 usvi_prod_wide <- read.csv(here::here("data/USVI", "usvi_producers_wide_sub.csv"))
 usvi_con_wide <- read.csv(here::here("data/USVI", "usvi_consumers_wide_sub.csv"))
 calculate_agg_stability(producer_data = usvi_prod_wide, consumer_data = usvi_con_wide, "usvi")
+usvi_aggregate_dss$site <- rep("usvi", nrow(usvi_aggregate_dss))
 
 ##### AIMS #####
 aims_prod_wide <- read.csv(here::here("data/aims", "aims_producers_wide_sub.csv"))
 aims_con_wide <- read.csv(here::here("data/aims", "aims_consumers_wide_sub.csv"))
 calculate_agg_stability(producer_data = aims_prod_wide, consumer_data = aims_con_wide, "aims")
+
 
 ###### NEW SITE NAMES DIDN'T CARRY OVER FOR CONSUMER GROUPS FOR SOME REASON SO INPUTTING MANUALLY #####
 ###### SBC ######
