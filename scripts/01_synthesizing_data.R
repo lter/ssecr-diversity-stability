@@ -146,14 +146,7 @@ usvi_con <- read.csv(here::here("data/USVI", "usvi_fish_census.csv"))
 usvi_prod <- subset(usvi_prod, id_confidence == 1)
 usvi_con <- subset(usvi_con, id_confidence == 1)
 
-# MUTATING PLOT AS ABOVE FOR FILTERING - RETURN HERE PENDING JUNNA'S DATA EXPLORATION
-usvi_prod_mutated <- usvi_prod %>%
-  mutate(plot = paste0(usvi_prod$plot, "-", usvi_prod$habitat_fine))
-
-usvi_con_mutated <- usvi_con %>%
-  mutate(plot = paste0(usvi_con$plot, "-", usvi_con$habitat_fine))
-
-filter_data(site_name = "usvi", producer_data = usvi_prod_mutated, consumer_data = usvi_con_mutated, mean_sum = "mean", output_folder = "data/USVI", minimize = TRUE, write_csv = TRUE)
+filter_data(site_name = "usvi", producer_data = usvi_prod, consumer_data = usvi_con, mean_sum = "mean", output_folder = "data/USVI", minimize = TRUE, write_csv = TRUE)
 
 ##### SBC #####
 sbc_all <-  read.csv(here::here("data/SBC", "sbc_all.csv"))
