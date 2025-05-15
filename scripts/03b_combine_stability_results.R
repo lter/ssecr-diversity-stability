@@ -4,8 +4,7 @@
 # Last Updated: May 13th, 2025
 
 rm(list = ls())
-librarian::shelf(googledrive, vegan, lme4, car, dplyr, tidyr, lattice, lavaan,
-                 piecewiseSEM, semPlot, ggplot2, codyn, ggpubr, performance, emmeans)
+librarian::shelf(tidyverse, here)
 
 # read combined dss
 combined_agg_stability <- read.csv(here::here("data/synthesized_data", "combined_agg_stability.csv"))
@@ -130,3 +129,36 @@ mcr_invert_consumer_lengths <- read_csv(here("tables/wide_output_minimize/consum
 mcr_invert_consumer_lengths$site <- rep("mcr_invert", nrow(mcr_invert_consumer_lengths))
 
 #### MERGE WITH COMB STABILITY ####
+
+## Combine consumer lengths only
+all_consumer_lengths <- rbind(
+  knz_consumer_lengths,
+  aims_consumer_lengths,
+  kbs_consumer_lengths,
+  cdr_of_consumer_lengths,
+  mcr_fish_consumer_lengths,
+  mcr_invert_consumer_lengths,
+  sbc_invert_consumer_lengths,
+  sbc_fish_consumer_lengths,
+  usvi_fish_consumer_lengths
+)
+
+# Combine producer lengths only
+all_producer_lengths <- rbind(
+  knz_producer_lengths,
+  aims_producer_lengths,
+  kbs_producer_lengths,
+  cdr_of_producer_lengths,
+  mcr_fish_producer_lengths,
+  mcr_invert_producer_lengths,
+  sbc_invert_producer_lengths,
+  sbc_fish_producer_lengths,
+  usvi_fish_producer_lengths
+)
+
+# Join them separately
+master_stability <- combined_agg_stability %>%
+  left_join(all_consumer_lengths, by = c("site", "plot")) %>%
+  left_join(all_producer_lengths, by = c("site", "plot"))
+
+
