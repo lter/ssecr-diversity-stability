@@ -7,8 +7,28 @@ librarian::shelf(googledrive, vegan, lme4, car, dplyr, tidyr, lattice, lavaan,
 # retrieve functions from 00_functions.r
 source(here::here("scripts", "00_functions.r"))
 
+#### MASTER ####
+master <- read.csv(here::here(file = "data/synthesized_data", "master_stability.csv"))
+model_stability(df = master,
+                ecosystem_type = "combined",
+                stability_metric = "aggregate",
+                diversity_metric = "richness",
+                prod_diversity_col = "prod_richness",
+                con_diversity_col = "con_richness",
+                prod_stability_col = "prod_stability",
+                con_stability_col = "con_stability",
+                multi_stability_col = NULL,
+                transformation = "log")
+# view figures
+basic_sem_plot_combined_richness_aggregate
+plot_combined_aggregate_prod_richness_stability
+plot_combined_aggregate_con_richness_stability
+# plot_combined_aggregate_multi_richness_stability
+plot_combined_aggregate_stability_richness_correlations
+
+
 ##### TERRESTRIAL ####
-terr <- read.csv(here::here(file = "data/synthesized_data", "terrestrial_agg_dss.csv"))
+terr <- subset(master, ecosystem == "terrestrial")
 
 # test function
 model_stability(df = terr,
@@ -25,7 +45,7 @@ model_stability(df = terr,
 basic_sem_plot_terrestrial_richness_aggregate
 plot_terrestrial_aggregate_prod_richness_stability
 plot_terrestrial_aggregate_con_richness_stability
-plot_terrestrial_aggregate_multi_richness_stability
+# plot_terrestrial_aggregate_multi_richness_stability
 plot_terrestrial_aggregate_stability_richness_correlations
 
 # view within-site coefficients and p-values (i.e. what results would be if modeled independently)
@@ -56,24 +76,24 @@ sem_results_terrestrial_richness_aggregate
 
 #### MARINE ####
 # read temp terrestrial comb data
-mar <- read.csv(here::here(file = "data/synthesized_data", "marine_agg_dss.csv"))
+mar <- subset(master, ecosystem == "aquatic")
 
 # test function
 model_stability(df = mar,
-                ecosystem_type = "marine",
+                ecosystem_type = "aquatic",
                 stability_metric = "aggregate",
                 diversity_metric = "richness",
                 prod_diversity_col = "prod_richness",
                 con_diversity_col = "con_richness",
                 prod_stability_col = "prod_stability",
                 con_stability_col = "con_stability",
-                multi_stability_col = "multitroph_stability",
-                z_standard = FALSE)
+                multi_stability_col = NULL,
+                transformation = "log")
 # view figures
 basic_sem_plot_marine_richness_aggregate
 plot_marine_aggregate_prod_richness_stability
 plot_marine_aggregate_con_richness_stability
-plot_marine_aggregate_multi_richness_stability
+# plot_marine_aggregate_multi_richness_stability
 plot_marine_aggregate_stability_richness_correlations
 
 # view within-site coefficients and p-values (i.e. what results would be if modeled independently)
