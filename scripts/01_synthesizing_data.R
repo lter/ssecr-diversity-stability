@@ -227,4 +227,4 @@ aims_con <- aims_con %>% group_by(site, taxa_type, ecosystem, habitat_broad, hab
 aims_prod <- subset(aims_prod, id_confidence == 1)
 aims_con <- subset(aims_con, id_confidence == 1)
 
-filter_data(site_name = 'aims', producer_data = aims_prod, consumer_data = aims_con, mean_sum = "mean",  minimize = TRUE, output_folder = "data/sbc", write_csv = TRUE)
+filter_data(site_name = 'aims', producer_data = aims_prod, consumer_data = aims_con, mean_sum = "mean",  minimize = TRUE, output_folder = "data/AIMS", write_csv = TRUE)
