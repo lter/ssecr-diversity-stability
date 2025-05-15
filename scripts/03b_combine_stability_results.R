@@ -161,4 +161,4 @@ master_stability <- combined_agg_stability %>%
   left_join(all_consumer_lengths, by = c("site", "plot")) %>%
   left_join(all_producer_lengths, by = c("site", "plot"))
 
-
+write.csv(row.names = F, master_stability, here::here("data/synthesized_data", "master_stability.csv"))
