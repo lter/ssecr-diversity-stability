@@ -85,6 +85,10 @@ run_cta_pipeline <- function(df, site_id, fig_path, table_path) {
 knz_prod_wide <- read.csv(here::here("data/KNZ", "knz_producers_wide_sub.csv"))
 knz_con_wide <- read.csv(here::here("data/KNZ", "knz_consumers_wide_sub.csv"))
 
+# AIMS #
+aims_con_wide <- read.csv(here::here("data/AIMS", "aims_consumers_wide_sub.csv"))
+aims_prod_wide <- read.csv(here::here("data/AIMS", "aims_producers_wide_sub.csv"))
+
 # KBS #
 kbs_prod_wide <- read.csv(here::here("data/KBS", "kbs_producers_wide_sub.csv"))
 kbs_con_wide <- read.csv(here::here("data/KBS", "kbs_consumers_wide_sub.csv"))
@@ -243,12 +247,12 @@ run_cta_pipeline(
   fig_path = here("figures/CTA/CDR", "cdr_biodiv_16_consumer_trajectory_plot.png"),
   table_path = here("tables/CDR/consumer", "cdr_biodiv_16_consumer_lengths.csv"))
 
-# #GCE Producers
-# run_cta_pipeline(
-#   df = gce_prod_wide,
-#   site_id = "gce",
-#   fig_path = here("figures/CTA/GCE", "gce_producer_trajectory_plot.png"),
-#   table_path = here("tables/GCE/producer", "gce_producer_lengths.csv"))
+#GCE Producers
+run_cta_pipeline(
+  df = gce_prod_wide,
+  site_id = "gce",
+  fig_path = here("figures/CTA/GCE", "gce_producer_trajectory_plot.png"),
+  table_path = here("tables/GCE/producer", "gce_producer_lengths.csv"))
 # 
 # #GCE Consumers
 # run_cta_pipeline(
@@ -276,15 +280,15 @@ run_cta_pipeline(
 run_cta_pipeline(
   df = usvi_invert_prod_wide,
   site_id = "usvi",
-  fig_path = here("figures/CTA/USVI", "usvi_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/USVI/producer", "usvi_fish_producer_lengths.csv"))
+  fig_path = here("figures/CTA/USVI", "usvi_invert_producer_trajectory_plot.png"),
+  table_path = here("tables/USVI/producer", "usvi_invert_producer_lengths.csv"))
 
 #USVI Invert Consumers
 run_cta_pipeline(
   df = usvi_invert_con_wide,
   site_id = "usvi",
-  fig_path = here("figures/CTA/USVI", "usvi_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/USVI/consumer", "usvi_fish_consumer_lengths.csv"))
+  fig_path = here("figures/CTA/USVI", "usvi_invert_consumer_trajectory_plot.png"),
+  table_path = here("tables/USVI/consumer", "usvi_invert_consumer_lengths.csv"))
 
 
 #SBC Fish Producers
@@ -305,15 +309,15 @@ run_cta_pipeline(
 # run_cta_pipeline(
 #   df = sbc_invert_prod_wide,
 #   site_id = "sbc",
-#   fig_path = here("figures/CTA/SBC", "sbc_fish_producer_trajectory_plot.png"),
-#   table_path = here("tables/SBC/producer", "sbc_fish_producer_lengths.csv"))
+#   fig_path = here("figures/CTA/SBC", "sbc_invert_producer_trajectory_plot.png"),
+#   table_path = here("tables/SBC/producer", "sbc_invert_producer_lengths.csv"))
 
 #SBC Invert Consumers
 run_cta_pipeline(
   df = sbc_invert_wide,
   site_id = "sbc",
-  fig_path = here("figures/CTA/SBC", "sbc_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/SBC/consumer", "sbc_fish_consumer_lengths.csv"))
+  fig_path = here("figures/CTA/SBC", "sbc_invert_consumer_trajectory_plot.png"),
+  table_path = here("tables/SBC/consumer", "sbc_invert_consumer_lengths.csv"))
 
 
 #MCR Fish Producers
@@ -334,8 +338,8 @@ run_cta_pipeline(
 run_cta_pipeline(
   df = mcr_invert_prod_wide,
   site_id = "mcr",
-  fig_path = here("figures/CTA/MCR", "mcr_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/MCR/producer", "mcr_fish_producer_lengths.csv"))
+  fig_path = here("figures/CTA/MCR", "mcr_invert_producer_trajectory_plot.png"),
+  table_path = here("tables/MCR/producer", "mcr_invert_producer_lengths.csv"))
 
 # #MCR Invert Consumers
 # run_cta_pipeline(
@@ -343,3 +347,17 @@ run_cta_pipeline(
 #   site_id = "mcr",
 #   fig_path = here("figures/CTA/MCR", "mcr_invert_consumer_trajectory_plot.png"),
 #   table_path = here("tables/MCR/consumer", "mcr_invert_consumer_lengths.csv"))
+
+#AIMS Producers
+run_cta_pipeline(
+  df = aims_prod_wide,
+  site_id = "aims",
+  fig_path = here("figures/CTA/wide_output_minimize", "aims_producer_trajectory_plot.png"),
+  table_path = here("tables/wide_output_minimize/producer", "aims_producer_lengths.csv"))
+
+#AIMS Consumers
+run_cta_pipeline(
+  df = aims_con_wide,
+  site_id = "aims",
+  fig_path = here("figures/CTA/wide_output_minimize", "aims_consumer_trajectory_plot.png"),
+  table_path = here("tables/wide_output_minimize/consumer", "aims_consumer_lengths.csv"))
