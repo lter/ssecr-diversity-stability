@@ -7,7 +7,8 @@ rm(list = ls())
 librarian::shelf(tidyverse, here)
 
 # read combined dss
-combined_agg_stability <- read.csv(here::here("data/synthesized_data", "combined_agg_stability.csv"))
+combined_agg_stability <- read.csv(here::here("data/synthesized_data", "combined_agg_stability.csv")) |> 
+  filter(plot != "AHND")
 
 # Read length CSVs ----
 #### KNZ ####
@@ -50,6 +51,7 @@ cdr_of_producer_lengths <- read_csv(here("tables/wide_output_minimize/producer",
   mutate(prod_comp_stability = mean_length,
          prod_total_length = Trajectory) %>%
   select(site, plot, prod_comp_stability, prod_total_length)
+cdr_of_producer_lengths$site <- rep("cdr_of", nrow(cdr_of_producer_lengths))
 
 cdr_of_consumer_lengths <- read_csv(here("tables/wide_output_minimize/consumer", "cdr_of_consumer_lengths.csv")) %>%
   mutate(con_comp_stability = mean_length,
@@ -161,4 +163,4 @@ master_stability <- combined_agg_stability %>%
   left_join(all_consumer_lengths, by = c("site", "plot")) %>%
   left_join(all_producer_lengths, by = c("site", "plot"))
 
-write.csv(row.names = F, master_stability, here::here("data/synthesized_data", "master_stability.csv"))
+# write.csv(row.names = F, master_stability, here::here("data/synthesized_data", "master_stability.csv"))
