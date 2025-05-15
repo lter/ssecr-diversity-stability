@@ -352,12 +352,12 @@ run_cta_pipeline(
 run_cta_pipeline(
   df = aims_prod_wide,
   site_id = "aims",
-  fig_path = here("figures/CTA/wide_output_minimize", "aims_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "aims_producer_lengths.csv"))
+  fig_path = here("figures/CTA/AIMS", "aims_producer_trajectory_plot.png"),
+  table_path = here("tables/AIMS/producer", "aims_producer_lengths.csv"))
 
 #AIMS Consumers
 run_cta_pipeline(
   df = aims_con_wide,
   site_id = "aims",
-  fig_path = here("figures/CTA/wide_output_minimize", "aims_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "aims_consumer_lengths.csv"))
+  fig_path = here("figures/CTA/AIMS", "aims_consumer_trajectory_plot.png"),
+  table_path = here("tables/AIMS/consumer", "aims_consumer_lengths.csv"))

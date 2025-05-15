@@ -110,9 +110,9 @@ cdr_of_con_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_cons
 # cdr_biodiv_16_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_16_producers_wide_sub.csv"))
 # cdr_biodiv_16_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_16_consumers_wide_sub.csv"))
 
-# GCE #
-gce_prod_wide <- read.csv(here::here("data/wide_output_minimize", "gce_producers_wide_sub.csv"))
-gce_con_wide <- read.csv(here::here("data/wide_output_minimize", "gce_consumers_wide_sub.csv"))
+# # GCE #
+# gce_prod_wide <- read.csv(here::here("data/wide_output_minimize", "gce_producers_wide_sub.csv"))
+# gce_con_wide <- read.csv(here::here("data/wide_output_minimize", "gce_consumers_wide_sub.csv"))
 
 #USVI #
 usvi_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_fish_producers_wide_sub.csv"))
@@ -132,6 +132,32 @@ mcr_invert_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_
 mcr_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_producers_wide_sub.csv"))
 mcr_fish_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_consumers_wide_sub.csv"))
 
+
+# Filtering Complete 0's ----
+
+mcr_invert_wide = mcr_invert_wide |>
+  filter(year != 2024)
+
+mcr_invert_prod_wide = mcr_invert_prod_wide |>
+  filter(year != 2024)
+
+mcr_fish_wide = mcr_fish_wide |>
+  filter(year != 2024)
+
+mcr_fish_prod_wide = mcr_fish_prod_wide |>
+  filter(year != 2024)
+
+sbc_fish_wide = sbc_fish_wide |> 
+  filter(plot != "AHND")
+
+sbc_fish_prod_wide = sbc_fish_prod_wide |> 
+  filter(plot != "AHND")
+
+sbc_invert_wide = sbc_invert_wide |> 
+  filter(plot != "AHND")
+
+sbc_invert_prod_wide = sbc_invert_prod_wide |> 
+  filter(plot != "AHND")
 
 # Run CTA Pipeline ----
 
@@ -264,12 +290,12 @@ run_cta_pipeline(
 #   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_16_consumer_lengths.csv"))
 
 #GCE Producers
-run_cta_pipeline(
-  df = gce_prod_wide,
-  site_id = "gce",
-  fig_path = here("figures/CTA/wide_output_minimize", "gce_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "gce_producer_lengths.csv"))
-# 
+# run_cta_pipeline(
+#   df = gce_prod_wide,
+#   site_id = "gce",
+#   fig_path = here("figures/CTA/wide_output_minimize", "gce_producer_trajectory_plot.png"),
+#   table_path = here("tables/wide_output_minimize/producer", "gce_producer_lengths.csv"))
+# # 
 # #GCE Consumers
 # run_cta_pipeline(
 #   df = gce_con_wide,
@@ -308,11 +334,11 @@ run_cta_pipeline(
 
 
 # SBC Fish Producers
-# run_cta_pipeline(
-#   df = sbc_fish_prod_wide,
-#   site_id = "sbc",
-#   fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_producer_trajectory_plot.png"),
-#   table_path = here("tables/SBC/producer", "sbc_fish_producer_lengths.csv"))
+run_cta_pipeline(
+  df = sbc_fish_prod_wide,
+  site_id = "sbc",
+  fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_producer_trajectory_plot.png"),
+  table_path = here("tables/wide_output_minimize/producer", "sbc_fish_producer_lengths.csv"))
 
 #SBC Fish Consumers
 run_cta_pipeline(
@@ -322,11 +348,11 @@ run_cta_pipeline(
   table_path = here("tables/wide_output_minimize/consumer", "sbc_fish_consumer_lengths.csv"))
 
 #SBC Invert Producers
-# run_cta_pipeline(
-#   df = sbc_invert_prod_wide,
-#   site_id = "sbc",
-#   fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "sbc_invert_producer_lengths.csv"))
+run_cta_pipeline(
+  df = sbc_invert_prod_wide,
+  site_id = "sbc",
+  fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_producer_trajectory_plot.png"),
+  table_path = here("tables/wide_output_minimize/producer", "sbc_invert_producer_lengths.csv"))
 
 #SBC Invert Consumers
 run_cta_pipeline(
@@ -358,8 +384,8 @@ run_cta_pipeline(
   table_path = here("tables/wide_output_minimize/producer", "mcr_invert_producer_lengths.csv"))
 
 # #MCR Invert Consumers
-# run_cta_pipeline(
-#   df = mcr_invert_wide,
-#   site_id = "mcr",
-#   fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "mcr_invert_consumer_lengths.csv"))
+run_cta_pipeline(
+  df = mcr_invert_wide,
+  site_id = "mcr",
+  fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_consumer_trajectory_plot.png"),
+  table_path = here("tables/wide_output_minimize/consumer", "mcr_invert_consumer_lengths.csv"))
