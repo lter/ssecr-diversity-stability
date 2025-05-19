@@ -44,8 +44,11 @@ terr_agg_dss_z <- terrestrial_agg_dss %>%
   lapply(z_standard_columns) %>%
   bind_rows()
 
+
+##### AQUATIC ####
 ### AQUATIC PRODUCER
 aquatic_prod_mod <- lmer(data = aquatic_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
+
 summary(aquatic_prod_mod)
 plot(simulateResiduals(aquatic_prod_mod))
 
@@ -103,17 +106,17 @@ predictaquatic_con_mod %>%
   theme(legend.position = "right")
 
 
-#### Multitrophic
-aquatic_multi_mod <- lmer(data = aquatic_agg_dss_z, z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site))
-aquatic_multi_mod <- glmmTMB(z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site),
-                           data = aquatic_agg_dss_z)
+#### aquatic Multitrophic
+#aquatic_multi_mod <- lmer(data = aquatic_agg_dss_z, z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site))
+#aquatic_multi_mod <- glmmTMB(z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site),
+#                           data = aquatic_agg_dss_z)
 
-summary(aquatic_multi_mod)
-plot(simulateResiduals(aquatic_multi_mod))
+#summary(aquatic_multi_mod)
+#plot(simulateResiduals(aquatic_multi_mod))
 
 
 
-########################
+########### TERRESTRIAL #############
 ## terrestrial Producer
 terr_prod_mod <- lmer(data = terr_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
 terr_prod_mod <- lm(data = terr_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich)
@@ -192,6 +195,17 @@ p6
 pdf("terrestrial_stability.pdf", width = 13, height = 12)
 cowplot::plot_grid(p3, p5, p4, p6, nrow = 2, ncol = 2)
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
 
 ##########################################
 #### OLD Assigining treatments ####
