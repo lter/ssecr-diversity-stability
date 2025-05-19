@@ -18,14 +18,15 @@ model_stability(df = master,
                 prod_stability_col = "prod_comp_stability",
                 con_stability_col = "con_comp_stability",
                 multi_stability_col = NULL,
-                transformation = "log")
+                transformation = "z")
 # view figures
 basic_sem_plot_combined_richness_compositional
 plot_combined_compositional_prod_richness_stability
 plot_combined_compositional_con_richness_stability
 # plot_combined_compositional_multi_richness_stability
 plot_combined_compositional_stability_richness_correlations
-
+write.csv(row.names = F, lmer_results_combined_compositional_richness,
+          here::here("data/summary_tables", "lmer_results_combined_compositional_richness.csv"))
 
 ##### TERRESTRIAL ####
 terr <- subset(master, ecosystem == "terrestrial")
@@ -61,9 +62,9 @@ write.csv(row.names = F, site_results_terrestrial_con_compositional_richness,
 
 # multitrophic_stability ~ producer_stability + consumer_stability
 # View(site_results_terrestrial_multi_compositional_richness)
-write.csv(row.names = F, site_results_terrestrial_multi_compositional_richness,
-          here::here("data/summary_tables", "site_results_terrestrial_multi_compositional_richness.csv"))
-
+# write.csv(row.names = F, site_results_terrestrial_multi_compositional_richness,
+#           here::here("data/summary_tables", "site_results_terrestrial_multi_compositional_richness.csv"))
+# 
 # view combined results (i.e. site as a random effect)
 # for producer and consumer stability, producer and consumer richness are the predictor variables
 # for multitrophic stability, producer and consumer stability are the predictor variables
@@ -109,8 +110,8 @@ write.csv(row.names = F, site_results_aquatic_con_compositional_richness,
 
 # multitrophic_stability ~ producer_stability + consumer_stability
 # View(site_results_aquatic_multi_compositional_richness)
-write.csv(row.names = F, site_results_aquatic_multi_compositional_richness,
-          here::here("data/summary_tables", "site_results_aquatic_multi_compositional_richness.csv"))
+# write.csv(row.names = F, site_results_aquatic_multi_compositional_richness,
+#           here::here("data/summary_tables", "site_results_aquatic_multi_compositional_richness.csv"))
 
 # view combined results (i.e. site as a random effect)
 # for producer and consumer stability, producer and consumer richness are the predictor variables
