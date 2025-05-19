@@ -18,7 +18,7 @@ model_stability(df = master,
                 prod_stability_col = "prod_stability",
                 con_stability_col = "con_stability",
                 multi_stability_col = NULL,
-                transformation = "log")
+                transformation = "z")
 # view figures
 basic_sem_plot_combined_richness_aggregate
 plot_combined_aggregate_prod_richness_stability
@@ -26,6 +26,8 @@ plot_combined_aggregate_con_richness_stability
 # plot_combined_aggregate_multi_richness_stability
 plot_combined_aggregate_stability_richness_correlations
 
+write.csv(row.names = F, lmer_results_combined_aggregate_richness,
+          here::here("data/summary_tables", "lmer_results_combined_aggregate_richness.csv"))
 
 ##### TERRESTRIAL ####
 terr <- subset(master, ecosystem == "terrestrial")
@@ -40,7 +42,7 @@ model_stability(df = terr,
                 prod_stability_col = "prod_stability",
                 con_stability_col = "con_stability",
                 multi_stability_col = NULL,
-                transformation = "log")
+                transformation = "z")
 # view figures
 basic_sem_plot_terrestrial_richness_aggregate
 plot_terrestrial_aggregate_prod_richness_stability
@@ -61,8 +63,8 @@ write.csv(row.names = F, site_results_terrestrial_con_aggregate_richness,
 
 # multitrophic_stability ~ producer_stability + consumer_stability
 # View(site_results_terrestrial_multi_aggregate_richness)
-write.csv(row.names = F, site_results_terrestrial_multi_aggregate_richness,
-          here::here("data/summary_tables", "site_results_terrestrial_multi_aggregate_richness.csv"))
+# write.csv(row.names = F, site_results_terrestrial_multi_aggregate_richness,
+#           here::here("data/summary_tables", "site_results_terrestrial_multi_aggregate_richness.csv"))
 
 # view combined results (i.e. site as a random effect)
 # for producer and consumer stability, producer and consumer richness are the predictor variables
@@ -74,7 +76,7 @@ write.csv(row.names = F, lmer_results_terrestrial_aggregate_richness,
 # view sem results
 sem_results_terrestrial_richness_aggregate
 
-#### MARINE ####
+#### aquatic ####
 # read temp terrestrial comb data
 mar <- subset(master, ecosystem == "aquatic")
 
@@ -88,36 +90,36 @@ model_stability(df = mar,
                 prod_stability_col = "prod_stability",
                 con_stability_col = "con_stability",
                 multi_stability_col = NULL,
-                transformation = "log")
+                transformation = "z")
 # view figures
-basic_sem_plot_marine_richness_aggregate
-plot_marine_aggregate_prod_richness_stability
-plot_marine_aggregate_con_richness_stability
-# plot_marine_aggregate_multi_richness_stability
-plot_marine_aggregate_stability_richness_correlations
+basic_sem_plot_aquatic_richness_aggregate
+plot_aquatic_aggregate_prod_richness_stability
+plot_aquatic_aggregate_con_richness_stability
+# plot_aquatic_aggregate_multi_richness_stability
+plot_aquatic_aggregate_stability_richness_correlations
 
 # view within-site coefficients and p-values (i.e. what results would be if modeled independently)
 # lm(producer_stability ~ producer_richness + consumer_richness)
-# View(site_results_marine_prod_aggregate_richness)
-write.csv(row.names = F, site_results_marine_prod_aggregate_richness,
-          here::here("data/summary_tables", "site_results_marine_prod_aggregate_richness.csv"))
+# View(site_results_aquatic_prod_aggregate_richness)
+write.csv(row.names = F, site_results_aquatic_prod_aggregate_richness,
+          here::here("data/summary_tables", "site_results_aquatic_prod_aggregate_richness.csv"))
 
 # consumer_stability ~ producer_richness + consumer_richness
-# View(site_results_marine_con_aggregate_richness)
-write.csv(row.names = F, site_results_marine_con_aggregate_richness,
-          here::here("data/summary_tables", "site_results_marine_con_aggregate_richness.csv"))
+# View(site_results_aquatic_con_aggregate_richness)
+write.csv(row.names = F, site_results_aquatic_con_aggregate_richness,
+          here::here("data/summary_tables", "site_results_aquatic_con_aggregate_richness.csv"))
 
 # multitrophic_stability ~ producer_stability + consumer_stability
-# View(site_results_marine_multi_aggregate_richness)
-write.csv(row.names = F, site_results_marine_multi_aggregate_richness,
-          here::here("data/summary_tables", "site_results_marine_multi_aggregate_richness.csv"))
+# View(site_results_aquatic_multi_aggregate_richness)
+# write.csv(row.names = F, site_results_aquatic_multi_aggregate_richness,
+#           here::here("data/summary_tables", "site_results_aquatic_multi_aggregate_richness.csv"))
 
 # view combined results (i.e. site as a random effect)
 # for producer and consumer stability, producer and consumer richness are the predictor variables
 # for multitrophic stability, producer and consumer stability are the predictor variables
-# View(lmer_results_marine_aggregate_richness)
-write.csv(row.names = F, lmer_results_marine_aggregate_richness,
-          here::here("data/summary_tables", "lmer_results_marine_aggregate_richness.csv"))
+# View(lmer_results_aquatic_aggregate_richness)
+write.csv(row.names = F, lmer_results_aquatic_aggregate_richness,
+          here::here("data/summary_tables", "lmer_results_aquatic_aggregate_richness.csv"))
 
 # view sem results
-sem_results_marine_richness_aggregate
+sem_results_aquatic_richness_aggregate
