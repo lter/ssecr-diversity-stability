@@ -5,12 +5,196 @@ librarian::shelf(tidyverse, stringr, piecewiseSEM, glmmTMB, DHARMa, performance,
                  ggeffects, vegan, lme4, car, MASS, dplyr, tidyr, 
                  semPlot, ggplot2, ggpubr, emmeans, lmerTest)
 
+source('scripts/00_functions_minimize.R')
+
 #### loading data #### 
 setwd("~/Documents/SSECR/data")
-terrestrial_agg_dss <- read.csv("terrestrial_agg_dss.csv") # reading in scripts manually for now -- downloaded from google drive
-marine_agg_dss <- read.csv("marine_agg_dss.csv")
+agg_dss <- read.csv("combined_agg_stability.csv")
 
-#### Assigining treatments ####
+aquatic_agg_dss <- agg_dss %>%
+  filter(ecosystem == "aquatic")
+terrestrial_agg_dss <- agg_dss %>%
+  filter(ecosystem == "terrestrial")
+
+z_standard <- function(x){
+  (x - mean(x))/sd(x)
+}
+# adding function to easily apply and rename to columns I want
+z_standard_columns <- function(df) {
+  df_z_score <- df %>%
+    mutate(z_prod_rich = z_standard(prod_richness)) %>%
+    mutate(z_prod_stability = z_standard(prod_stability)) %>%
+    mutate(z_con_rich = z_standard(con_richness)) %>%
+    mutate(z_con_stability = z_standard(con_stability)) %>%
+    mutate(z_multitroph_richness = z_standard(multitroph_richness)) %>%
+    mutate(z_multitroph_stability = z_standard(multitroph_stability)) %>%
+    return(df_z_score)
+}
+
+### z standardize within each site 
+aquatic_agg_dss_z <- aquatic_agg_dss %>%
+  group_by(site) %>%
+  group_split() %>%
+  lapply(z_standard_columns) %>%
+  bind_rows()
+
+terr_agg_dss_z <- terrestrial_agg_dss %>%
+  group_by(site) %>%
+  group_split() %>%
+  lapply(z_standard_columns) %>%
+  bind_rows()
+
+### AQUATIC PRODUCER
+aquatic_prod_mod <- lmer(data = aquatic_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
+summary(aquatic_prod_mod)
+plot(simulateResiduals(aquatic_prod_mod))
+
+producer_predictmod <- ggpredict(aquatic_prod_mod, terms = "z_prod_rich", back_transform = TRUE, type = "random")
+p1 <- producer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = aquatic_agg_dss_z, size = 3, alpha = 0.7) +
+  geom_smooth(aes(z_prod_rich, z_prod_stability, color = site), data = aquatic_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 2.5) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("AIMS", "MCR Fish", "MCR Invertebrates", "SBC Fish", "SBC Invertebrates", "USVI")) +
+  xlab("Producer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p1
+
+consumer_predictmod <- ggpredict(aquatic_prod_mod, terms = "z_con_rich", back_transform = TRUE, type = "random")
+p2 <- consumer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_con_rich, z_prod_stability, color = site), data = aquatic_agg_dss_z, size = 3) +
+  geom_smooth(aes(z_con_rich, z_prod_stability, color = site), data = aquatic_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 3) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("AIMS", "MCR Fish", "MCR Invertebrates", "SBC Fish", "SBC Invertebrates", "USVI")) +
+  xlab("Consumer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p2
+
+pdf("producer_stability.pdf", width = 10, height = 12)
+cowplot::plot_grid(p1, p2, nrow = 2, ncol = 1)
+dev.off()
+
+
+### AQUATIC CONSUMER
+aquatic_con_mod <- lmer(data = aquatic_agg_dss_z, z_con_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
+summary(aquatic_con_mod)
+plot(simulateResiduals(aquatic_con_mod))
+
+predictaquatic_con_mod <- ggpredict(aquatic_con_mod, terms = "z_con_rich", back_transform = TRUE, type = "random")
+predictaquatic_con_mod %>%
+  ggplot() +
+  geom_point(aes(z_con_rich, z_con_stability, color = site), data = aquatic_agg_dss_z, size = 3) +
+  geom_line(aes(x, predicted), linewidth = 3) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("AIMS", "MCR Fish", "MCR Invertebrates", "SBC Fish", "SBC Invertebrates", "USVI")) +
+  xlab("Consumer Richness (z-standardized)") +
+  ylab("Consumer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+
+
+#### Multitrophic
+aquatic_multi_mod <- lmer(data = aquatic_agg_dss_z, z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site))
+aquatic_multi_mod <- glmmTMB(z_multitroph_stability ~ 0 + z_prod_stability + z_con_stability + (z_prod_stability + 0|site) + (z_con_stability + 0|site),
+                           data = aquatic_agg_dss_z)
+
+summary(aquatic_multi_mod)
+plot(simulateResiduals(aquatic_multi_mod))
+
+
+
+########################
+## terrestrial Producer
+terr_prod_mod <- lmer(data = terr_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
+terr_prod_mod <- lm(data = terr_agg_dss_z, z_prod_stability ~ z_prod_rich + z_con_rich)
+
+summary(terr_prod_mod)
+plot(simulateResiduals(terr_prod_mod))
+producer_predictmod <- ggpredict(terr_prod_mod, terms = "z_prod_rich", back_transform = TRUE, type = "random")
+p3 <- producer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_prod_rich, z_prod_stability, color = site), data = terr_agg_dss_z, size = 3, alpha = 0.7) +
+  geom_smooth(aes(z_prod_rich, z_prod_stability, color = site), data = terr_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 2.5) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR", "KBS", "KNZ")) +
+  xlab("Producer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p3
+consumer_predictmod <- ggpredict(terr_prod_mod, terms = "z_con_rich", back_transform = TRUE, type = "random")
+p4 <- producer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_con_rich, z_prod_stability, color = site), data = terr_agg_dss_z, size = 3, alpha = 0.7) +
+  geom_smooth(aes(z_con_rich, z_prod_stability, color = site), data = terr_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 2.5) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR", "KBS", "KNZ")) +
+  xlab("Consumer Richness (z-standardized)") +
+  ylab("Producer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p4
+
+
+
+
+###### TERRESTRIAL CONSUMER
+terr_con_mod <- lmer(data = terr_agg_dss_z, z_con_stability ~ z_prod_rich + z_con_rich + (1 + z_prod_rich|site) + (1 + z_con_rich|site))
+terr_con_mod <- lm(data = terr_agg_dss_z, z_con_stability ~ z_prod_rich + z_con_rich)
+
+summary(terr_con_mod)
+plot(simulateResiduals(terr_con_mod))
+producer_predictmod <- ggpredict(terr_con_mod, terms = "z_prod_rich", back_transform = TRUE, type = "random")
+p5 <- producer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_prod_rich, z_con_stability, color = site), data = terr_agg_dss_z, size = 3, alpha = 0.7) +
+  geom_smooth(aes(z_prod_rich, z_con_stability, color = site), data = terr_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 2.5) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR", "KBS", "KNZ")) +
+  xlab("Producer Richness (z-standardized)") +
+  ylab("Consumer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p5
+
+consumer_predictmod <- ggpredict(terr_con_mod, terms = "z_con_rich", back_transform = TRUE, type = "random")
+p6 <- consumer_predictmod %>%
+  ggplot() +
+  geom_point(aes(z_con_rich, z_con_stability, color = site), data = terr_agg_dss_z, size = 3, alpha = 0.7) +
+  geom_smooth(aes(z_con_rich, z_con_stability, color = site), data = terr_agg_dss_z, method = "lm", se = FALSE, linewidth = 1.5) +
+  geom_line(aes(x, predicted), linewidth = 2.5) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high), alpha = 0.3) + 
+  theme_classic(base_size = 20) +
+  scale_color_brewer(palette = "Set2", labels = c("CDR", "KBS", "KNZ")) +
+  xlab("Consumer Richness (z-standardized)") +
+  ylab("Consumer Stability (z-standardized)") +
+  guides(color=guide_legend(title="Site")) +
+  theme(legend.position = "right")
+p6
+
+
+pdf("terrestrial_stability.pdf", width = 13, height = 12)
+cowplot::plot_grid(p3, p5, p4, p6, nrow = 2, ncol = 2)
+dev.off()
+
+##########################################
+#### OLD Assigining treatments ####
 ## CDR biodiversity experiment
 cdr_biodiv_prod <-  read.csv("cdr_producer.csv") # again, reading in manually for now
 cdr_biodiv_prod <- subset(cdr_biodiv_prod, id_confidence == 1)
