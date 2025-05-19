@@ -108,11 +108,13 @@ filter_data <- function(site_name, # site name as string
     
     producer_wide_sub <- producer_wide %>%
       filter(year %in% as.numeric(overlap_years)) %>%
-      filter(plot %in% rownames(valid_plot_years_check))
+      filter(plot %in% rownames(valid_plot_years_check)) %>%
+      mutate(site = site_name)
     
     consumer_wide_sub <- consumer_wide %>%
       filter(year %in% as.numeric(overlap_years)) %>%
-      filter(plot %in% rownames(valid_plot_years_check))      
+      filter(plot %in% rownames(valid_plot_years_check)) %>%
+      mutate(site = site_name)    
   } else {
     producer_wide_sub <- producer_wide %>%
       inner_join(valid_plot_years, by = c("plot", "year")) %>%
@@ -403,9 +405,11 @@ model_stability <- function(df, # stability df
     coef_names <- names(coefs)
     prod_name <-  prod_diversity_col
     con_name  <-  con_diversity_col
+    stability_name <- stability_metric
     
     # Store results
     prod_stability_results_list[[s]] <- data.frame(
+      model_type <- paste0("producer_", stability_name),
       site = s,
       intercept = unname(coefs["(Intercept)"]),
       prod_diversity_coef = unname(coefs[prod_name]),
@@ -451,9 +455,11 @@ model_stability <- function(df, # stability df
     consumer_coef_names <- names(consumer_coefs)
     prod_name <-  prod_diversity_col
     con_name  <-  con_diversity_col
+    stability_name <- stability_metric
     
     # Store results
     con_stability_results_list[[s]] <- data.frame(
+      model_type <- paste0("consumer_", stability_name),
       site = s,
       intercept = unname(consumer_coefs["(Intercept)"]),
       prod_diversity_coef = unname(consumer_coefs[prod_name]),
@@ -498,9 +504,11 @@ model_stability <- function(df, # stability df
     coef_names <- names(coefs)
     prod_name <-  prod_stability_col
     con_name  <-  con_stability_col
+    stability_name <- stability_metric
     
     # Store results
     multitrophic_stability_results_list[[s]] <- data.frame(
+      model_type <- paste0("multitrophic_", stability_name),
       site = s,
       intercept = unname(coefs["(Intercept)"]),
       prod_stability_coef = unname(coefs[prod_name]),
@@ -535,13 +543,17 @@ model_stability <- function(df, # stability df
   producer_combined_model_formula <- as.formula(paste0(
     prod_stability_col, " ~ ",
     prod_diversity_col, " + ",
-    con_diversity_col, "+ (1|site)"
+    con_diversity_col, " + ",
+    "(1 + ", prod_diversity_col, " | site) + ",
+    "(1 + ", con_diversity_col, " | site)"
   ))
   
   consumer_combined_model_formula <- as.formula(paste0(
     con_stability_col, " ~ ",
     prod_diversity_col, " + ",
-    con_diversity_col, "+ (1|site)"
+    con_diversity_col, " + ",
+    "(1 + ", prod_diversity_col, " | site) + ",
+    "(1 + ", con_diversity_col, " | site)"
   ))
   
 
@@ -553,10 +565,12 @@ model_stability <- function(df, # stability df
     consumer = lmer(consumer_combined_model_formula, data = df)
   )
   if (!is.null(multi_stability_col)) {
-    multitrophic_combined_model_formula <- as.formula(paste0(
+    multitrophic_combined_model_formula <-as.formula(paste0(
       multi_stability_col, " ~ ",
       prod_stability_col, " + ",
-      con_stability_col, "+ (1|site)"
+      con_stability_col, " + ",
+      "(1 + ", prod_stability_col, " | site) + ",
+      "(1 + ", con_stability_col, " | site)"
     ))
     combined_models$multitrophic <- lmer(multitrophic_combined_model_formula, data = df)
   }
