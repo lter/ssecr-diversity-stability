@@ -39,21 +39,21 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_consumers_wide_sub.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 
-
-result <- filter_data(site_name = 'usvi_invert', # site name as string
-                      producer_data = producer_data, # producer df
-                      consumer_data = invert_data,   # consumer df
-                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
-                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
-                      write_csv = TRUE)
-
-# write data to google drive
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_invert_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_invert_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# removed invert data for usvi because they are senssile
+# result <- filter_data(site_name = 'usvi_invert', # site name as string
+#                       producer_data = producer_data, # producer df
+#                       consumer_data = invert_data,   # consumer df
+#                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+#                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+#                       output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+#                       write_csv = TRUE)
+# 
+# # write data to google drive
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_invert_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_invert_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 
 # #------------------------------------------------------------more USVI updates------------------------------------------------------
 # # update the non-minimize result for USVI
