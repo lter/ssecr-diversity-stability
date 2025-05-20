@@ -122,23 +122,5 @@ ggplot(mar_fish, aes(y=con_stability, x=con_richness, col=site)) +
 
 
 
-##these structure
-# model_stability(df = terr_z,
-#                 ecosystem_type = "terrestrial",
-#                 stability_metric = "aggregate",
-#                 diversity_metric = "richness",
-#                 prod_diversity_col = "prod_richness",
-#                 con_diversity_col = "con_richness",
-#                 prod_stability_col = "prod_stability",
-#                 con_stability_col = "con_stability",
-#                 multi_stability_col = "multitroph_stability",
-#                 z_standard = FALSE)
-# # view figures
-# basic_sem_plot_terrestrial_richness_aggregate
-# plot_terrestrial_aggregate_prod_richness_stability
-# plot_terrestrial_aggregate_con_richness_stability
-# plot_terrestrial_aggregate_multi_richness_stability
-# plot_terrestrial_aggregate_stability_richness_correlations
-
 
 
