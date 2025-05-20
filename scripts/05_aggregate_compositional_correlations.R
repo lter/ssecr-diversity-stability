@@ -3,7 +3,12 @@ rm(list = ls())
 library(ggplot2)
 source(here::here("scripts", "00_functions.r"))
 # read data
-master <- read.csv(here::here(file = "data/synthesized_data", "master_stability.csv"))
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"), type='csv')
+tmp <- tempfile(fileext = ".csv")
+download <- drive_download(drive_folder[drive_folder$name=="master_stability.csv",], path = tmp, overwrite = TRUE)
+master <- read.csv(tmp)
+
+# z-standardize
 stability_cols <- c("prod_stability", "prod_comp_stability", "con_stability", "con_comp_stability")
 master_z <- master %>%
   group_by(site) %>%
