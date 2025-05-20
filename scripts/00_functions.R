@@ -381,11 +381,21 @@ model_stability <- function(df, # stability df
     
 
      #  CREATE A FORMULA STRING AND THEN APPLY IS TO THE FORMULA OBJECTI WITH as.formula()
+    # if z standardizing, set intercept to 0
+    if(transformation == "z"){
+      producer_model_formula <- as.formula(paste0(
+        prod_stability_col, " ~ ",
+        "0 + ", 
+        prod_diversity_col, " + ",
+        con_diversity_col)
+      )
+    }else{
      producer_model_formula <- as.formula(paste0(
        prod_stability_col, " ~ ",
        prod_diversity_col, " + ",
        con_diversity_col)
        )
+    }
 
     
     # Fit the model
@@ -431,11 +441,20 @@ model_stability <- function(df, # stability df
     
 
       # model formula
+    if(transformation == "z"){
+      consumer_model_formula <- as.formula(paste0(
+        con_stability_col, " ~ ",
+        "0 + ", 
+        prod_diversity_col, " + ",
+        con_diversity_col)
+      )
+    }else{
       consumer_model_formula <- as.formula(paste0(
         con_stability_col, " ~ ",
         prod_diversity_col, " + ",
         con_diversity_col
       ))
+    }
     
     
     # Fit the model
@@ -479,12 +498,20 @@ model_stability <- function(df, # stability df
   for (s in unique(df$site)) {
     site_data <- subset(df, site == s)
     
-      # model formula 
+      # model formula
+    if(transformation == "z"){
+      multitrophic_model_formula <- as.formula(paste0(
+        multi_stability_col, " ~ ",
+        "0 + ",  prod_stability_col, " + ",
+        con_stability_col
+      )) 
+    }else{
       multitrophic_model_formula <- as.formula(paste0(
         multi_stability_col, " ~ ",
         prod_stability_col, " + ",
         con_stability_col
       ))
+    }
     
     
     # Fit the model
@@ -540,6 +567,24 @@ model_stability <- function(df, # stability df
   
     
   # model formulas
+  if(transformation == "z"){
+    producer_combined_model_formula <- as.formula(paste0(
+      prod_stability_col, " ~ ",
+      "0 + ",                               
+      prod_diversity_col, " + ",
+      con_diversity_col, " + ",
+      "(0 + ", prod_diversity_col, " | site) + ",
+      "(0 + ", con_diversity_col, " | site)"
+    ))
+    consumer_combined_model_formula <- as.formula(paste0(
+      con_stability_col, " ~ ",
+      "0 + ",                               
+      prod_diversity_col, " + ",
+      con_diversity_col, " + ",
+      "(0 + ", prod_diversity_col, " | site) + ",
+      "(0 + ", con_diversity_col, " | site)"
+    ))
+  }else{
   producer_combined_model_formula <- as.formula(paste0(
     prod_stability_col, " ~ ",
     prod_diversity_col, " + ",
@@ -555,6 +600,7 @@ model_stability <- function(df, # stability df
     "(1 + ", prod_diversity_col, " | site) + ",
     "(1 + ", con_diversity_col, " | site)"
   ))
+  }
   
 
 
@@ -565,6 +611,16 @@ model_stability <- function(df, # stability df
     consumer = lmer(consumer_combined_model_formula, data = df)
   )
   if (!is.null(multi_stability_col)) {
+    if(transformation == "z"){
+      multitrophic_combined_model_formula <-as.formula(paste0(
+        multi_stability_col, " ~ ",
+        "0+", 
+        prod_stability_col, " + ",
+        con_stability_col, " + ",
+        "(0 + ", prod_stability_col, " | site) + ",
+        "(0 + ", con_stability_col, " | site)"
+      ))
+    }else{
     multitrophic_combined_model_formula <-as.formula(paste0(
       multi_stability_col, " ~ ",
       prod_stability_col, " + ",
@@ -572,6 +628,7 @@ model_stability <- function(df, # stability df
       "(1 + ", prod_stability_col, " | site) + ",
       "(1 + ", con_stability_col, " | site)"
     ))
+    }
     combined_models$multitrophic <- lmer(multitrophic_combined_model_formula, data = df)
   }
   
