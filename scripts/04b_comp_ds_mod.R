@@ -93,7 +93,7 @@ model_stability(df = mar,
                 prod_stability_col = "prod_comp_stability",
                 con_stability_col = "con_comp_stability",
                 multi_stability_col = NULL,
-                transformation = "log")
+                transformation = "z")
 # view figures
 basic_sem_plot_aquatic_richness_compositional
 plot_aquatic_compositional_prod_richness_stability
