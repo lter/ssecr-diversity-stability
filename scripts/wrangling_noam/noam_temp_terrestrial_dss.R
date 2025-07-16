@@ -68,7 +68,7 @@ for (s in unique(terr_comb$site)) {
 
 
 # run as lmer with site as random effect
-comb_prod_mod <- lmer(prod_stability  ~ prod_richness + con_richness + (1|site),  data = terr_comb)
+comb_prod_mod <- lmer(prod_stability  ~ z_standard(prod_richness) + z_standard(con_richness) + (1|site),  data = terr_comb)
 summary(comb_prod_mod)
 Anova(comb_prod_mod) # producer X2 = 0.5, P = 0.47, consumer X2 = 14.7, P = 0.0001
 x <- Anova(comb_prod_mod)
@@ -81,10 +81,10 @@ y$R2_marginal
 # basic plots
 (prod_stab_prod_div_plot <- 
   ggplot() +
-  geom_point(data = terr_comb, aes(x = prod_richness, y = prod_stability , colour = site)) +
-  stat_smooth(data = terr_comb, aes(x = prod_richness, y = prod_stability, colour = site),
+  geom_point(data = terr_comb, aes(x = z_standard(prod_richness), y = prod_stability , colour = site)) +
+  stat_smooth(data = terr_comb, aes(x = z_standard(prod_richness), y = prod_stability, colour = site),
               method = "glm", se = F) +
-  stat_smooth(data = terr_comb, aes(x = prod_richness, y = prod_stability),
+  stat_smooth(data = terr_comb, aes(x = z_standard(prod_richness), y = prod_stability),
               method = "glm", se = T, colour = "black") +
   theme_classic() 
 )
@@ -147,7 +147,7 @@ for (s in unique(terr_comb$site)) {
 
 
 # run as lmer with site as random effect
-comb_con_mod <- lmer(con_stability  ~ prod_richness + con_richness + (1|site), , data = terr_comb)
+comb_con_mod <- lmer(con_stability  ~ z_standard(prod_richness) + z_standard(con_richness) + (1|site), , data = terr_comb)
 summary(comb_con_mod)
 Anova(comb_con_mod) # prod richness X2 = 3,1, P = 0.08; con richness X2 = 003, P = 0.96
 performance::r2(comb_con_mod) # 0.05, 0.53
@@ -155,10 +155,10 @@ performance::r2(comb_con_mod) # 0.05, 0.53
 # basic plots
 (con_stab_prod_div_plot <- 
     ggplot() +
-    geom_point(data = terr_comb, aes(x = prod_richness, y = log(con_stability + 1), colour = site)) +
-    stat_smooth(data = terr_comb, aes(x = prod_richness, y = log(con_stability + 1), colour = site),
+    geom_point(data = terr_comb, aes(x = z_standard(prod_richness), y = con_stability, colour = site)) +
+    stat_smooth(data = terr_comb, aes(x = z_standard(prod_richness), y = con_stability, colour = site),
                 method = "lm", se = F) +
-    stat_smooth(data = terr_comb, aes(x = prod_richness, y = log(con_stability + 1)),
+    stat_smooth(data = terr_comb, aes(x = z_standard(prod_richness), y = con_stability),
                 method = "lm", se = T, colour = "black") +
     theme_classic() 
 )
