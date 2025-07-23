@@ -332,7 +332,7 @@ filter_ranges <- function(trend, # emtrends df created from emmip
              .data[[value]] <= .data[[paste0("max_", value)]])
 }
 
-#### create preliminary models plots for  stability ####
+#### main function ####
 model_stability <- function(df, # stability df
                             ecosystem_type, # string c("terrestrial", "marine")
                             stability_metric, # metric used to measure stability c("aggregate", "compositional")
@@ -383,21 +383,14 @@ model_stability <- function(df, # stability df
     
 
      #  CREATE A FORMULA STRING AND THEN APPLY IS TO THE FORMULA OBJECTI WITH as.formula()
-    # if z standardizing, set intercept to 0
-    if(transformation == "z"){
-      producer_model_formula <- as.formula(paste0(
-        prod_stability_col, " ~ ",
-  #      "0 + ",  # commenting out the 0 intercept now that we are not z-standardizing the 
-        prod_diversity_col, " + ",
-        con_diversity_col)
-      )
-    }else{
+
+
      producer_model_formula <- as.formula(paste0(
        prod_stability_col, " ~ ",
        prod_diversity_col, " + ",
        con_diversity_col)
        )
-    }
+    
 
     
     # Fit the model
@@ -443,20 +436,13 @@ model_stability <- function(df, # stability df
     
 
       # model formula
-    if(transformation == "z"){
-      consumer_model_formula <- as.formula(paste0(
-        con_stability_col, " ~ ",
- #       "0 + ",  # see above
-        prod_diversity_col, " + ",
-        con_diversity_col)
-      )
-    }else{
+
       consumer_model_formula <- as.formula(paste0(
         con_stability_col, " ~ ",
         prod_diversity_col, " + ",
         con_diversity_col
       ))
-    }
+    
     
     
     # Fit the model
@@ -501,20 +487,13 @@ model_stability <- function(df, # stability df
     site_data <- subset(df, site == s)
     
       # model formula
-    if(transformation == "z"){
-      multitrophic_model_formula <- as.formula(paste0(
-        multi_stability_col, " ~ ",
-  #      "0 + ",  
-        prod_stability_col, " + ",
-        con_stability_col
-      )) 
-    }else{
+
       multitrophic_model_formula <- as.formula(paste0(
         multi_stability_col, " ~ ",
         prod_stability_col, " + ",
         con_stability_col
       ))
-    }
+
     
     
     # Fit the model
