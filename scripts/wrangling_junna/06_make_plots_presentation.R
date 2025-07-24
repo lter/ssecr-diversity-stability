@@ -9,7 +9,8 @@ librarian::shelf(googledrive, vegan, lme4, car, dplyr, tidyr, lattice, lavaan, l
 combined_dss <- read.csv('scripts/wrangling_junna/synthesized_data/combined_dss.csv')
 
 # diversity-stability within one trophic level
-combined_dss %>% filter(!site_new %in% c('sbc_fish', 'mcr_fish')) %>%
+# combined_dss %>% filter(!site_new %in% c('sbc_fish', 'mcr_fish')) %>%
+combined_dss %>% filter(!site_new %in% c('gce_invert')) %>%
   filter(ecosystem == 'aquatic') %>%
   ggplot(aes(x=prod_richness, y=prod_stability, color = site)) +
   geom_point() +
