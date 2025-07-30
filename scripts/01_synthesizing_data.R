@@ -107,6 +107,40 @@ filter_data(site_name = "cdr_of", producer_data = cdr_of_prod, consumer_data = c
 #             mean_sum = "mean", output_folder = "data/CDR_biodiv", minimize = TRUE, write_csv = TRUE, minimize = FALSE)
 # 
 # 
+
+
+##### BEX DATA #####
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1aNuNslzIM4g03cZ85rjgsG-bbE1fuGec"), type='csv')
+tmp <- tempfile(fileext = ".csv")
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_se_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_se_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_he_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_he_con <- read.csv(tmp)
+
+
+filter_data(site_name = "bex_se", producer_data = bex_se_prod, consumer_data = bex_se_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_ae", producer_data = bex_ae_prod, consumer_data = bex_ae_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_he", producer_data = bex_he_prod, consumer_data = bex_he_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+
 #### AQUATIC DATA ####
 
 ###### GCE ######
@@ -221,3 +255,5 @@ aims_prod <- subset(aims_prod, id_confidence == 1)
 aims_con <- subset(aims_con, id_confidence == 1)
 
 filter_data(site_name = 'aims', producer_data = aims_prod, consumer_data = aims_con, mean_sum = "mean",  minimize = TRUE, output_folder = "data/AIMS", write_csv = TRUE)
+
+
