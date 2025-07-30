@@ -3,6 +3,10 @@
 # Co-Leads: James Sturges & Dr. Junna Wang
 # Last Updated: May 13th, 2025
 
+# ──────────────────────────────────────────────────────────────────────────────
+# CTA pipeline (Bray-Curtis distance)
+# ──────────────────────────────────────────────────────────────────────────────
+
 # Load Libraries ----
 library(tidyverse)
 library(vegan)
@@ -27,7 +31,7 @@ prepare_cta_matrix <- function(df) {
     select(where(is.numeric)) %>%
     select(-any_of(metadata_cols))  # Safely drop only those that exist
   
-  nmds <- metaMDS(comm_matrix)
+  nmds <- metaMDS(comm_matrix, trymax = 100)
   nmds_coords <- data.frame(nmds$points, site.year = rownames(comm_matrix))
   
   df_joined <- df %>%
@@ -63,13 +67,24 @@ run_cta_plot <- function(D, metadata, palette, output_path) {
 # Extract and save trajectory length metrics
 extract_cta_metrics <- function(D, metadata, site_id, output_path) {
   traj_lengths <- trajectoryLengths(D, sites = metadata$plot, surveys = metadata$vector_nums)
-  traj_lengths <- as.data.frame(traj_lengths)
-  traj_lengths$mean_length <- rowMeans(traj_lengths, na.rm = TRUE)
-  traj_lengths$plot <- rownames(traj_lengths)
-  traj_lengths$site <- site_id
-  write.csv(traj_lengths, output_path, row.names = FALSE)
+  traj_lengths_df <- as.data.frame(traj_lengths)
+  
+  # Store Trajectory column for reference
+  traj_lengths_df$total_trajectory <- traj_lengths_df$Trajectory
+  
+  # Calculate mean from just the segment columns (i.e., S1, S2, ..., S18)
+  segment_cols <- grep("^S\\d+", names(traj_lengths_df), value = TRUE)
+  traj_lengths_df$mean_segment_length <- rowMeans(traj_lengths_df[, segment_cols], na.rm = TRUE)
+  
+  # Add metadata
+  traj_lengths_df$plot <- rownames(traj_lengths_df)
+  traj_lengths_df$site <- site_id
+  
+  # Reorder for clarity
+  traj_lengths_df <- traj_lengths_df[, c("plot", "site", segment_cols, "Trajectory", "total_trajectory", "mean_segment_length")]
+  
+  write.csv(traj_lengths_df, output_path, row.names = FALSE)
 }
-
 # Complete pipeline runner
 run_cta_pipeline <- function(df, site_id, fig_path, table_path) {
   prep <- prepare_cta_matrix(df)
@@ -80,7 +95,6 @@ run_cta_pipeline <- function(df, site_id, fig_path, table_path) {
 }
 
 # Load Harmonized Data ----
-
 # KNZ #
 knz_prod_wide <- read.csv(here::here("data/wide_output_minimize", "knz_producers_wide_sub.csv"))
 knz_con_wide <- read.csv(here::here("data/wide_output_minimize", "knz_consumers_wide_sub.csv"))
@@ -166,14 +180,14 @@ run_cta_pipeline(
   df = knz_prod_wide,
   site_id = "knz",
   fig_path = here("figures/CTA/wide_output_minimize", "knz_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "knz_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "knz_producer_legnths_bray.csv"))
 
 #KNZ Consumers
 run_cta_pipeline(
   df = knz_con_wide,
   site_id = "knz",
   fig_path = here("figures/CTA/wide_output_minimize", "knz_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "knz_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "knz_consumer_legnths_bray.csv"))
 
 
 #AIMS Producers
@@ -181,14 +195,14 @@ run_cta_pipeline(
   df = aims_prod_wide,
   site_id = "aims",
   fig_path = here("figures/CTA/wide_output_minimize", "aims_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "aims_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "aims_producer_legnths_bray.csv"))
 
 #AIMS Consumers
 run_cta_pipeline(
   df = aims_con_wide,
   site_id = "aims",
   fig_path = here("figures/CTA/wide_output_minimize", "aims_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "aims_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "aims_consumer_legnths_bray.csv"))
 
 
 #KBS Producers
@@ -196,112 +210,112 @@ run_cta_pipeline(
   df = kbs_prod_wide,
   site_id = "kbs",
   fig_path = here("figures/CTA/wide_output_minimize", "kbs_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "kbs_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "kbs_producer_legnths_bray.csv"))
 
 #KBS Consumers
 run_cta_pipeline(
   df = kbs_con_wide,
   site_id = "kbs",
   fig_path = here("figures/CTA/wide_output_minimize", "kbs_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "kbs_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "kbs_consumer_legnths_bray.csv"))
 
 #CDR Oldfield Producers
 run_cta_pipeline(
   df = cdr_of_prod_wide,
   site_id = "CDR",
   fig_path = here("figures/CTA/wide_output_minimize", "cdr_of_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "cdr_of_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "cdr_of_producer_legnths_bray.csv"))
 
 #CDR Oldfield Consumer
 run_cta_pipeline(
   df = cdr_of_con_wide,
   site_id = "cdr_of",
   fig_path = here("figures/CTA/wide_output_minimize", "cdr_of_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "cdr_of_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "cdr_of_consumer_legnths_bray.csv"))
 
 # #CDR Biodiv 1 Producers
 # run_cta_pipeline(
 #   df = cdr_biodiv_1_prod_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_1_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_1_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_1_producer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 1 Consumers
 # run_cta_pipeline(
 #   df = cdr_biodiv_1_con_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_1_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_1_consumer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_1_consumer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 2 Producers
 # run_cta_pipeline(
 #   df = cdr_biodiv_2_prod_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_2_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_2_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_2_producer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 2 Consumers
 # run_cta_pipeline(
 #   df = cdr_biodiv_2_con_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_2_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_2_consumer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_2_consumer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 4 Producers
 # run_cta_pipeline(
 #   df = cdr_biodiv_4_prod_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_4_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_4_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_4_producer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 4 Consumers
 # run_cta_pipeline(
 #   df = cdr_biodiv_4_con_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_4_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_4_consumer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_4_consumer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 8 Producers
 # run_cta_pipeline(
 #   df = cdr_biodiv_8_prod_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_8_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_8_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_8_producer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 8 Consumers
 # run_cta_pipeline(
 #   df = cdr_biodiv_8_con_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_8_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_8_consumer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_8_consumer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 16 Producers
 # run_cta_pipeline(
 #   df = cdr_biodiv_16_prod_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_16_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_16_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_16_producer_legnths_bray.csv"))
 # 
 # #CDR Biodiv 16 Consumers
 # run_cta_pipeline(
 #   df = cdr_biodiv_16_con_wide,
 #   site_id = "CDR",
 #   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_16_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_16_consumer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_16_consumer_legnths_bray.csv"))
 
 #GCE Producers
 # run_cta_pipeline(
 #   df = gce_prod_wide,
 #   site_id = "gce",
 #   fig_path = here("figures/CTA/wide_output_minimize", "gce_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "gce_producer_lengths.csv"))
+#   table_path = here("tables/wide_output_minimize/producer", "gce_producer_legnths_bray.csv"))
 # # 
 # #GCE Consumers
 # run_cta_pipeline(
 #   df = gce_con_wide,
 #   site_id = "gce",
 #   fig_path = here("figures/CTA/GCE", "gce_consumer_trajectory_plot.png"),
-#   table_path = here("tables/GCE/consumer", "gce_consumer_lengths.csv"))
+#   table_path = here("tables/GCE/consumer", "gce_consumer_legnths_bray.csv"))
 
 
 #USVI Fish Producers
@@ -309,28 +323,28 @@ run_cta_pipeline(
   df = usvi_fish_prod_wide,
   site_id = "usvi",
   fig_path = here("figures/CTA/wide_output_minimize", "usvi_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "usvi_fish_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "usvi_fish_producer_legnths_bray.csv"))
 
 #USVI Fish Consumers
 run_cta_pipeline(
   df = usvi_fish_con_wide,
   site_id = "usvi",
   fig_path = here("figures/CTA/wide_output_minimize", "usvi_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "usvi_fish_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "usvi_fish_consumer_legnths_bray.csv"))
 
 #USVI Invert Producers
 run_cta_pipeline(
   df = usvi_invert_prod_wide,
   site_id = "usvi",
   fig_path = here("figures/CTA/wide_output_minimize", "usvi_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "usvi_invert_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "usvi_invert_producer_legnths_bray.csv"))
 
 #USVI Invert Consumers
 run_cta_pipeline(
   df = usvi_invert_con_wide,
   site_id = "usvi",
   fig_path = here("figures/CTA/wide_output_minimize", "usvi_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "usvi_invert_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "usvi_invert_consumer_legnths_bray.csv"))
 
 
 # SBC Fish Producers
@@ -338,28 +352,28 @@ run_cta_pipeline(
   df = sbc_fish_prod_wide,
   site_id = "sbc",
   fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "sbc_fish_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "sbc_fish_producer_legnths_bray.csv"))
 
 #SBC Fish Consumers
 run_cta_pipeline(
   df = sbc_fish_wide,
   site_id = "sbc",
   fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "sbc_fish_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "sbc_fish_consumer_legnths_bray.csv"))
 
 #SBC Invert Producers
 run_cta_pipeline(
   df = sbc_invert_prod_wide,
   site_id = "sbc",
   fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "sbc_invert_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "sbc_invert_producer_legnths_bray.csv"))
 
 #SBC Invert Consumers
 run_cta_pipeline(
   df = sbc_invert_wide,
   site_id = "sbc",
   fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "sbc_invert_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "sbc_invert_consumer_legnths_bray.csv"))
 
 
 #MCR Fish Producers
@@ -367,25 +381,25 @@ run_cta_pipeline(
   df = mcr_fish_prod_wide,
   site_id = "mcr",
   fig_path = here("figures/CTA/wide_output_minimize", "mcr_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "mcr_fish_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "mcr_fish_producer_legnths_bray.csv"))
 
 #MCR Fish Consumers
 run_cta_pipeline(
   df = mcr_fish_wide,
   site_id = "mcr",
   fig_path = here("figures/CTA/wide_output_minimize", "mcr_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "mcr_fish_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "mcr_fish_consumer_legnths_bray.csv"))
 
 #MCR Invert Producers
 run_cta_pipeline(
   df = mcr_invert_prod_wide,
   site_id = "mcr",
   fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "mcr_invert_producer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/producer", "mcr_invert_producer_legnths_bray.csv"))
 
 # #MCR Invert Consumers
 run_cta_pipeline(
   df = mcr_invert_wide,
   site_id = "mcr",
   fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "mcr_invert_consumer_lengths.csv"))
+  table_path = here("tables/wide_output_minimize/consumer", "mcr_invert_consumer_legnths_bray.csv"))
