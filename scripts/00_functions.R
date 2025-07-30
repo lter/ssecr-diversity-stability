@@ -414,7 +414,7 @@ model_stability <- function(df, # stability df
     
     # Store results
     prod_stability_results_list[[s]] <- data.frame(
-      model_type <- paste0("producer_", stability_name),
+      model_type = paste0("producer_", stability_name),
       site = s,
       intercept = unname(coefs["(Intercept)"]),
       prod_diversity_coef = unname(coefs[prod_name]),
@@ -466,7 +466,7 @@ model_stability <- function(df, # stability df
     
     # Store results
     con_stability_results_list[[s]] <- data.frame(
-      model_type <- paste0("consumer_", stability_name),
+      model_type = paste0("consumer_", stability_name),
       site = s,
       intercept = unname(consumer_coefs["(Intercept)"]),
       prod_diversity_coef = unname(consumer_coefs[prod_name]),
@@ -517,7 +517,7 @@ model_stability <- function(df, # stability df
     
     # Store results
     multitrophic_stability_results_list[[s]] <- data.frame(
-      model_type <- paste0("multitrophic_", stability_name),
+      model_type = paste0("multitrophic_", stability_name),
       site = s,
       intercept = unname(coefs["(Intercept)"]),
       prod_stability_coef = unname(coefs[prod_name]),
@@ -572,8 +572,8 @@ model_stability <- function(df, # stability df
   # Fit the models - LOOP METHOD
   # Store models in a named list
   combined_models <- list(
-    producer = lmer(producer_combined_model_formula, data = df),
-    consumer = lmer(consumer_combined_model_formula, data = df)
+    producer = lmer(producer_combined_model_formula, data = df, REML = TRUE),
+    consumer = lmer(consumer_combined_model_formula, data = df, REML = TRUE)
   )
   if (!is.null(multi_stability_col)) {
 
@@ -585,7 +585,7 @@ model_stability <- function(df, # stability df
       "(1 | site)"
     ))
     
-    combined_models$multitrophic <- lmer(multitrophic_combined_model_formula, data = df)
+    combined_models$multitrophic <- lmer(multitrophic_combined_model_formula, data = df, control = lmerControl(optimizer ="bobyqa"))
   }
   
   # Initialize list to collect results
