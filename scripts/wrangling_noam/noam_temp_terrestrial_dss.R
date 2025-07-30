@@ -43,6 +43,14 @@ Anova(terr_prod_stab_mod)
 # con_richness_z  0.45437   
 performance::r2(terr_prod_stab_mod) # 0.097, 0.643
 
+producer_combined_model_formula <- as.formula(paste0(
+  "prod_stability", " ~ ",
+  "prod_richness_z", " + ",
+  "con_richness_z", " + ",
+  "(1 | site) + ",
+  "(1 | site)"
+))
+lmer(producer_combined_model_formula, data = terr_comb)
 
 terr_con_stab_mod <- lmer(con_stability  ~ prod_richness_z + con_richness_z + (1|site),  data = terr_comb)
 summary(terr_con_stab_mod)
@@ -196,8 +204,8 @@ performance::r2(aquatic_con_stab_mod) # 0.069, 0.341
 # ggsave(plot = aquatic_prod_rich_stab_panel, filename =  here::here("figures/GLM", "aquatic_prod_stab_richness_z.png"), height = 7, width = 14)
 
 #### Test function ####
-model_stability(df = terr_comb,
-                ecosystem_type = "terrestrial",
+model_stability(df = aquatic_comb,
+                ecosystem_type = "aquatic",
                 stability_metric = "aggregate",
                 diversity_metric = "richness",
                 prod_diversity_col = "prod_richness",
