@@ -1,18 +1,17 @@
-# Project Information ----
-# SSECR: Diversity-Stability Relationships
-# Co-Leads: James Sturges & Dr. Junna Wang
-# Last Updated: May 13th, 2025
 
 rm(list = ls())
 librarian::shelf(tidyverse, googledrive, readr, tools)
+
+# read master stability
 drive_auth()
-# read combined dss
-combined_agg_stability <- read.csv(here::here("data/synthesized_data", "combined_agg_stability.csv")) |> 
-  filter(plot != "AHND")
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"), type='csv')
+tmp <- tempfile(fileext = ".csv")
+download <- drive_download(drive_folder[drive_folder$name=="agg_bray_stability.csv",], path = tmp, overwrite = TRUE)
+agg_bray <- read.csv(tmp)
 
-# Read bray curtis producer csvs ----
+# Read jaccard producer csvs ----
 
-producer_folder_url <- "https://drive.google.com/drive/u/0/folders/1GHSn0Ffgn4PubbnzEn_vqcNEOejpEoXR"
+producer_folder_url <- "https://drive.google.com/drive/u/0/folders/1is8cOu-WZzFEYdVeKiwNneQfjQeyu0Wm"
 producer_folder_id <- gsub(".*/folders/([^/?]+).*", "\\1", producer_folder_url)
 
 # List CSV files in that folder
@@ -40,10 +39,10 @@ for (i in seq_len(nrow(producer_csv_files))) {
   # Apply mutation to all files
   df <- df %>%
     mutate(
-      prod_comp_stability = 1 / mean_segment_length,
-      prod_total_length = total_trajectory
+      prod_jaccard_stability = 1 / mean_segment_length,
+      prod_jaccard_total_length = total_trajectory
     ) %>%
-    select(site, plot, prod_comp_stability, prod_total_length)
+    select(site, plot, prod_jaccard_stability, prod_jaccard_total_length)
   
   # Assign to environment
   assign(var_name, df, envir = .GlobalEnv)
@@ -51,8 +50,8 @@ for (i in seq_len(nrow(producer_csv_files))) {
 
 
 
-# Read bray curtis consumer csvs ----
-consumer_folder_url <- "https://drive.google.com/drive/u/0/folders/1_85P6tUSAB0MVGDYBmNJ7XUJnO6ZaPEM"
+# Read jaccard consumer csvs ----
+consumer_folder_url <- "https://drive.google.com/drive/u/0/folders/1S8kvBx2lvpF6PNs4VFKXmtjnWbdtsDAK"
 consumer_folder_id <- gsub(".*/folders/([^/?]+).*", "\\1", consumer_folder_url)
 
 # List CSV files in that folder
@@ -80,10 +79,10 @@ for (i in seq_len(nrow(consumer_csv_files))) {
   # Apply mutation to all files
   df <- df %>%
     mutate(
-      con_comp_stability = 1 / mean_segment_length,
-      con_total_length = total_trajectory
+      con_jaccard_stability = 1 / mean_segment_length,
+      con_jaccard_total_length = total_trajectory
     ) %>%
-    select(site, plot, con_comp_stability, con_total_length)
+    select(site, plot, con_jaccard_stability, con_jaccard_total_length)
   
   # Assign to environment
   assign(var_name, df, envir = .GlobalEnv)
@@ -92,7 +91,7 @@ for (i in seq_len(nrow(consumer_csv_files))) {
 
 
 
-#### MERGE WITH COMB STABILITY ####
+#### MERGE WITH MASTER DF ####
 
 ## REFACTOR CDR, SBC, MCR - needs to be done in the file - talk to james. Brute force here ##
 cdr_of_producer_lengths$site <- as.factor( rep("cdr_of", nrow(cdr_of_producer_lengths)) )
@@ -133,8 +132,8 @@ all_producer_lengths <- rbind(
 )
 
 # Join them separately
-master_stability <- combined_agg_stability %>%
+master <- agg_bray %>%
   left_join(all_consumer_lengths, by = c("site", "plot")) %>%
   left_join(all_producer_lengths, by = c("site", "plot"))
 
-# write.csv(row.names = F, master_stability, here::here("data/synthesized_data", "agg_bray_stability.csv"))
+# write.csv(row.names = F, master, here::here("data/synthesized_data", "master_stability.csv"))
