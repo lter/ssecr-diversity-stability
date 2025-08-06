@@ -9,7 +9,7 @@ download <- drive_download(drive_folder[drive_folder$name=="master_stability.csv
 master <- read.csv(tmp)
 
 # z-standardize
-stability_cols <- c("prod_stability", "prod_comp_stability", "con_stability", "con_comp_stability")
+stability_cols <- c("prod_stability", "prod_comp_stability", "con_stability", "con_comp_stability", "prod_jaccard_stability", "con_jaccard_stability")
 master_z <- master %>%
   group_by(site) %>%
   mutate(across(all_of(stability_cols), ~ as.numeric(z_standard(.x)))) %>%
@@ -21,10 +21,10 @@ cor.test(master_z$prod_comp_stability,
 
 (prod_stability_metric_corr <-
   ggplot() +
-  geom_point(data = master_z, aes(x = prod_comp_stability, y = prod_stability, colour = site, shape = ecosystem), size = 2.5) +
-  geom_smooth(data = master_z, aes(x = prod_comp_stability, y = prod_stability, colour = site), 
+  geom_point(data = master, aes(x = prod_comp_stability, y = prod_stability, colour = site, shape = ecosystem), size = 2.5) +
+  geom_smooth(data = master, aes(x = prod_comp_stability, y = prod_stability, colour = site), 
               method = lm, se = F) +
-  geom_smooth(data = master_z, aes(x = prod_comp_stability, y = prod_stability ), 
+  geom_smooth(data = master, aes(x = prod_comp_stability, y = prod_stability ), 
                 method = lm, se = T, colour = "black") +
   labs(x = "Compositional stability", y = "Aggregate stability", title = "a. Producer stability \n") +
   theme_classic() 
