@@ -58,13 +58,13 @@ plot_terrestrial_aggregate_stability_richness_correlations
 # view within-site coefficients and p-values (i.e. what results would be if modeled independently)
 # lm(producer_stability ~ producer_richness + consumer_richness)
 # View(site_results_terrestrial_prod_aggregate_richness)
-# write.csv(row.names = F, site_results_terrestrial_prod_aggregate_richness,
-#           here::here("data/summary_tables", "site_results_terrestrial_prod_aggregate_richness.csv"))
+write.csv(row.names = F, site_results_terrestrial_prod_aggregate_richness,
+          here::here("data/summary_tables", "site_results_terrestrial_prod_aggregate_richness.csv"))
 
 # consumer_stability ~ producer_richness + consumer_richness
 # View(site_results_terrestrial_con_aggregate_richness)
-# write.csv(row.names = F, site_results_terrestrial_con_aggregate_richness,
-#           here::here("data/summary_tables", "site_results_terrestrial_con_aggregate_richness.csv"))
+write.csv(row.names = F, site_results_terrestrial_con_aggregate_richness,
+          here::here("data/summary_tables", "site_results_terrestrial_con_aggregate_richness.csv"))
 
 # multitrophic_stability ~ producer_stability + consumer_stability
 # View(site_results_terrestrial_multi_aggregate_richness)
@@ -75,8 +75,8 @@ plot_terrestrial_aggregate_stability_richness_correlations
 # for producer and consumer stability, producer and consumer richness are the predictor variables
 # for multitrophic stability, producer and consumer stability are the predictor variables
 # View(lmer_results_terrestrial_aggregate_richness)
-# write.csv(row.names = F, lmer_results_terrestrial_aggregate_richness,
-#           here::here("data/summary_tables", "lmer_results_terrestrial_aggregate_richness.csv"))
+write.csv(row.names = F, lmer_results_terrestrial_aggregate_richness,
+          here::here("data/summary_tables", "lmer_results_terrestrial_aggregate_richness.csv"))
 
 # view sem results
 sem_results_terrestrial_richness_aggregate
@@ -106,13 +106,13 @@ plot_aquatic_aggregate_stability_richness_correlations
 # view within-site coefficients and p-values (i.e. what results would be if modeled independently)
 # lm(producer_stability ~ producer_richness + consumer_richness)
 # View(site_results_aquatic_prod_aggregate_richness)
-# write.csv(row.names = F, site_results_aquatic_prod_aggregate_richness,
-#           here::here("data/summary_tables", "site_results_aquatic_prod_aggregate_richness.csv"))
+write.csv(row.names = F, site_results_aquatic_prod_aggregate_richness,
+          here::here("data/summary_tables", "site_results_aquatic_prod_aggregate_richness.csv"))
 # 
 # consumer_stability ~ producer_richness + consumer_richness
 # View(site_results_aquatic_con_aggregate_richness)
-# write.csv(row.names = F, site_results_aquatic_con_aggregate_richness,
-#           here::here("data/summary_tables", "site_results_aquatic_con_aggregate_richness.csv"))
+write.csv(row.names = F, site_results_aquatic_con_aggregate_richness,
+          here::here("data/summary_tables", "site_results_aquatic_con_aggregate_richness.csv"))
 
 # multitrophic_stability ~ producer_stability + consumer_stability
 # View(site_results_aquatic_multi_aggregate_richness)
@@ -123,8 +123,8 @@ plot_aquatic_aggregate_stability_richness_correlations
 # for producer and consumer stability, producer and consumer richness are the predictor variables
 # for multitrophic stability, producer and consumer stability are the predictor variables
 # View(lmer_results_aquatic_aggregate_richness)
-# write.csv(row.names = F, lmer_results_aquatic_aggregate_richness,
-#           here::here("data/summary_tables", "lmer_results_aquatic_aggregate_richness.csv"))
+write.csv(row.names = F, lmer_results_aquatic_aggregate_richness,
+          here::here("data/summary_tables", "lmer_results_aquatic_aggregate_richness.csv"))
 
 # view sem results
 sem_results_aquatic_richness_aggregate
