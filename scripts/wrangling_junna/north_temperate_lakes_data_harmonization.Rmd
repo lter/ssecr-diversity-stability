@@ -12,8 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r phytoplankton in trout lake area}
 library(tidyverse)
 rm(list=ls())
-##
-data_phyto_trout <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.238.20&entityid=76505f244b022b902963f9665d30667b')
+# this website link does not work;
+# data_phyto_trout <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.238.20&entityid=76505f244b022b902963f9665d30667b')
+data_phyto_trout <- read.csv("/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.238.20_Phytoplankton_Trout_Lake_Area/phytoplanktonnl.csv")
 # 7 lakes in Allequash, Big Muskellunge, Crystal, Sparkling, and Trout lakes and Crystal Bog, and Trout Bog (two bog lakes)
 #
 unique(data_phyto_trout$lakeid) 
@@ -24,12 +25,12 @@ data_phyto_year_trout <- data_phyto_trout %>% group_by(lakeid, year4) %>% summar
 ggplot(data_phyto_year_trout, aes(x=year4, y=num_sample, color=lakeid)) +
   geom_point() +
   geom_line()
-# CR and SP are not as frequently sampled as the Mendota. 
+# CR and SP phytoplankton were sampled in 1984~1993, 2005 and 2006
 #
-# start to harmonize using data collected in 2005
+# start to harmonize using data collected in the 12 years
 # only use data collected in the three months: 4, 8, and 11; to be consistent among these lakes. 
 data_phyto_trout$month <- month(data_phyto_trout$sampledate)
-data_phyto_trout2005   <- data_phyto_trout %>% filter(year4==2005) %>% filter(month %in% c(4, 8, 11)) 
+data_phyto_trout2005   <- data_phyto_trout %>% filter(year4 %in% c(1984:1993, 2005:2006)) %>% filter(month %in% c(4, 8, 11)) %>% filter(lakeid %in% c("CR", "SP"))
 #
 # for the Miscellaneous division, give it a unique taxon name--Miscellaneous
 data_phyto_trout2005$taxa_name[data_phyto_trout2005$taxa_name==''] <- data_phyto_trout2005$division[data_phyto_trout2005$taxa_name=='']
@@ -42,13 +43,13 @@ data_phyto_trout2005 <- data_phyto_trout2005 %>% group_by(lakeid, year4, sampled
 # for each site, we only have one station and one depth, so we can omit sta and depth: nsta=n_distinct(sta), ndepth=n_distinct(depth_range)
 # output the data that are needed
 # total biomass unit: mg/L; relative total biovolume: %
-data_phyto_trout_out <- data.frame(site=data_phyto_trout2005$lakeid, taxa_type="producer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='plant', herbivore='no')
+data_phyto_trout_out <- data.frame(site="NTL_Trout", taxa_type="producer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='plant', herbivore='no', year = data_phyto_trout2005$year4)
 ##
-data_phyto_trout_out$year  <- data_phyto_trout2005$year4
+# data_phyto_trout_out$year  <- data_phyto_trout2005$year4
 data_phyto_trout_out$month <- month(data_phyto_trout2005$sampledate)
 data_phyto_trout_out$day   <- day(data_phyto_trout2005$sampledate)
 ##
-data_phyto_trout_out$plot  <- 1
+data_phyto_trout_out$plot  <- data_phyto_trout2005$lakeid
 data_phyto_trout_out$unique_ID <- paste(data_phyto_trout_out$site, data_phyto_trout_out$habitat_fine, data_phyto_trout_out$plot, sep='_')
 data_phyto_trout_out$unit_abundance  <- "mg/L"
 data_phyto_trout_out$scale_abundance <- "1L"
@@ -72,13 +73,17 @@ googledrive::drive_upload(media = file.path("harmonized_data/phytoplankton_trout
 library(tidyverse)
 rm(list=ls())
 ##
-data_zoop_trout <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.37.38&entityid=3d2b1ab343c670c5117824cbfdaeec12')
+# data_zoop_trout <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.37.38&entityid=3d2b1ab343c670c5117824cbfdaeec12')
+data_zoop_trout <- read.csv("/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.37.38_Zooplankton_Trout_Lake_Area/ntl37_v11.csv")
 
 # uniform lakeid
 unique(data_zoop_trout$lakeid)  # Bm -> BM; "Tr" -> "TR"
 # 
 data_zoop_trout$lakeid[data_zoop_trout$lakeid=='Bm'] <- 'BM'
 data_zoop_trout$lakeid[data_zoop_trout$lakeid=='Tr'] <- 'TR'
+
+# use "CR" and "SP" only
+data_zoop_trout <- data_zoop_trout %>% filter(lakeid %in% c("CR", "SP"))
 #
 # check if there is duplicated rows
 sum(duplicated(data_zoop_trout[, c(1:4, 6)])==TRUE)  # 140 rows; 
@@ -94,13 +99,12 @@ ggplot(data_zoop_trout_year, aes(x=year4, y=num_sample, color=lakeid)) +
   geom_line()  
 
 #### prepare for output datasets
-data_zoop_trout_out <- data.frame(site=data_zoop_trout$lakeid, taxa_type="consumer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='zooplankton', herbivore='yes')
+data_zoop_trout_out <- data.frame(site="NTL_Trout", taxa_type="consumer", ecosystem="aquatic", habitat_broad='lake', habitat_fine='lake', biome='temperate', guild='zooplankton', herbivore='yes', year = data_zoop_trout$year4)
 ####
-data_zoop_trout_out$year  <- data_zoop_trout$year4
 data_zoop_trout_out$month <- month(data_zoop_trout$sample_date)
 data_zoop_trout_out$day   <- day(data_zoop_trout$sample_date)
 ####
-data_zoop_trout_out$plot  <- data_zoop_trout$station
+data_zoop_trout_out$plot  <- data_zoop_trout$lakeid
 data_zoop_trout_out$unique_ID <- paste(data_zoop_trout_out$site, data_zoop_trout_out$habitat_fine, data_zoop_trout_out$plot, sep='_')
 data_zoop_trout_out$unit_abundance  <- "number/L"
 data_zoop_trout_out$scale_abundance <- "1L"
@@ -123,14 +127,16 @@ googledrive::drive_upload(media = file.path("harmonized_data/zooplankton_trout_l
 ```
 
 
-```{r benthic macroinvertebrates}
+```{r benthic macroinvertebrates, not used because data are from 2011}
 library(tidyverse)
 rm(list=ls())
 ###
-data_binvert <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.11.38&entityid=64a3def6d4f03ea0ac3e8630b75df453')
+# data_binvert <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.11.38&entityid=64a3def6d4f03ea0ac3e8630b75df453')
+data_binvert <- read.csv("/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.11.38_benthic_macroinvertebrates/ntl11_1_v12.csv")
+
 # A: abundant but not counted
 # N: Taxon present but not counted
-# A and N cannot be taken account of. 
+# A and N cannot be taken account of
 #
 data_binvert_year <- data_binvert %>% group_by(lakeid, site, year4) %>% summarise(num_taxon = n_distinct(taxon_code))
 # most data are from 2011, 3 years in the 1980s,
@@ -138,7 +144,7 @@ data_binvert_year <- data_binvert %>% group_by(lakeid, site, year4) %>% summaris
 # macrophytes are only at 3 lakes (CR, SP, TR), but each lake has different replicates!
 unique(data_binvert_year$lakeid)
 ####
-tmp <- data_binvert_year %>% filter(lakeid=='TR')
+tmp <- data_binvert_year %>% filter(lakeid=='CR')
 unique(tmp$year4)
 #### CR lake has 5 sites: 27, 43, 6, 9, and GILL; gill likely mean the data collected by gill net. 
 #### SP lake has 5 sites: "1",  "19", "21", "24", "GILL"
@@ -181,4 +187,27 @@ googledrive::drive_upload(media = file.path("harmonized_data/benthic_macroinvert
 ###
 
 ```
+
+
+```{r double check if we can use these datasets}
+trout_lake_invertebrate <- read.csv('harmonized_data/benthic_macroinvertebrates_trout_lake_area.csv')
+unique(trout_lake_invertebrate$year)  # after 2011 
+unique(trout_lake_invertebrate$plot)  # only three lakes data, but with multiple plots; CR, SP, TR
+
+#
+trout_lake_zooplankton <- read.csv('harmonized_data/zooplankton_trout_lake_area.csv')
+sort(unique(trout_lake_zooplankton$year))  # 1981~2022 ; really good long-term data 
+unique(trout_lake_zooplankton$site) # 7 lakes: "AL" "BM" "CB" "TB" "CR" "SP" "TR"
+
+#
+trout_lake_phytoplankton <- read.csv('harmonized_data/phytoplankton_trout_lake_area.csv')
+sort(unique(trout_lake_phytoplankton$year))  # producer data is only in 2005; that is why 
+unique(trout_lake_zooplankton$site) # 7 lakes: "AL" "BM" "CB" "TB" "CR" "SP" "TR"
+
+data_binvert <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.11.38&entityid=64a3def6d4f03ea0ac3e8630b75df453')
+
+
+```
+
+
 

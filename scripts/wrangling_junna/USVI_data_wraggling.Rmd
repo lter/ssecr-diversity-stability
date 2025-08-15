@@ -136,3 +136,17 @@ googledrive::drive_upload(media = file.path("harmonized_data/USVI_fish_census.cs
 
 ```
 
+
+```{r check why USVI producer data is so stable}
+producer <- read.csv('/Users/junnawang/Downloads/usvi_fish_producers_wide_sub.csv')
+#
+producer$total_abundance <- rowSums(producer[, 11:25])
+                      
+producer %>% group_by(plot) %>% summarise(std = sd(total_abundance, na.rm=T), stability = mean(total_abundance, na.rm=T) / sd(total_abundance, na.rm=T))                    
+
+# high change in stability because of cover data are used here. 
+
+```
+
+
+
