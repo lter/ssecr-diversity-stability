@@ -10,6 +10,44 @@ source(here::here("scripts", "00_functions.r"))
 ###### read comb data #####
 comb <- read.csv(here::here(file = "data/synthesized_data", "combined_agg_stability.csv"))
 
+#### add mean-center transformation ####
+comb <- comb %>%
+  group_by(site) %>%
+  mutate(
+    n_habitats = n_distinct(habitat_fine)
+  ) %>%
+  ungroup() %>%
+  group_by(site, habitat_fine) %>%
+  mutate(
+    prod_mean_cent = ifelse(
+      n_habitats > 1,
+      prod_richness - mean(prod_richness, na.rm = TRUE),
+      prod_richness - mean(prod_richness, na.rm = TRUE) # will be replaced later
+    ),
+    con_mean_cent = ifelse(
+      n_habitats > 1,
+      con_richness - mean(con_richness, na.rm = TRUE),
+      con_richness - mean(con_richness, na.rm = TRUE) # will be replaced later
+    )
+  ) %>%
+  ungroup() %>%
+  group_by(site) %>%
+  mutate(
+    prod_mean_cent = ifelse(
+      n_habitats == 1,
+      prod_richness - mean(prod_richness, na.rm = TRUE),
+      prod_mean_cent
+    ),
+    con_mean_cent = ifelse(
+      n_habitats == 1,
+      con_richness - mean(con_richness, na.rm = TRUE),
+      con_mean_cent
+    )
+  ) %>%
+  ungroup() %>%
+  select(-n_habitats)
+
+
 ##### z-transform predictors #####
 comb <- comb %>%
   group_by(site) %>%
@@ -27,9 +65,172 @@ comb <- comb %>%
 terr_comb <- subset(comb, ecosystem == "terrestrial")
 aquatic_comb <- subset(comb, ecosystem == "aquatic")
 
+#### test mean centered component models ###
+terr_prod_stab_mod <- lmer(prod_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = terr_comb)
+summary(terr_prod_stab_mod)
+# Estimate Std. Error t value
+# (Intercept)     5.00923    1.42709   3.510
+# prod_mean_cent -0.11826    0.03612  -3.274
+# con_mean_cent   0.10230    0.24158   0.423
+plot(DHARMa::simulateResiduals(terr_prod_stab_mod)) # significant quantile deviations
+Anova(terr_prod_stab_mod) 
+# prod_mean_cent 10.7223  1   0.001059 **
+# con_mean_cent   0.1793  1   0.671956    
+performance::r2(terr_prod_stab_mod) # 0.18, 0.735
+
+terr_con_stab_mod <- lmer(con_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = terr_comb)
+summary(terr_con_stab_mod)
+# Estimate Std. Error t value
+# (Intercept)     1.704154   0.074429  22.896
+# prod_mean_cent  0.018102   0.007891   2.294
+# con_mean_cent  -0.079746   0.052782  -1.511
+plot(DHARMa::simulateResiduals(terr_con_stab_mod)) # quantile deviations but not as bad
+Anova(terr_con_stab_mod) 
+# prod_mean_cent 5.2629  1    0.02178 *
+# con_mean_cent  2.2827  1    0.13082    
+performance::r2(terr_con_stab_mod) # 0.144, 0.169
 
 
-#### test  component models ####
+aquatic_prod_stab_mod <- lmer(prod_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = aquatic_comb)
+summary(aquatic_prod_stab_mod)
+# Estimate Std. Error t value
+# (Intercept)     6.81148    2.66280   2.558
+# prod_mean_cent  0.34455    0.22086   1.560
+# con_mean_cent   0.01314    0.05526   0.238
+plot(DHARMa::simulateResiduals(aquatic_prod_stab_mod)) # significant quantile deviations in simulated residuals, KS test sig
+plot(residuals(aquatic_prod_stab_mod), predict(aquatic_prod_stab_mod)) # lots of clumping from one outlying site
+Anova(aquatic_prod_stab_mod) 
+# Chisq Df Pr(>Chisq)
+# prod_mean_cent 2.4338  1     0.1187
+# con_mean_cent  0.0566  1     0.8120
+performance::r2(aquatic_prod_stab_mod) # 0.006, 0.563
+
+
+aquatic_con_stab_mod <- lmer(con_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = aquatic_comb)
+summary(aquatic_con_stab_mod)
+# Estimate Std. Error t value
+# (Intercept)    1.766865   0.206738   8.546
+# prod_mean_cent 0.024330   0.030300   0.803
+# con_mean_cent  0.007780   0.007581   1.026
+plot(DHARMa::simulateResiduals(aquatic_con_stab_mod)) # same issues as prod stability but not as bad
+plot(residuals(aquatic_con_stab_mod), predict(aquatic_con_stab_mod)) # two clusters
+Anova(aquatic_con_stab_mod) 
+# prod_mean_cent 0.6448  1     0.4220
+# con_mean_cent  1.0533  1     0.3047
+performance::r2(aquatic_con_stab_mod) # 0.007, 0.276
+
+(terr_prod_prod_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = prod_mean_cent, y = prod_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  prod_mean_cent, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  prod_mean_cent, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_prod_con_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = con_mean_cent, y = prod_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  con_mean_cent, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  con_mean_cent, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_prod_rich_stab_panel <- ggpubr::ggarrange(terr_prod_prod_plot, terr_prod_con_plot,
+                                                nrow = 1, ncol = 2)
+)
+# ggsave(plot = terr_prod_rich_stab_panel, filename =  here::here("figures/GLM", "terr_prod_stab_richness_mean_cent.png"), height = 7, width = 14)
+
+
+
+(terr_con_prod_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = prod_mean_cent, y = con_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  prod_mean_cent, y = con_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  prod_mean_cent, y = con_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_con_con_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = con_mean_cent, y = con_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  con_mean_cent, y = con_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  con_mean_cent, y = con_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_con_rich_stab_panel <- ggpubr::ggarrange(terr_con_prod_plot, terr_con_con_plot,
+                                               nrow = 1, ncol = 2)
+)
+# ggsave(plot = terr_con_rich_stab_panel, filename =  here::here("figures/GLM", "terr_con_stab_richness_mean_cent.png"), height = 7, width = 14)
+
+
+
+
+
+(aquatic_prod_prod_plot <- 
+    ggplot() +
+    geom_point(data = aquatic_comb, aes(x = prod_mean_cent, y = prod_stability , colour = site)) +
+    stat_smooth(data = aquatic_comb, aes(x =  prod_mean_cent, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = aquatic_comb, aes(x =  prod_mean_cent, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(aquatic_prod_con_plot <- 
+    ggplot() +
+    geom_point(data = aquatic_comb, aes(x = con_mean_cent, y = prod_stability , colour = site)) +
+    stat_smooth(data = aquatic_comb, aes(x =  con_mean_cent, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = aquatic_comb, aes(x =  con_mean_cent, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(aquatic_prod_rich_stab_panel <- ggpubr::ggarrange(aquatic_prod_prod_plot, aquatic_prod_con_plot,
+                                                nrow = 1, ncol = 2)
+)
+# ggsave(plot = aquatic_prod_rich_stab_panel, filename =  here::here("figures/GLM", "aquatic_prod_stab_richness_mean_cent.png"), height = 7, width = 14)
+
+
+
+(aquatic_con_prod_plot <- 
+    ggplot() +
+    geom_point(data = aquatic_comb, aes(x = prod_mean_cent, y = con_stability , colour = site)) +
+    stat_smooth(data = aquatic_comb, aes(x =  prod_mean_cent, y = con_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = aquatic_comb, aes(x =  prod_mean_cent, y = con_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(aquatic_con_con_plot <- 
+    ggplot() +
+    geom_point(data = aquatic_comb, aes(x = con_mean_cent, y = con_stability , colour = site)) +
+    stat_smooth(data = aquatic_comb, aes(x =  con_mean_cent, y = con_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = aquatic_comb, aes(x =  con_mean_cent, y = con_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(aquatic_con_rich_stab_panel <- ggpubr::ggarrange(aquatic_con_prod_plot, aquatic_con_con_plot,
+                                               nrow = 1, ncol = 2)
+)
+# ggsave(plot = aquatic_con_rich_stab_panel, filename =  here::here("figures/GLM", "aquatic_con_stab_richness_mean_cent.png"), height = 7, width = 14)
+
+
+
+###############################################################################################
+### z-standardized component models ####
 ##### terrestrial richness #####
 terr_prod_stab_mod <- lmer(prod_stability  ~ prod_richness_z + con_richness_z + (1|site),  data = terr_comb)
 summary(terr_prod_stab_mod)
@@ -176,6 +377,32 @@ performance::r2(aquatic_con_stab_mod) # 0.069, 0.341
                                      nrow = 1, ncol = 2)
 )
 # ggsave(plot = terr_prod_rich_stab_panel, filename =  here::here("figures/GLM", "terr_prod_stab_richness_z.png"), height = 7, width = 14)
+
+(terr_con_prod_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = prod_richness_z, y = prod_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  prod_richness_z, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  prod_richness_z, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_con_con_plot <- 
+    ggplot() +
+    geom_point(data = terr_comb, aes(x = con_richness_z, y = prod_stability , colour = site)) +
+    stat_smooth(data = terr_comb, aes(x =  con_richness_z, y = prod_stability, colour = site),
+                method = "glm", se = F) +
+    stat_smooth(data = terr_comb, aes(x =  con_richness_z, y = prod_stability),
+                method = "glm", se = T, colour = "black") +
+    theme_classic() 
+)
+
+(terr_con_rich_stab_panel <- ggpubr::ggarrange(terr_prod_prod_plot, terr_prod_con_plot,
+                                                nrow = 1, ncol = 2)
+)
+# ggsave(plot = terr_prod_rich_stab_panel, filename =  here::here("figures/GLM", "terr_prod_stab_richness_z.png"), height = 7, width = 14)
+
 
 ##### aquatic richness #####
 (aquatic_prod_prod_plot <- 
