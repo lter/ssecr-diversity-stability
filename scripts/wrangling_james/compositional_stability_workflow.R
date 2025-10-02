@@ -149,7 +149,7 @@ prepare_cta_matrix <- function(df, method = "bray", nmds_trymax = 100) {
   )
 }
 
-# 3. Function: generate_custom_palette (unique trajectory colors per plot) ----
+# 3. Function: generate_custom_palette creates unique trajectory colors per plot ----
 generate_custom_palette <- function(sites) {
   uniq <- unique(sites)
   num_sites <- length(uniq)
@@ -160,7 +160,7 @@ generate_custom_palette <- function(sites) {
   # return named vector mapping plot -> hex color
   colors
 }
-# 4. Function: Plot CTA ----
+# 4. Function: run_cta_plot creates plot structure ----
 run_cta_plot <- function(D, metadata, palette, output_path) {
   # D: distance object or matrix
   # metadata must contain plot and vector_nums (numeric) and be ordered sensibly
@@ -317,17 +317,56 @@ run_cta_pipeline <- function(df, site_id, fig_path, output_dir,
 
 # 7. Load harmonized data for producer and consumer assemblages ----
 
-# load harmonized KNZ data (assumes these files already exist and are harmonized)
+# KNZ
+#producer data
 knz_prod_wide <- readr::read_csv(here::here("data/wide_output_minimize", "knz_producers_wide_sub.csv"))
+#consumer data
 knz_con_wide  <- readr::read_csv(here::here("data/wide_output_minimize", "knz_consumers_wide_sub.csv"))
-
-# match producer & consumer years (keeps only plot-years present in BOTH)
+# match producer & consumer site-year combos
 matched <- match_site_years(knz_prod_wide, knz_con_wide)
-# Save diagnostics of matching
+# Save diagnostics in case years or sites are removed
 save_diag(matched$diagnostics, here::here("diagnostics", "knz_producer_consumer_year_matching.csv"))
 
 knz_prod_matched <- matched$prod
 knz_con_matched  <- matched$con
+
+
+#KBS
+#producer data
+kbs_prod_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_producers_wide_sub.csv"))
+#consumer data
+kbs_con_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_consumers_wide_sub.csv"))
+# match producer & consumer site-year combos
+matched <- match_site_years(kbs_prod_wide, kbs_con_wide)
+# Save diagnostics in case years or sites are removed
+save_diag(matched$diagnostics, here::here("diagnostics", "kbs_producer_consumer_year_matching.csv"))
+
+kbs_prod_matched <- matched$prod
+kbs_con_matched  <- matched$con
+
+
+
+#SBC 
+#producer data
+sbc_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_producers_wide_sub.csv"))
+#consumer data
+sbc_invert_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_consumers_wide_sub.csv"))
+# match producer & consumer site-year combos
+
+
+# match producer & consumer site-year combos
+matched <- match_site_years(sbc_invert_prod_wide, sbc_invert_wide)
+# Save diagnostics in case years or sites are removed
+save_diag(matched$diagnostics, here::here("diagnostics", "sbc_producer_invert_year_matching.csv"))
+
+sbc_prod_matched <- matched$prod
+sbc_con_matched  <- matched$con
+
+sbc_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_producers_wide_sub.csv"))
+sbc_fish_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_consumers_wide_sub.csv"))
+
+
+
 
 # Methods to run
 methods <- c("bray", "jaccard", "hellinger", "chord")
@@ -347,7 +386,21 @@ for (m in methods) {
   )
 }
 
-# 9. Run for consumers ----
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("kbs_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "kbs", "producer", m)
+  message("Running KBS producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = kbs_prod_matched,
+    site_id = "kbs",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# 9. Run analysis pipeline for consumers ----
 for (m in methods) {
   fig_path <- here::here("figures", "cta", paste0("knz_consumer_trajectory_", m, ".png"))
   output_dir <- here::here("outputs", "cta", "knz", "consumer", m)
@@ -362,7 +415,21 @@ for (m in methods) {
   )
 }
 
-# 10. KNZ Models
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("kbs_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "kbs", "consumer", m)
+  message("Running KBS consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = kbs_con_matched,
+    site_id = "kbs",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# 10. Model Output Comparison Analysis
 
 # Helper function used to load and annotate
 load_lengths <- function(path, trophic, method) {
@@ -383,6 +450,18 @@ knz_lengths <- bind_rows(
   load_lengths(here("outputs/cta/knz/producer/jaccard/knz_lengths_jaccard.csv"), "producer", "jaccard"),
   load_lengths(here("outputs/cta/knz/producer/chord/knz_lengths_chord.csv"), "producer", "chord"),
   load_lengths(here("outputs/cta/knz/producer/hellinger/knz_lengths_hellinger.csv"), "producer", "hellinger")
+)
+
+
+kbs_lengths <- bind_rows(
+  load_lengths(here("outputs/cta/kbs/consumer/bray/kbs_lengths_bray.csv"), "consumer", "bray"),
+  load_lengths(here("outputs/cta/kbs/consumer/jaccard/kbs_lengths_jaccard.csv"), "consumer", "jaccard"),
+  load_lengths(here("outputs/cta/kbs/consumer/chord/kbs_lengths_chord.csv"), "consumer", "chord"),
+  load_lengths(here("outputs/cta/kbs/consumer/hellinger/kbs_lengths_hellinger.csv"), "consumer", "hellinger"),
+  load_lengths(here("outputs/cta/kbs/producer/bray/kbs_lengths_bray.csv"), "producer", "bray"),
+  load_lengths(here("outputs/cta/kbs/producer/jaccard/kbs_lengths_jaccard.csv"), "producer", "jaccard"),
+  load_lengths(here("outputs/cta/kbs/producer/chord/kbs_lengths_chord.csv"), "producer", "chord"),
+  load_lengths(here("outputs/cta/kbs/producer/hellinger/kbs_lengths_hellinger.csv"), "producer", "hellinger")
 )
 
 
@@ -408,7 +487,47 @@ ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
     strip.text = element_text(face = "bold")
   )
 
-# End of script ----
+
+# Summary table
+length_summary <- kbs_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(length_summary)
+
+ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "Total trajectory length", x = "Distance method",
+       title = "Compositional stability across distance methods (KBS)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+
+  # End of script ----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
