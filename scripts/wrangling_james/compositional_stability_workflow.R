@@ -230,7 +230,7 @@ extract_cta_metrics <- function(D, metadata, site_id, output_path_full, output_p
                  summary = if (!is.null(output_path_summary)) summary_df else NULL))
 }
 
-# 6. Pipeline Runner: extract all CTA metrics + run full pipeline ----
+# 6. Function: extract_all_cta_metrics + run full pipeline ----
 extract_all_cta_metrics <- function(D, metadata, site_id, output_dir, method = NULL) {
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   
@@ -452,6 +452,7 @@ knz_lengths <- bind_rows(
   load_lengths(here("outputs/cta/knz/producer/hellinger/knz_lengths_hellinger.csv"), "producer", "hellinger")
 )
 
+glimpse(knz_lengths)
 
 kbs_lengths <- bind_rows(
   load_lengths(here("outputs/cta/kbs/consumer/bray/kbs_lengths_bray.csv"), "consumer", "bray"),
@@ -465,6 +466,9 @@ kbs_lengths <- bind_rows(
 )
 
 
+
+
+
 # Summary table
 length_summary <- knz_lengths %>%
   group_by(trophic, method) %>%
@@ -475,7 +479,7 @@ length_summary <- knz_lengths %>%
   )
 print(length_summary)
 
-ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+plot_knz_tl_metric_comp <- ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
   facet_wrap(~trophic, scales = "free_y") +
@@ -486,17 +490,84 @@ ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
     axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
     strip.text = element_text(face = "bold")
   )
+ggsave(
+  filename = "figures/cta/plot_knz_tl_metric_comp.png",
+  plot = plot_knz_stability_metrics,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
 
 
-# Summary table
-length_summary <- kbs_lengths %>%
+plot_knz_mean_metric_comp <- ggplot(knz_lengths, aes(x = method, y = mean_segment_length, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "mean segment length", x = "Distance method",
+       title = "Compositional stability across distance methods (KNZ)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_knz_mean_metric_comp.png",
+  plot = plot_knz_stability_metrics,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+# ---- 0) quick safety checks & settings ----
+# Ensure the metric column exists and is numeric
+stopifnot("mean_segment_length" %in% names(knz_lengths))
+knz_lengths <- knz_lengths %>%
+  mutate(
+    method = factor(method, levels = c("bray", "hellinger", "chord", "jaccard")), # consistent ordering
+    trophic = factor(trophic)
+  )
+
+# Vector of methods used (ordered)
+methods <- levels(knz_lengths$method)
+# helper: number of surveys per plot = number of non-NA segments + 1
+knz_lengths <- knz_lengths %>%
+  rowwise() %>%
+  mutate(
+    n_segments = sum(!is.na(c_across(starts_with("S")))),
+    n_surveys = n_segments + 1
+  ) %>%
+  ungroup()
+
+# ---- 1) summary table (per trophic x method) ----
+length_summary <- knz_lengths %>%
   group_by(trophic, method) %>%
   summarise(
-    mean_length = mean(total_trajectory, na.rm = TRUE),
-    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    n_plots = n_distinct(plot),                     
+    mean_length = mean(mean_segment_length, na.rm = TRUE),
+    sd_length   = sd(mean_segment_length, na.rm = TRUE),
+    median_length = median(mean_segment_length, na.rm = TRUE),
+    mean_total_traj_length = mean(total_trajectory, na.rm = TRUE),
+    sd_total_traj_length   = sd(total_trajectory, na.rm = TRUE),
     .groups = "drop"
-  )
-print(length_summary)
+  ) %>%
+  arrange(trophic, method)
+
+length_summary %>% print(n = Inf)
+
+# Save summary for records
+dir.create("outputs/analysis/knz", recursive = TRUE, showWarnings = FALSE)
+readr::write_csv(length_summary, "outputs/analysis/knz/knz_mean_segment_length_summary_by_method.csv")
+
+# ---- 2) helper: wide, complete-case transformation per trophic ----
+make_wide_complete <- function(df, trophic_level) {
+  df %>%
+    filter(trophic == trophic_level) %>%
+    select(plot, method, mean_segment_length) %>%
+    pivot_wider(names_from = method, values_from = mean_segment_length) %>%
+    arrange(plot)
+}
+
+
 
 ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
@@ -509,6 +580,13 @@ ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
     axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
     strip.text = element_text(face = "bold")
   )
+ggsave(
+  filename = "figures/cta/kbs_stability_metrics.png",
+  plot = p,
+  width = 10,
+  height = 7,
+  dpi = 300
+)
 
   # End of script ----
 
