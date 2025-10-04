@@ -25,7 +25,7 @@ make_save_path <- function(site_id, group, method, filename) {
   dir.create(base_dir, recursive = TRUE, showWarnings = FALSE)
   file.path(base_dir, filename)
 }
-# 1. Standardize producer & consumer data sets by matching site-year combos ----
+# 1. Function: match_site_years cleans producer/consumer data sets by matching site-years ----
 # Returns filtered versions and a diagnostics tibble of removed combos
 match_site_years <- function(prod_df, con_df, by_plot = TRUE) {
   # expects both tables have columns: plot, year (can be numeric or character)
@@ -182,55 +182,7 @@ run_cta_plot <- function(D, metadata, palette, output_path) {
   dev.off()
 }
 
-# 5. Function: extract_cta_metrics ----
-# Keeps segment lengths, total trajectory length, computes mean segment length,
-# and saves both a "full segments" CSV and a "summary" CSV.
-extract_cta_metrics <- function(D, metadata, site_id, output_path_full, output_path_summary = NULL) {
-  traj_lengths <- trajectoryLengths(D, sites = metadata$plot, surveys = metadata$vector_nums)
-  traj_lengths_df <- as.data.frame(traj_lengths)
-  
-  # Preserve the ecotraj 'Trajectory' (total path length) column
-  if (!"Trajectory" %in% names(traj_lengths_df)) {
-    warning("'Trajectory' column not found; using last column as total trajectory.")
-    traj_lengths_df$total_trajectory <- traj_lengths_df[[ncol(traj_lengths_df)]]
-  } else {
-    traj_lengths_df$total_trajectory <- traj_lengths_df$Trajectory
-  }
-  
-  # Segment columns
-  segment_cols <- grep("^S\\d+$", names(traj_lengths_df), value = TRUE)
-  traj_lengths_df$mean_segment_length <- if (length(segment_cols) > 0) {
-    rowMeans(traj_lengths_df[, segment_cols, drop = FALSE], na.rm = TRUE)
-  } else {
-    NA_real_
-  }
-  
-  # Add metadata
-  traj_lengths_df$plot <- rownames(traj_lengths_df)
-  traj_lengths_df$site <- site_id
-  
-  # Column ordering
-  out_cols <- c("plot", "site", segment_cols)
-  if ("Trajectory" %in% names(traj_lengths_df)) out_cols <- c(out_cols, "Trajectory")
-  out_cols <- c(out_cols, "total_trajectory", "mean_segment_length")
-  out_cols <- intersect(out_cols, names(traj_lengths_df))
-  final_df <- traj_lengths_df[, out_cols]
-  
-  # Save outputs
-  dir.create(dirname(output_path_full), recursive = TRUE, showWarnings = FALSE)
-  write_csv(final_df, output_path_full)
-  
-  if (!is.null(output_path_summary)) {
-    summary_df <- final_df %>% select(site, plot, mean_segment_length)
-    dir.create(dirname(output_path_summary), recursive = TRUE, showWarnings = FALSE)
-    write_csv(summary_df, output_path_summary)
-  }
-  
-  invisible(list(full = final_df,
-                 summary = if (!is.null(output_path_summary)) summary_df else NULL))
-}
-
-# 6. Function: extract_all_cta_metrics + run full pipeline ----
+# 5. Function: extract_all_cta_metrics + run full pipeline ----
 extract_all_cta_metrics <- function(D, metadata, site_id, output_dir, method = NULL) {
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   
@@ -315,63 +267,79 @@ run_cta_pipeline <- function(df, site_id, fig_path, output_dir,
   invisible(metrics)
 }
 
-# 7. Load harmonized data for producer and consumer assemblages ----
+# 6. Load harmonized data for producer and consumer assemblages ----
 
 # KNZ
 #producer data
 knz_prod_wide <- readr::read_csv(here::here("data/wide_output_minimize", "knz_producers_wide_sub.csv"))
-#consumer data
 knz_con_wide  <- readr::read_csv(here::here("data/wide_output_minimize", "knz_consumers_wide_sub.csv"))
-# match producer & consumer site-year combos
-matched <- match_site_years(knz_prod_wide, knz_con_wide)
-# Save diagnostics in case years or sites are removed
-save_diag(matched$diagnostics, here::here("diagnostics", "knz_producer_consumer_year_matching.csv"))
-
-knz_prod_matched <- matched$prod
-knz_con_matched  <- matched$con
-
 
 #KBS
-#producer data
 kbs_prod_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_producers_wide_sub.csv"))
-#consumer data
 kbs_con_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_consumers_wide_sub.csv"))
-# match producer & consumer site-year combos
-matched <- match_site_years(kbs_prod_wide, kbs_con_wide)
-# Save diagnostics in case years or sites are removed
-save_diag(matched$diagnostics, here::here("diagnostics", "kbs_producer_consumer_year_matching.csv"))
-
-kbs_prod_matched <- matched$prod
-kbs_con_matched  <- matched$con
-
-
 
 #SBC 
-#producer data
 sbc_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_producers_wide_sub.csv"))
-#consumer data
 sbc_invert_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_consumers_wide_sub.csv"))
-# match producer & consumer site-year combos
-
-
-# match producer & consumer site-year combos
-matched <- match_site_years(sbc_invert_prod_wide, sbc_invert_wide)
-# Save diagnostics in case years or sites are removed
-save_diag(matched$diagnostics, here::here("diagnostics", "sbc_producer_invert_year_matching.csv"))
-
-sbc_prod_matched <- matched$prod
-sbc_con_matched  <- matched$con
-
 sbc_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_producers_wide_sub.csv"))
 sbc_fish_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_consumers_wide_sub.csv"))
 
+# AIMS #
+aims_con_wide <- read.csv(here::here("data/wide_output_minimize", "aims_consumers_wide_sub.csv"))
+aims_prod_wide <- read.csv(here::here("data/wide_output_minimize", "aims_producers_wide_sub.csv"))
+
+# KBS #
+kbs_prod_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_producers_wide_sub.csv"))
+kbs_con_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_consumers_wide_sub.csv"))
+
+# CDR OLD FIELD #
+cdr_of_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_producers_wide_sub.csv"))
+cdr_of_con_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_consumers_wide_sub.csv"))
 
 
+# 7. Diagnostic check that all plots surveyed have harmonized site-year combinations ----
 
+# KNZ Match
+matched <- match_site_years(knz_prod_wide, knz_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "knz_producer_consumer_year_matching.csv"))
+knz_prod_matched <- matched$prod
+knz_con_matched  <- matched$con
+
+# KBS Match
+matched <- match_site_years(kbs_prod_wide, kbs_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "kbs_producer_consumer_year_matching.csv"))
+kbs_prod_matched <- matched$prod
+kbs_con_matched  <- matched$con
+
+# SBC Invert Match
+matched <- match_site_years(sbc_invert_prod_wide, sbc_invert_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "sbc_producer_invert_year_matching.csv"))
+sbc_prod_inv_matched <- matched$prod
+sbc_con_inv_matched  <- matched$con
+
+# SBC Fish Match
+matched <- match_site_years(sbc_fish_prod_wide, sbc_fish_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "sbc_producer_fish_year_matching.csv"))
+sbc_prod_fish_matched <- matched$prod
+sbc_con_fish_matched  <- matched$con
+
+# AIMS Match
+matched <- match_site_years(aims_prod_wide, aims_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "aims_producer_consumer_year_matching.csv"))
+aims_prod_matched <- matched$prod
+aims_con_matched  <- matched$con
+
+# CDR Match
+matched <- match_site_years(cdr_of_prod_wide, cdr_of_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "cdr_of_producer_consumer_year_matching.csv"))
+cdr_of_prod_matched <- matched$prod
+cdr_of_con_matched  <- matched$con
+
+# 8. Run analysis pipeline----
 # Methods to run
 methods <- c("bray", "jaccard", "hellinger", "chord")
 
-# 8. Run analysis pipeline for producers ----
+# KNZ 
 for (m in methods) {
   fig_path <- here::here("figures", "cta", paste0("knz_producer_trajectory_", m, ".png"))
   output_dir <- here::here("outputs", "cta", "knz", "producer", m)
@@ -386,6 +354,22 @@ for (m in methods) {
   )
 }
 
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("knz_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "knz", "consumer", m)
+  message("Running KNZ consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = knz_con_matched,
+    site_id = "knz",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# KBS 
 for (m in methods) {
   fig_path <- here::here("figures", "cta", paste0("kbs_producer_trajectory_", m, ".png"))
   output_dir <- here::here("outputs", "cta", "kbs", "producer", m)
@@ -400,20 +384,6 @@ for (m in methods) {
   )
 }
 
-# 9. Run analysis pipeline for consumers ----
-for (m in methods) {
-  fig_path <- here::here("figures", "cta", paste0("knz_consumer_trajectory_", m, ".png"))
-  output_dir <- here::here("outputs", "cta", "knz", "consumer", m)
-  message("Running KNZ consumer CTA (method = ", m, ") ...")
-  run_cta_pipeline(
-    df = knz_con_matched,
-    site_id = "knz",
-    fig_path = fig_path,
-    output_dir = output_dir,
-    method = m,
-    nmds_trymax = 100
-  )
-}
 
 for (m in methods) {
   fig_path <- here::here("figures", "cta", paste0("kbs_consumer_trajectory_", m, ".png"))
@@ -429,9 +399,116 @@ for (m in methods) {
   )
 }
 
-# 10. Model Output Comparison Analysis
 
-# Helper function used to load and annotate
+# SBC 
+# can use either fish/invert matched producer file (identical)
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("sbc_producer_invert_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "sbc", "producer", m)
+  message("Running SBC producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = sbc_prod_inv_matched,
+    site_id = "sbc",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("sbc_consumer_invert_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "sbc", "consumer", m)
+  message("Running SBC consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = sbc_con_inv_matched,
+    site_id = "sbc",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("sbc_consumer_fish_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "sbc", "consumer", m)
+  message("Running SBC consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = sbc_con_fish_matched,
+    site_id = "sbc",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+glimpse(cdr_of_con_matched)
+# CDR Old Forest
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("cdr_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "cdr", "producer", m)
+  message("Running CDR producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = cdr_of_prod_matched,
+    site_id = "cdr",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("cdr_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "cdr", "consumer", m)
+  message("Running CDR consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = cdr_of_con_matched,
+    site_id = "cdr",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+# AIMS
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("aims_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "aims", "producer", m)
+  message("Running AIMS producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = aims_prod_matched,
+    site_id = "aims",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("aims_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "aims", "consumer", m)
+  message("Running AIMS consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = aims_con_matched,
+    site_id = "aims",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# Load composition stability length files ----
+# Helper function to load and annotate
 load_lengths <- function(path, trophic, method) {
   read_csv(path) %>%
     mutate(
@@ -440,7 +517,7 @@ load_lengths <- function(path, trophic, method) {
     )
 }
 
-# Load all 8 length files
+
 knz_lengths <- bind_rows(
   load_lengths(here("outputs/cta/knz/consumer/bray/knz_lengths_bray.csv"), "consumer", "bray"),
   load_lengths(here("outputs/cta/knz/consumer/jaccard/knz_lengths_jaccard.csv"), "consumer", "jaccard"),
@@ -452,7 +529,6 @@ knz_lengths <- bind_rows(
   load_lengths(here("outputs/cta/knz/producer/hellinger/knz_lengths_hellinger.csv"), "producer", "hellinger")
 )
 
-glimpse(knz_lengths)
 
 kbs_lengths <- bind_rows(
   load_lengths(here("outputs/cta/kbs/consumer/bray/kbs_lengths_bray.csv"), "consumer", "bray"),
@@ -466,7 +542,16 @@ kbs_lengths <- bind_rows(
 )
 
 
-
+aims_lengths <- bind_rows(
+  load_lengths(here("outputs/cta/aims/consumer/bray/aims_lengths_bray.csv"), "consumer", "bray"),
+  load_lengths(here("outputs/cta/aims/consumer/jaccard/aims_lengths_jaccard.csv"), "consumer", "jaccard"),
+  load_lengths(here("outputs/cta/aims/consumer/chord/aims_lengths_chord.csv"), "consumer", "chord"),
+  load_lengths(here("outputs/cta/aims/consumer/hellinger/aims_lengths_hellinger.csv"), "consumer", "hellinger"),
+  load_lengths(here("outputs/cta/aims/producer/bray/aims_lengths_bray.csv"), "producer", "bray"),
+  load_lengths(here("outputs/cta/aims/producer/jaccard/aims_lengths_jaccard.csv"), "producer", "jaccard"),
+  load_lengths(here("outputs/cta/aims/producer/chord/aims_lengths_chord.csv"), "producer", "chord"),
+  load_lengths(here("outputs/cta/aims/producer/hellinger/aims_lengths_hellinger.csv"), "producer", "hellinger")
+)
 
 
 # Summary table
