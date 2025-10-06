@@ -267,10 +267,17 @@ run_cta_pipeline <- function(df, site_id, fig_path, output_dir,
   invisible(metrics)
 }
 
-# 6. Load harmonized data for producer and consumer assemblages ----
+# 6. Function: Helper function to load model output length files ----
+load_lengths <- function(path, trophic, method) {
+  read_csv(path) %>%
+    mutate(
+      trophic = trophic,
+      method = method
+    )
+}
+# 7. Load harmonized data for producer and consumer assemblages ----
 
 # KNZ
-#producer data
 knz_prod_wide <- readr::read_csv(here::here("data/wide_output_minimize", "knz_producers_wide_sub.csv"))
 knz_con_wide  <- readr::read_csv(here::here("data/wide_output_minimize", "knz_consumers_wide_sub.csv"))
 
@@ -296,8 +303,24 @@ kbs_con_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_consumers_
 cdr_of_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_producers_wide_sub.csv"))
 cdr_of_con_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_consumers_wide_sub.csv"))
 
+# GCE #
+gce_prod_wide <- read.csv(here::here("data/wide_output_minimize", "gce_producers_wide_sub.csv"))
+gce_con_wide <- read.csv(here::here("data/wide_output_minimize", "gce_consumers_wide_sub.csv"))
 
-# 7. Diagnostic check that all plots surveyed have harmonized site-year combinations ----
+#USVI #
+usvi_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_fish_producers_wide_sub.csv"))
+usvi_fish_con_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_fish_consumers_wide_sub.csv"))
+usvi_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_invert_producers_wide_sub.csv"))
+usvi_invert_con_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_invert_consumers_wide_sub.csv"))
+
+# MCR #
+mcr_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_producers_wide_sub.csv"))
+mcr_invert_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_consumers_wide_sub.csv"))
+mcr_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_producers_wide_sub.csv"))
+mcr_fish_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_consumers_wide_sub.csv"))
+
+
+# 8. Diagnostic check that all plots surveyed have harmonized site-year combinations ----
 
 # KNZ Match
 matched <- match_site_years(knz_prod_wide, knz_con_wide)
@@ -335,7 +358,37 @@ save_diag(matched$diagnostics, here::here("diagnostics", "cdr_of_producer_consum
 cdr_of_prod_matched <- matched$prod
 cdr_of_con_matched  <- matched$con
 
-# 8. Run analysis pipeline----
+# GCE Match
+matched <- match_site_years(gce_prod_wide, gce_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "gce_producer_consumer_year_matching.csv"))
+gce_prod_matched <- matched$prod
+gce_con_matched  <- matched$con
+
+# USVI Fish Match
+matched <- match_site_years(usvi_fish_prod_wide, usvi_fish_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "usvi_producer_fish_consumer_year_matching.csv"))
+usvi_fish_prod_matched <- matched$prod
+usvi_fish_con_matched  <- matched$con
+
+# USVI Invert Match
+matched <- match_site_years(usvi_invert_prod_wide, usvi_invert_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "usvi_producer_invert_consumer_year_matching.csv"))
+usvi_invert_prod_matched <- matched$prod
+usvi_invert_con_matched  <- matched$con
+
+# mcr Fish Match
+matched <- match_site_years(mcr_fish_prod_wide, mcr_fish_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "mcr_producer_fish_consumer_year_matching.csv"))
+mcr_fish_prod_matched <- matched$prod
+mcr_fish_con_matched  <- matched$con
+
+# mcr Invert Match
+matched <- match_site_years(mcr_invert_prod_wide, mcr_invert_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "mcr_producer_invert_consumer_year_matching.csv"))
+mcr_invert_prod_matched <- matched$prod
+mcr_invert_con_matched  <- matched$con
+
+# 9. Run analysis pipeline ----
 # Methods to run
 methods <- c("bray", "jaccard", "hellinger", "chord")
 
@@ -445,7 +498,6 @@ for (m in methods) {
   )
 }
 
-glimpse(cdr_of_con_matched)
 # CDR Old Forest
 for (m in methods) {
   fig_path <- here::here("figures", "cta", paste0("cdr_producer_trajectory_", m, ".png"))
@@ -507,16 +559,127 @@ for (m in methods) {
   )
 }
 
-# Load composition stability length files ----
-# Helper function to load and annotate
-load_lengths <- function(path, trophic, method) {
-  read_csv(path) %>%
-    mutate(
-      trophic = trophic,
-      method = method
-    )
+
+# GCE 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("gce_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "gce", "producer", m)
+  message("Running GCE producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = gce_prod_matched,
+    site_id = "gce",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
 }
 
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("gce_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "gce", "consumer", m)
+  message("Running GCE consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = gce_con_matched,
+    site_id = "gce",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+# USVI
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("usvi_fish_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "usvi", "producer", m)
+  message("Running USVI producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = usvi_fish_prod_matched,
+    site_id = "usvi",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("usvi_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "usvi", "consumer", m)
+  message("Running USVI consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = usvi_fish_con_matched,
+    site_id = "usvi",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("usvi_invert_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "usvi", "invert", m)
+  message("Running USVI Invert consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = usvi_invert_con_matched,
+    site_id = "usvi",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# MCR
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("mcr_fish_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "mcr", "producer", m)
+  message("Running MCR producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = mcr_fish_prod_matched,
+    site_id = "mcr",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("mcr_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "usvi", "consumer", m)
+  message("Running MCR consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = mcr_fish_con_matched,
+    site_id = "usvi",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("mcr_invert_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "usvi", "invert", m)
+  message("Running MCR Invert consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = mcr_invert_con_matched,
+    site_id = "mcr",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# 10. Load model output files for compositional stability metrics ----
 
 knz_lengths <- bind_rows(
   load_lengths(here("outputs/cta/knz/consumer/bray/knz_lengths_bray.csv"), "consumer", "bray"),
@@ -554,16 +717,78 @@ aims_lengths <- bind_rows(
 )
 
 
-# Summary table
-length_summary <- knz_lengths %>%
+cdr_lengths <- bind_rows(
+  load_lengths(here("outputs/cta/cdr/consumer/bray/cdr_lengths_bray.csv"), "consumer", "bray"),
+  load_lengths(here("outputs/cta/cdr/consumer/jaccard/cdr_lengths_jaccard.csv"), "consumer", "jaccard"),
+  load_lengths(here("outputs/cta/cdr/consumer/chord/cdr_lengths_chord.csv"), "consumer", "chord"),
+  load_lengths(here("outputs/cta/cdr/consumer/hellinger/cdr_lengths_hellinger.csv"), "consumer", "hellinger"),
+  load_lengths(here("outputs/cta/cdr/producer/bray/cdr_lengths_bray.csv"), "producer", "bray"),
+  load_lengths(here("outputs/cta/cdr/producer/jaccard/cdr_lengths_jaccard.csv"), "producer", "jaccard"),
+  load_lengths(here("outputs/cta/cdr/producer/chord/cdr_lengths_chord.csv"), "producer", "chord"),
+  load_lengths(here("outputs/cta/cdr/producer/hellinger/cdr_lengths_hellinger.csv"), "producer", "hellinger")
+)
+
+
+sbc_lengths <- bind_rows(
+  load_lengths(here("outputs/cta/sbc/consumer/bray/sbc_lengths_bray.csv"), "consumer", "bray"),
+  load_lengths(here("outputs/cta/sbc/consumer/jaccard/sbc_lengths_jaccard.csv"), "consumer", "jaccard"),
+  load_lengths(here("outputs/cta/sbc/consumer/chord/sbc_lengths_chord.csv"), "consumer", "chord"),
+  load_lengths(here("outputs/cta/sbc/consumer/hellinger/sbc_lengths_hellinger.csv"), "consumer", "hellinger"),
+  load_lengths(here("outputs/cta/sbc/producer/bray/sbc_lengths_bray.csv"), "producer", "bray"),
+  load_lengths(here("outputs/cta/sbc/producer/jaccard/sbc_lengths_jaccard.csv"), "producer", "jaccard"),
+  load_lengths(here("outputs/cta/sbc/producer/chord/sbc_lengths_chord.csv"), "producer", "chord"),
+  load_lengths(here("outputs/cta/sbc/producer/hellinger/sbc_lengths_hellinger.csv"), "producer", "hellinger")
+)
+
+# 11. Summary tables ----
+knz_length_summary <- knz_lengths %>%
   group_by(trophic, method) %>%
   summarise(
     mean_length = mean(total_trajectory, na.rm = TRUE),
     sd_length   = sd(total_trajectory, na.rm = TRUE),
     .groups = "drop"
   )
-print(length_summary)
+print(knz_length_summary)
 
+kbs_length_summary <- kbs_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(kbs_length_summary)
+
+aims_length_summary <- aims_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(aims_length_summary)
+
+cdr_length_summary <- cdr_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(cdr_length_summary)
+
+
+sbc_length_summary <- sbc_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(sbc_length_summary)
+
+
+# 12. Figures: Boxplots of total and mean compositional stability across models ----
 plot_knz_tl_metric_comp <- ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
@@ -577,7 +802,7 @@ plot_knz_tl_metric_comp <- ggplot(knz_lengths, aes(x = method, y = total_traject
   )
 ggsave(
   filename = "figures/cta/plot_knz_tl_metric_comp.png",
-  plot = plot_knz_stability_metrics,
+  plot = plot_knz_tl_metric_comp,
   width = 10,
   height = 7,
   dpi = 600
@@ -597,64 +822,14 @@ plot_knz_mean_metric_comp <- ggplot(knz_lengths, aes(x = method, y = mean_segmen
   )
 ggsave(
   filename = "figures/cta/plot_knz_mean_metric_comp.png",
-  plot = plot_knz_stability_metrics,
+  plot = plot_knz_mean_metric_comp,
   width = 10,
   height = 7,
   dpi = 600
 )
 
-# ---- 0) quick safety checks & settings ----
-# Ensure the metric column exists and is numeric
-stopifnot("mean_segment_length" %in% names(knz_lengths))
-knz_lengths <- knz_lengths %>%
-  mutate(
-    method = factor(method, levels = c("bray", "hellinger", "chord", "jaccard")), # consistent ordering
-    trophic = factor(trophic)
-  )
 
-# Vector of methods used (ordered)
-methods <- levels(knz_lengths$method)
-# helper: number of surveys per plot = number of non-NA segments + 1
-knz_lengths <- knz_lengths %>%
-  rowwise() %>%
-  mutate(
-    n_segments = sum(!is.na(c_across(starts_with("S")))),
-    n_surveys = n_segments + 1
-  ) %>%
-  ungroup()
-
-# ---- 1) summary table (per trophic x method) ----
-length_summary <- knz_lengths %>%
-  group_by(trophic, method) %>%
-  summarise(
-    n_plots = n_distinct(plot),                     
-    mean_length = mean(mean_segment_length, na.rm = TRUE),
-    sd_length   = sd(mean_segment_length, na.rm = TRUE),
-    median_length = median(mean_segment_length, na.rm = TRUE),
-    mean_total_traj_length = mean(total_trajectory, na.rm = TRUE),
-    sd_total_traj_length   = sd(total_trajectory, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(trophic, method)
-
-length_summary %>% print(n = Inf)
-
-# Save summary for records
-dir.create("outputs/analysis/knz", recursive = TRUE, showWarnings = FALSE)
-readr::write_csv(length_summary, "outputs/analysis/knz/knz_mean_segment_length_summary_by_method.csv")
-
-# ---- 2) helper: wide, complete-case transformation per trophic ----
-make_wide_complete <- function(df, trophic_level) {
-  df %>%
-    filter(trophic == trophic_level) %>%
-    select(plot, method, mean_segment_length) %>%
-    pivot_wider(names_from = method, values_from = mean_segment_length) %>%
-    arrange(plot)
-}
-
-
-
-ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+plot_kbs_tl_metric_comp <- ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
   geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
   facet_wrap(~trophic, scales = "free_y") +
@@ -666,336 +841,112 @@ ggplot(kbs_lengths, aes(x = method, y = total_trajectory, fill = method)) +
     strip.text = element_text(face = "bold")
   )
 ggsave(
-  filename = "figures/cta/kbs_stability_metrics.png",
-  plot = p,
+  filename = "figures/cta/plot_kbs_tl_metric_comp.png",
+  plot = plot_kbs_tl_metric_comp,
   width = 10,
   height = 7,
-  dpi = 300
+  dpi = 600
 )
 
+
+plot_kbs_mean_metric_comp <- ggplot(kbs_lengths, aes(x = method, y = mean_segment_length, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "mean segment length", x = "Distance method",
+       title = "Compositional stability across distance methods (KBS)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_kbs_mean_metric_comp.png",
+  plot = plot_kbs_mean_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+plot_aims_tl_metric_comp <- ggplot(aims_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "Total trajectory length", x = "Distance method",
+       title = "Compositional stability across distance methods (AIMS)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_aims_tl_metric_comp.png",
+  plot = plot_aims_tl_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+
+plot_aims_mean_metric_comp <- ggplot(aims_lengths, aes(x = method, y = mean_segment_length, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "mean segment length", x = "Distance method",
+       title = "Compositional stability across distance methods (AIMS)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_aims_mean_metric_comp.png",
+  plot = plot_aims_mean_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+
+plot_cdr_tl_metric_comp <- ggplot(cdr_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "Total trajectory length", x = "Distance method",
+       title = "Compositional stability across distance methods (CDR)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_cdr_tl_metric_comp.png",
+  plot = plot_cdr_tl_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+
+plot_cdr_mean_metric_comp <- ggplot(cdr_lengths, aes(x = method, y = mean_segment_length, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "mean segment length", x = "Distance method",
+       title = "Compositional stability across distance methods (CDR)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_cdr_mean_metric_comp.png",
+  plot = plot_cdr_mean_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
+
+
+
   # End of script ----
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# AIMS #
-aims_con_wide <- read.csv(here::here("data/wide_output_minimize", "aims_consumers_wide_sub.csv"))
-aims_prod_wide <- read.csv(here::here("data/wide_output_minimize", "aims_producers_wide_sub.csv"))
-
-# KBS #
-kbs_prod_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_producers_wide_sub.csv"))
-kbs_con_wide <- read.csv(here::here("data/wide_output_minimize", "kbs_consumers_wide_sub.csv"))
-
-# CDR OLD FIELD #
-cdr_of_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_producers_wide_sub.csv"))
-cdr_of_con_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_of_consumers_wide_sub.csv"))
-
-# # CDR BIODIVERSITY #
-# # numbers describe the initial diversity of producers in each plot
-# cdr_biodiv_1_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_1_producers_wide_sub.csv"))
-# cdr_biodiv_1_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_1_consumers_wide_sub.csv"))
-# cdr_biodiv_2_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_2_producers_wide_sub.csv"))
-# cdr_biodiv_2_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_2_consumers_wide_sub.csv"))
-# cdr_biodiv_4_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_4_producers_wide_sub.csv"))
-# cdr_biodiv_4_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_4_consumers_wide_sub.csv"))
-# cdr_biodiv_8_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_8_producers_wide_sub.csv"))
-# cdr_biodiv_8_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_8_consumers_wide_sub.csv"))
-# cdr_biodiv_16_prod_wide <- read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_16_producers_wide_sub.csv"))
-# cdr_biodiv_16_con_wide <-  read.csv(here::here("data/wide_output_minimize", "cdr_biodiv_16_consumers_wide_sub.csv"))
-
-# # GCE #
-# gce_prod_wide <- read.csv(here::here("data/wide_output_minimize", "gce_producers_wide_sub.csv"))
-# gce_con_wide <- read.csv(here::here("data/wide_output_minimize", "gce_consumers_wide_sub.csv"))
-
-#USVI #
-usvi_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_fish_producers_wide_sub.csv"))
-usvi_fish_con_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_fish_consumers_wide_sub.csv"))
-usvi_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_invert_producers_wide_sub.csv"))
-usvi_invert_con_wide <- read.csv(here::here("data/wide_output_minimize", "usvi_invert_consumers_wide_sub.csv"))
-
-#SBC #
-sbc_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_producers_wide_sub.csv"))
-sbc_invert_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_invert_consumers_wide_sub.csv"))
-sbc_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_producers_wide_sub.csv"))
-sbc_fish_wide <- read.csv(here::here("data/wide_output_minimize", "sbc_fish_consumers_wide_sub.csv"))
-
-# MCR #
-mcr_invert_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_producers_wide_sub.csv"))
-mcr_invert_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_consumers_wide_sub.csv"))
-mcr_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_producers_wide_sub.csv"))
-mcr_fish_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_consumers_wide_sub.csv"))
-
-
-# Filtering Complete 0's ----
-
-mcr_invert_wide = mcr_invert_wide |>
-  filter(year != 2024)
-
-mcr_invert_prod_wide = mcr_invert_prod_wide |>
-  filter(year != 2024)
-
-mcr_fish_wide = mcr_fish_wide |>
-  filter(year != 2024)
-
-mcr_fish_prod_wide = mcr_fish_prod_wide |>
-  filter(year != 2024)
-
-sbc_fish_wide = sbc_fish_wide |> 
-  filter(plot != "AHND")
-
-sbc_fish_prod_wide = sbc_fish_prod_wide |> 
-  filter(plot != "AHND")
-
-sbc_invert_wide = sbc_invert_wide |> 
-  filter(plot != "AHND")
-
-sbc_invert_prod_wide = sbc_invert_prod_wide |> 
-  filter(plot != "AHND")
-
-# Run CTA Pipeline ----
-
-#KNZ Producers
-run_cta_pipeline(
-  df = knz_prod_wide,
-  site_id = "knz",
-  fig_path = here("figures/CTA/wide_output_minimize", "knz_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "knz_producer_legnths_bray.csv"))
-
-#KNZ Consumers
-run_cta_pipeline(
-  df = knz_con_wide,
-  site_id = "knz",
-  fig_path = here("figures/CTA/wide_output_minimize", "knz_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "knz_consumer_legnths_bray.csv"))
-
-
-#AIMS Producers
-run_cta_pipeline(
-  df = aims_prod_wide,
-  site_id = "aims",
-  fig_path = here("figures/CTA/wide_output_minimize", "aims_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "aims_producer_legnths_bray.csv"))
-
-#AIMS Consumers
-run_cta_pipeline(
-  df = aims_con_wide,
-  site_id = "aims",
-  fig_path = here("figures/CTA/wide_output_minimize", "aims_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "aims_consumer_legnths_bray.csv"))
-
-
-#KBS Producers
-run_cta_pipeline(
-  df = kbs_prod_wide,
-  site_id = "kbs",
-  fig_path = here("figures/CTA/wide_output_minimize", "kbs_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "kbs_producer_legnths_bray.csv"))
-
-#KBS Consumers
-run_cta_pipeline(
-  df = kbs_con_wide,
-  site_id = "kbs",
-  fig_path = here("figures/CTA/wide_output_minimize", "kbs_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "kbs_consumer_legnths_bray.csv"))
-
-#CDR Oldfield Producers
-run_cta_pipeline(
-  df = cdr_of_prod_wide,
-  site_id = "CDR",
-  fig_path = here("figures/CTA/wide_output_minimize", "cdr_of_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "cdr_of_producer_legnths_bray.csv"))
-
-#CDR Oldfield Consumer
-run_cta_pipeline(
-  df = cdr_of_con_wide,
-  site_id = "cdr_of",
-  fig_path = here("figures/CTA/wide_output_minimize", "cdr_of_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "cdr_of_consumer_legnths_bray.csv"))
-
-# #CDR Biodiv 1 Producers
-# run_cta_pipeline(
-#   df = cdr_biodiv_1_prod_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_1_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_1_producer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 1 Consumers
-# run_cta_pipeline(
-#   df = cdr_biodiv_1_con_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_1_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_1_consumer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 2 Producers
-# run_cta_pipeline(
-#   df = cdr_biodiv_2_prod_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_2_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_2_producer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 2 Consumers
-# run_cta_pipeline(
-#   df = cdr_biodiv_2_con_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_2_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_2_consumer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 4 Producers
-# run_cta_pipeline(
-#   df = cdr_biodiv_4_prod_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_4_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_4_producer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 4 Consumers
-# run_cta_pipeline(
-#   df = cdr_biodiv_4_con_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_4_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_4_consumer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 8 Producers
-# run_cta_pipeline(
-#   df = cdr_biodiv_8_prod_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_8_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_8_producer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 8 Consumers
-# run_cta_pipeline(
-#   df = cdr_biodiv_8_con_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_8_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_8_consumer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 16 Producers
-# run_cta_pipeline(
-#   df = cdr_biodiv_16_prod_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_16_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "cdr_biodiv_16_producer_legnths_bray.csv"))
-# 
-# #CDR Biodiv 16 Consumers
-# run_cta_pipeline(
-#   df = cdr_biodiv_16_con_wide,
-#   site_id = "CDR",
-#   fig_path = here("figures/CTA/wide_output_minimize", "cdr_biodiv_16_consumer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/consumer", "cdr_biodiv_16_consumer_legnths_bray.csv"))
-
-#GCE Producers
-# run_cta_pipeline(
-#   df = gce_prod_wide,
-#   site_id = "gce",
-#   fig_path = here("figures/CTA/wide_output_minimize", "gce_producer_trajectory_plot.png"),
-#   table_path = here("tables/wide_output_minimize/producer", "gce_producer_legnths_bray.csv"))
-# # 
-# #GCE Consumers
-# run_cta_pipeline(
-#   df = gce_con_wide,
-#   site_id = "gce",
-#   fig_path = here("figures/CTA/GCE", "gce_consumer_trajectory_plot.png"),
-#   table_path = here("tables/GCE/consumer", "gce_consumer_legnths_bray.csv"))
-
-
-#USVI Fish Producers
-run_cta_pipeline(
-  df = usvi_fish_prod_wide,
-  site_id = "usvi",
-  fig_path = here("figures/CTA/wide_output_minimize", "usvi_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "usvi_fish_producer_legnths_bray.csv"))
-
-#USVI Fish Consumers
-run_cta_pipeline(
-  df = usvi_fish_con_wide,
-  site_id = "usvi",
-  fig_path = here("figures/CTA/wide_output_minimize", "usvi_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "usvi_fish_consumer_legnths_bray.csv"))
-
-#USVI Invert Producers
-run_cta_pipeline(
-  df = usvi_invert_prod_wide,
-  site_id = "usvi",
-  fig_path = here("figures/CTA/wide_output_minimize", "usvi_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "usvi_invert_producer_legnths_bray.csv"))
-
-#USVI Invert Consumers
-run_cta_pipeline(
-  df = usvi_invert_con_wide,
-  site_id = "usvi",
-  fig_path = here("figures/CTA/wide_output_minimize", "usvi_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "usvi_invert_consumer_legnths_bray.csv"))
-
-
-# SBC Fish Producers
-run_cta_pipeline(
-  df = sbc_fish_prod_wide,
-  site_id = "sbc",
-  fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "sbc_fish_producer_legnths_bray.csv"))
-
-#SBC Fish Consumers
-run_cta_pipeline(
-  df = sbc_fish_wide,
-  site_id = "sbc",
-  fig_path = here("figures/CTA/wide_output_minimize", "sbc_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "sbc_fish_consumer_legnths_bray.csv"))
-
-#SBC Invert Producers
-run_cta_pipeline(
-  df = sbc_invert_prod_wide,
-  site_id = "sbc",
-  fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "sbc_invert_producer_legnths_bray.csv"))
-
-#SBC Invert Consumers
-run_cta_pipeline(
-  df = sbc_invert_wide,
-  site_id = "sbc",
-  fig_path = here("figures/CTA/wide_output_minimize", "sbc_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "sbc_invert_consumer_legnths_bray.csv"))
-
-
-#MCR Fish Producers
-run_cta_pipeline(
-  df = mcr_fish_prod_wide,
-  site_id = "mcr",
-  fig_path = here("figures/CTA/wide_output_minimize", "mcr_fish_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "mcr_fish_producer_legnths_bray.csv"))
-
-#MCR Fish Consumers
-run_cta_pipeline(
-  df = mcr_fish_wide,
-  site_id = "mcr",
-  fig_path = here("figures/CTA/wide_output_minimize", "mcr_fish_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "mcr_fish_consumer_legnths_bray.csv"))
-
-#MCR Invert Producers
-run_cta_pipeline(
-  df = mcr_invert_prod_wide,
-  site_id = "mcr",
-  fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_producer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/producer", "mcr_invert_producer_legnths_bray.csv"))
-
-# #MCR Invert Consumers
-run_cta_pipeline(
-  df = mcr_invert_wide,
-  site_id = "mcr",
-  fig_path = here("figures/CTA/wide_output_minimize", "mcr_invert_consumer_trajectory_plot.png"),
-  table_path = here("tables/wide_output_minimize/consumer", "mcr_invert_consumer_legnths_bray.csv"))
