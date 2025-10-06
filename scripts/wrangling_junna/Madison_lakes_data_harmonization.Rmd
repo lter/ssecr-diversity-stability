@@ -15,7 +15,8 @@ shelf('tidyverse', 'vegan', 'ggpubr')
 ```{r phytoplankton in Madison Lake area}
 # Phytoplankton samples for the 4 southern Wisconsin LTER lakes (Mendota, Monona, Wingra, Fish) have been collected for analysis by LTER since 1995
 # read data
-data_phyto_madison <- read.csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.88.31&entityid=f2de15b2fff6ae962a04c150c0a1c510")
+# data_phyto_madison <- read.csv("https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.88.31&entityid=f2de15b2fff6ae962a04c150c0a1c510")
+data_phyto_madison <- read.csv("/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.88.31_Phytoplankton_Madison_Lakes_Area/ntl88_v13.csv")
 #lakeid: "MO" "ME" "FI" "WI"
 
 ####data exploration####
@@ -28,7 +29,8 @@ data_phyto_madison$sampledate <- as.Date(data_phyto_madison$sampledate)
 data_phyto_year_madison <- data_phyto_madison %>% group_by(lakeid, year4) %>% 
   summarise(num_sample = n_distinct(sampledate))
 
-ggplot(data_phyto_year_madison, aes(x=year4, y=num_sample, color=lakeid)) +
+data_phyto_year_madison %>% 
+  ggplot(aes(x=year4, y=num_sample, color=lakeid)) +
   geom_point() +
   geom_line()
 # only ME and MO have enough data
@@ -43,9 +45,10 @@ data_phyto_madison %>% mutate(year=as.factor(year(sampledate)), month=month(samp
 
 #####start to prepare for output data
 # use 1995-2019, 2020 is not used because one site has fewer data this year.
+# MO missed 2012
 # use monthly data in April-August
 data_phyto_filter <- data_phyto_madison %>% mutate(month=month(sampledate)) %>%
-  filter(year4>=1995 & year4<=2019) %>% filter(month %in% c(4:8)) 
+  filter(year4>=1995 & year4<=2019) %>% filter(month %in% c(4:8)) %>% filter(lakeid %in% c("ME", "MO"))
 # 538 taxon
 
 # for the Miscellaneous division, give it a unique taxon name--Miscellaneous
@@ -63,7 +66,7 @@ data_phyto_filter <- data_phyto_filter %>% group_by(lakeid, year4, sampledate, s
 # output the data that are needed
 # total biomass unit: mg/L; relative total biovolume: %
 data_phyto_out <- data.frame(
-  site = data_phyto_filter$lakeid,
+  site = 'NTL_Madison',
   taxa_type = "producer",
   ecosystem = "aquatic",
   habitat_broad = 'lake',
@@ -74,7 +77,7 @@ data_phyto_out <- data.frame(
   year=data_phyto_filter$year4, 
   month=month(data_phyto_filter$sampledate), 
   day=day(data_phyto_filter$sampledate),
-  plot=1
+  plot=data_phyto_filter$lakeid
 )
 
 data_phyto_out <- data_phyto_out %>% 
@@ -107,7 +110,8 @@ googledrive::drive_upload(media = file.path("harmonized_data/phytoplankton_madis
 library(tidyverse)
 rm(list=ls())
 
-data_zoop_madison <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.90.36&entityid=5880c7ba184589e239aec9c55f9d313b')
+# data_zoop_madison <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.90.36&entityid=5880c7ba184589e239aec9c55f9d313b')
+data_zoop_madison <- read.csv('/Users/junnawang/courses/SSECR/data_discovery/North Temperate Lake LTER/knb-lter-ntl.90.35_Zooplankton_Madison_Lakes_Area/ntl90_v10.csv')
 
 # uniform lakeid
 unique(data_zoop_madison$lakeid)  # the 4 lakes
@@ -135,14 +139,14 @@ data_zoop_madison %>% mutate(year=as.factor(year(sample_date)), month=month(samp
 
 
 # we only have data from 2 lakes in this area. 
-# use 1995-2018
+# use 1995-2019
 # use monthly data in April-August
 data_zoop_filter <- data_zoop_madison %>% mutate(year=year(sample_date), month=month(sample_date)) %>%
-  filter(year4>=1995 & year4<=2018) %>% filter(month %in% c(4:8)) 
+  filter(year4>=1995 & year4<=2019) %>% filter(month %in% c(4:8)) 
 
 #### prepare for output datasets
 data_zoop_out <- data.frame(
-  site = data_zoop_filter$lakeid,
+  site = "NTL_Madison",
   taxa_type = "consumer",
   ecosystem = "aquatic",
   habitat_broad = 'lake',
@@ -153,7 +157,7 @@ data_zoop_out <- data.frame(
   year=data_zoop_filter$year4, 
   month=data_zoop_filter$month,
   day=day(data_zoop_filter$sample_date),
-  plot=data_zoop_filter$station
+  plot=data_zoop_filter$lakeid
 )
 
 data_zoop_out <- data_zoop_out %>% 

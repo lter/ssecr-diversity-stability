@@ -1,0 +1,422 @@
+---
+title: "diversity_stability_relationship_temporal"
+output: html_document
+---
+
+```{r use the spatial method to calculate diversity-stability relationships}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa)
+rm(list=ls())
+
+# source('scripts/00_functions_minimize.R')
+
+tmp <- tempfile(fileext = ".csv")
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"), type='csv')
+drive_download(drive_folder[drive_folder$name == "marine_agg_dss.csv",], path = tmp, overwrite = TRUE)
+mar <- read.csv(tmp)
+
+drive_download(drive_folder[drive_folder$name == "terrestrial_agg_dss.csv",], path = tmp, overwrite = TRUE)
+terr <- read.csv(tmp)
+
+# if you want to see results of terrestrial ecosystems; uncomment the next line. 
+# mar <- terr
+
+# add new columns, do log transformation
+mar$site_habitat_fine <- paste(mar$site_new, mar$habitat_fine, sep='_')
+mar$prod_stability_log <- log(mar$prod_stability)
+mar$con_stability_log <- log(mar$con_stability)
+mar$prod_richness_log <- log(mar$prod_richness)
+mar$con_richness_log <- log(mar$con_richness)
+
+# z-score to get standardized effect size
+mar$prod_richness_zscore <- scale(mar$prod_richness)
+mar$con_richness_zscore <- scale(mar$con_richness)
+mar$prod_stability_zscore <- scale(mar$prod_stability)
+mar$con_stability_zscore <- scale(mar$con_stability)
+#
+mar$prod_richness_log_zscore <- scale(mar$prod_richness_log)
+mar$con_richness_log_zscore <- scale(mar$con_richness_log)
+mar$prod_stability_log_zscore <- scale(mar$prod_stability_log)
+mar$con_stability_log_zscore <- scale(mar$con_stability_log)
+
+
+# calculate mean diversity and stability of each site
+mar_site_mean <- mar %>% group_by(site_new) %>% 
+  summarise(prod_richness_zscore_site_mean = mean(prod_richness_zscore), 
+            con_richness_zscore_site_mean = mean(con_richness_zscore),
+            prod_stability_zscore_site_mean = mean(prod_stability_zscore), 
+            con_stability_zscore_site_mean = mean(con_stability_zscore),
+            prod_richness_log_zscore_site_mean = mean(prod_richness_log_zscore), 
+            con_richness_log_zscore_site_mean = mean(con_richness_log_zscore),            
+            prod_stability_log_zscore_site_mean = mean(prod_stability_log_zscore),
+            con_stability_log_zscore_site_mean = mean(con_stability_log_zscore))
+
+if (! "prod_richness_zscore_site_mean" %in% names(mar)) {
+  mar <- mar %>% left_join(mar_site_mean, by="site_new")
+}
+
+# calculate deviation
+mar$prod_richness_zscore_devi <- mar$prod_richness_zscore - mar$prod_richness_zscore_site_mean
+mar$con_richness_zscore_devi <- mar$con_richness_zscore - mar$con_richness_zscore_site_mean
+mar$prod_stability_zscore_devi <- mar$prod_stability_zscore - mar$prod_stability_zscore_site_mean
+mar$con_stability_zscore_devi <- mar$con_stability_zscore - mar$con_stability_zscore_site_mean
+#
+mar$prod_richness_log_zscore_devi <- mar$prod_richness_log_zscore - mar$prod_richness_log_zscore_site_mean
+mar$con_richness_log_zscore_devi <- mar$con_richness_log_zscore - mar$con_richness_log_zscore_site_mean
+mar$prod_stability_log_zscore_devi <- mar$prod_stability_log_zscore - mar$prod_stability_log_zscore_site_mean
+mar$con_stability_log_zscore_devi <- mar$con_stability_log_zscore - mar$con_stability_log_zscore_site_mean
+
+
+# Adopt Laura Dee's comment: 
+# step 1: which metrics to use? and whether we need to do log transformation?
+# producer and consumer richness: no log transformation
+# producer stability: log transformation
+# consumer stability: no log transformation
+
+# step 2: do z-standardization to get standard effect sizes
+# this is needed
+
+# step 3: control for spatial confounding factors
+#-------------------marine producer community
+# use model D -- group mean centered path model in Byrnes and Dee, 2025
+mod_mar_prod1 <- lmer(data = mar, prod_stability_log_zscore ~ prod_richness_zscore_devi + con_richness_zscore_devi + prod_richness_zscore_site_mean + con_richness_zscore_site_mean + (1|site_new))
+summary(mod_mar_prod1)
+isSingular(mod_mar_prod1, tol = 1e-4)
+# 
+plot(DHARMa::simulateResiduals(mod_mar_prod1))  # ks test sig; DHARMa sig; failed ks test; 
+plot(residuals(mod_mar_prod1), predict(mod_mar_prod1))
+
+#----
+# use model A -- fixed effects transformation path model
+mod_mar_prod2 <- lm(data = mar, prod_stability_log_zscore_devi ~ prod_richness_zscore_devi + con_richness_zscore_devi)
+summary(mod_mar_prod2)
+
+plot(DHARMa::simulateResiduals(mod_mar_prod2))         # all good
+plot(residuals(mod_mar_prod2), predict(mod_mar_prod2))
+# Models A and D are equivalent. 
+
+#-------------------marine consumer community
+# use model D
+mod_mar_con1 <- lmer(data = mar, con_stability_log_zscore ~ prod_richness_zscore_devi + con_richness_zscore_devi + prod_richness_zscore_site_mean + con_richness_zscore_site_mean + (1|site_new))
+summary(mod_mar_con1)
+isSingular(mod_mar_con1, tol = 1e-4)
+# 
+plot(DHARMa::simulateResiduals(mod_mar_con1))  # failed ks test; 
+plot(residuals(mod_mar_con1), predict(mod_mar_con1))
+
+#-------------------
+# use model A
+mod_mar_con2 <- lm(data = mar, con_stability_zscore_devi ~ prod_richness_zscore_devi + con_richness_zscore_devi)  
+summary(mod_mar_con2)
+# 
+plot(DHARMa::simulateResiduals(mod_mar_con2))  # failed ks test; and outlier test. 
+plot(residuals(mod_mar_con2), predict(mod_mar_con2))
+# Models A and D are equivalent.
+
+
+```
+
+
+```{r using the non-overlapping temporal method to calculate diversity and stability relationship}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms)
+rm(list=ls())
+
+source('/Users/junnawang/courses/SSECR/Diversity_stability/scripts/00_functions_minimize.R')
+
+tmp <- tempfile(fileext = ".csv")
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"), type='csv')
+
+# sites: 
+sites_aquatic <- c("usvi_fish", "sbc_fish", "sbc_invert", "aims", "gce", "mcr_fish", "mcr_invert")
+sites_terrestrial <- c("cdr_of", "kbs", "knz")
+sites <- c(sites_aquatic, sites_terrestrial)
+
+# number of years to aggregate to calculate stability; this can be changed.
+duration = 5
+
+for (isite in 1:length(sites)) {
+  
+  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_producers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
+  producer <- read.csv(tmp)
+  
+  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_consumers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
+  consumer <- read.csv(tmp)
+  
+  years <- sort(unique(producer$year))
+  
+  nyears <- floor(length(years) / duration) * duration
+  
+  period <- data.frame(start = seq(1, nyears, by = duration), end = seq(duration, nyears, by = duration))
+  # do we want to add one more row
+  if (length(years) - nyears >= duration / 2) {
+    period <- rbind(period, data.frame(start = length(years) - duration + 1, end = length(years)))
+  }
+  period$start <- years[period$start]
+  period$end <- years[period$end]
+  period$years <- paste(period$start, period$end, sep = "_")
+  #
+  for (i in 1:nrow(period)) {
+    producer_period <- producer %>% filter(between(year, period$start[i], period$end[i]))
+    consumer_period <- consumer %>% filter(between(year, period$start[i], period$end[i]))
+    calculate_agg_stability(producer_data = producer_period, consumer_data = consumer_period, site_name=sites[isite])
+    # pull the output dataframe
+    agg_ds_site <- get(paste0(sites[isite], "_aggregate_dss"))
+    
+    if (i == 1 & isite == 1) {
+      agg_ds_allsites <- data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite])
+    } else {
+      agg_ds_allsites <- rbind(agg_ds_allsites, data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite]))
+    }
+  }
+  #
+}
+#
+agg_ds_allsites$site_period <- paste(agg_ds_allsites$site, agg_ds_allsites$period, sep="_")
+# we have 24 site_period in total
+
+# rename plot to ensure every plot is unique across these sites
+agg_ds_allsites$plot_new <- paste(agg_ds_allsites$site_new, agg_ds_allsites$plot, sep="_")
+
+# Step 1: log transform producer stability and consumer stability
+agg_ds_allsites$prod_stability_log <- log(agg_ds_allsites$prod_stability)
+agg_ds_allsites$con_stability_log <- log(agg_ds_allsites$con_stability)
+
+# the study site "aims", "GCE" caused the residual problem. 
+agg_ds_aquatic <- agg_ds_allsites %>% filter(site %in% c("USVI", "sbc", "aims", "GCE", "mcr")) # "USVI", "sbc", "aims", "GCE", "mcr"
+agg_ds_terrestrial <- agg_ds_allsites %>% filter(site %in% c("CDR_oldField", "KBS", "KNZ"))
+
+# if you'd like to see the results of terrestrial ecosystems; uncomment the next line; 
+# agg_ds_aquatic <- agg_ds_terrestrial
+
+# ggplot(data=agg_ds_aquatic, aes(x = prod_richness, y = prod_stability_log, col = site)) +
+#   geom_point()
+
+# get z-score of two richness and stability metrics
+agg_ds_aquatic$prod_stability_zscore <- scale(agg_ds_aquatic$prod_stability)
+agg_ds_aquatic$con_stability_zscore <- scale(agg_ds_aquatic$con_stability)
+agg_ds_aquatic$prod_stability_log_zscore <- scale(agg_ds_aquatic$prod_stability_log)
+agg_ds_aquatic$con_stability_log_zscore <- scale(agg_ds_aquatic$con_stability_log)
+#
+agg_ds_aquatic$prod_richness_zscore <- scale(agg_ds_aquatic$prod_richness)
+agg_ds_aquatic$con_richness_zscore <- scale(agg_ds_aquatic$con_richness)
+# we should not log transform richness
+# agg_ds_aquatic$prod_richness_log_zscore <- scale(log(agg_ds_aquatic$prod_richness))
+# agg_ds_aquatic$con_richness_log_zscore <- scale(log(agg_ds_aquatic$con_richness))
+
+
+# get plot mean diversity metrics
+agg_ds_aquatic_plot_mean <- agg_ds_aquatic %>% group_by(plot_new) %>% summarise(prod_richness_zscore_plot_mean = mean(prod_richness_zscore), con_richness_zscore_plot_mean = mean(con_richness_zscore))
+
+# get site_period mean diversity metrics
+agg_ds_aquatic_site_period_mean <- agg_ds_aquatic %>% group_by(site_period) %>% summarise(prod_richness_zscore_site_period_mean = mean(prod_richness_zscore), con_richness_zscore_site_period_mean = mean(con_richness_zscore))
+  
+# join the original table
+if (!"prod_richness_zscore_plot_mean" %in% names(agg_ds_aquatic)) {
+  agg_ds_aquatic <- agg_ds_aquatic %>% left_join(agg_ds_aquatic_plot_mean, by = "plot_new") %>%
+  left_join(agg_ds_aquatic_site_period_mean, by = "site_period")
+}
+
+agg_ds_aquatic$prod_richness_zscore_plot_mean_devi <- agg_ds_aquatic$prod_richness_zscore - agg_ds_aquatic$prod_richness_zscore_plot_mean
+agg_ds_aquatic$con_richness_zscore_plot_mean_devi <- agg_ds_aquatic$con_richness_zscore - agg_ds_aquatic$con_richness_zscore_plot_mean
+
+# For producer stability
+# use a simple linear mixed model
+mod_aquatic_prod <- lmer(data=agg_ds_aquatic, prod_stability_log_zscore ~ prod_richness_zscore_plot_mean_devi + prod_richness_zscore_plot_mean + prod_richness_zscore_site_period_mean + con_richness_zscore_plot_mean_devi + con_richness_zscore_plot_mean + con_richness_zscore_site_period_mean + (1|plot) + (1|site_period))
+summary(mod_aquatic_prod)
+plot(DHARMa::simulateResiduals(mod_aquatic_prod)) # failed in KS test for aquatic ecosystems
+
+# use other linear mixed models: brms
+mod_aquatic_prod_brm <- brm(data=agg_ds_aquatic, prod_stability_log_zscore ~ prod_richness_zscore_plot_mean_devi + con_richness_zscore_plot_mean_devi + prod_richness_zscore_plot_mean + prod_richness_zscore_site_period_mean + con_richness_zscore_plot_mean + con_richness_zscore_site_period_mean + (1|plot) + (1|site_period),
+                            family = gaussian(),
+                            chains = 4, cores = 4, control = list(adapt_delta = 0.95))
+summary(mod_aquatic_prod_brm)
+# 
+# # Step 1: simulate posterior predictions
+# y_rep <- posterior_predict(mod_aquatic_prod_brm, ndraws = 1000)  # nsamples x n_obs
+# y_rep_t <- t(y_rep)
+# 
+# # Step 2: convert to DHARMa object
+# sim <- createDHARMa(
+#   simulatedResponse = y_rep_t,                 # transpose to n_obs x nsim
+#   observedResponse = as.vector(agg_ds_aquatic$prod_stability_log_zscore),
+#   fittedPredictedResponse = apply(y_rep_t, 1, median),
+#   integerResponse = FALSE
+# )
+# plot(sim)
+# 
+# hist(apply(y_rep_t, 1, median) - as.vector(agg_ds_aquatic$prod_stability_log_zscore))
+
+# For consumer stability
+# use a simple linear mixed model
+mod_aquatic_con <- lmer(data=agg_ds_aquatic, con_stability_log_zscore ~ prod_richness_zscore_plot_mean_devi + prod_richness_zscore_plot_mean + prod_richness_zscore_site_period_mean + con_richness_zscore_plot_mean_devi + con_richness_zscore_plot_mean + con_richness_zscore_site_period_mean + (1|plot) + (1|site_period))
+summary(mod_aquatic_con)
+plot(DHARMa::simulateResiduals(mod_aquatic_con))
+
+# use other linear mixed models: brms
+mod_aquatic_con_brm <- brm(data=agg_ds_aquatic, con_stability_log_zscore ~ prod_richness_zscore_plot_mean_devi + con_richness_zscore_plot_mean_devi + prod_richness_zscore_plot_mean + prod_richness_zscore_site_period_mean + con_richness_zscore_plot_mean + con_richness_zscore_site_period_mean + (1|plot) + (1|site_period),
+                            family = gaussian(),
+                            chains = 4, cores = 4, control = list(adapt_delta = 0.95))
+summary(mod_aquatic_con_brm)
+
+
+```
+
+```{r using overlapping method temporal method to calculate diversity and stability relationship}
+# Need to take account of autocorrelation in models
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms, nlme)
+rm(list=ls())
+
+source('/Users/junnawang/courses/SSECR/Diversity_stability/scripts/00_functions_minimize.R')
+
+tmp <- tempfile(fileext = ".csv")
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"), type='csv')
+
+# sites: 
+sites_aquatic <- c("usvi_fish", "sbc_fish", "sbc_invert", "aims", "gce", "mcr_fish", "mcr_invert")
+sites_terrestrial <- c("cdr_of", "kbs", "knz")
+sites <- c(sites_aquatic, sites_terrestrial)
+
+# number of years to aggregate to calculate stability; this can be changed.
+duration = 5
+
+for (isite in 1:length(sites)) {
+  
+  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_producers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
+  producer <- read.csv(tmp)
+  
+  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_consumers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
+  consumer <- read.csv(tmp)
+  
+  years <- sort(unique(producer$year))
+  
+  nyears <- length(years)
+  
+  # need to test the effect of the by value here!
+  period <- data.frame(start = seq(1, nyears - duration + 1, by = 2), end = seq(duration, nyears, by = 2))
+
+  period$start <- years[period$start]
+  period$end <- years[period$end]
+  period$years <- paste(period$start, period$end, sep = "_")
+  #
+  for (i in 1:nrow(period)) {
+    producer_period <- producer %>% filter(between(year, period$start[i], period$end[i]))
+    consumer_period <- consumer %>% filter(between(year, period$start[i], period$end[i]))
+    calculate_agg_stability(producer_data = producer_period, consumer_data = consumer_period, site_name=sites[isite])
+    # pull the output dataframe
+    agg_ds_site <- get(paste0(sites[isite], "_aggregate_dss"))
+    
+    if (i == 1 & isite == 1) {
+      agg_ds_allsites <- data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite])
+    } else {
+      agg_ds_allsites <- rbind(agg_ds_allsites, data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite]))
+    }
+  }
+  #
+}
+#
+agg_ds_allsites$site_period <- paste(agg_ds_allsites$site, agg_ds_allsites$period, sep="_")
+# we have 94 site_period in total
+
+# rename plot to ensure every plot is unique across these sites
+agg_ds_allsites$plot_new <- paste(agg_ds_allsites$site_new, agg_ds_allsites$plot, sep="_")
+
+# Step 1: log transform producer stability and consumer stability
+agg_ds_allsites$prod_stability_log <- log(agg_ds_allsites$prod_stability)
+agg_ds_allsites$con_stability_log <- log(agg_ds_allsites$con_stability)
+
+# the study site "aims", "GCE" caused the residual problem. 
+agg_ds_aquatic <- agg_ds_allsites %>% filter(site %in% c("USVI", "sbc", "aims", "GCE", "mcr")) # "USVI", "sbc", "aims", "GCE", "mcr"
+agg_ds_terrestrial <- agg_ds_allsites %>% filter(site %in% c("CDR_oldField", "KBS", "KNZ"))
+
+# if you'd like to see the results of terrestrial ecosystems; uncomment the next line; 
+# agg_ds_aquatic <- agg_ds_terrestrial
+
+# ggplot(data=agg_ds_aquatic, aes(x = prod_richness, y = prod_stability_log, col = site)) +
+#   geom_point()
+
+# get z-score of two richness and stability metrics
+agg_ds_aquatic$prod_stability_zscore <- scale(agg_ds_aquatic$prod_stability)
+agg_ds_aquatic$con_stability_zscore <- scale(agg_ds_aquatic$con_stability)
+agg_ds_aquatic$prod_stability_log_zscore <- scale(agg_ds_aquatic$prod_stability_log)
+agg_ds_aquatic$con_stability_log_zscore <- scale(agg_ds_aquatic$con_stability_log)
+#
+agg_ds_aquatic$prod_richness_zscore <- scale(agg_ds_aquatic$prod_richness)
+agg_ds_aquatic$con_richness_zscore <- scale(agg_ds_aquatic$con_richness)
+# we should not log transform richness
+# agg_ds_aquatic$prod_richness_log_zscore <- scale(log(agg_ds_aquatic$prod_richness))
+# agg_ds_aquatic$con_richness_log_zscore <- scale(log(agg_ds_aquatic$con_richness))
+
+
+# get plot mean diversity metrics
+agg_ds_aquatic_plot_mean <- agg_ds_aquatic %>% group_by(plot_new) %>% summarise(prod_richness_zscore_plot_mean = mean(prod_richness_zscore), con_richness_zscore_plot_mean = mean(con_richness_zscore))
+
+# get site_period mean diversity metrics
+agg_ds_aquatic_site_period_mean <- agg_ds_aquatic %>% group_by(site_period) %>% summarise(prod_richness_zscore_site_period_mean = mean(prod_richness_zscore), con_richness_zscore_site_period_mean = mean(con_richness_zscore))
+  
+# join the original table
+if (!"prod_richness_zscore_plot_mean" %in% names(agg_ds_aquatic)) {
+  agg_ds_aquatic <- agg_ds_aquatic %>% left_join(agg_ds_aquatic_plot_mean, by = "plot_new") %>%
+  left_join(agg_ds_aquatic_site_period_mean, by = "site_period")
+}
+
+agg_ds_aquatic$prod_richness_zscore_plot_mean_devi <- agg_ds_aquatic$prod_richness_zscore - agg_ds_aquatic$prod_richness_zscore_plot_mean
+agg_ds_aquatic$con_richness_zscore_plot_mean_devi <- agg_ds_aquatic$con_richness_zscore - agg_ds_aquatic$con_richness_zscore_plot_mean
+
+# For producer stability
+# use a simple linear mixed model (lme), but lme cannot handle crossed random effects. 
+# use other linear mixed models: brms
+# producer community
+mod_aquatic_prod_brm <- brm(
+  formula = bf(
+    prod_stability_log_zscore ~
+      prod_richness_zscore_plot_mean_devi +
+      con_richness_zscore_plot_mean_devi +
+      prod_richness_zscore_plot_mean +
+      prod_richness_zscore_site_period_mean +
+      con_richness_zscore_plot_mean +
+      con_richness_zscore_site_period_mean +
+      (1 | plot_new) +
+      (1 | site_period),
+    autocor = cor_ar(~ period | plot_new, p = 1)
+  ),
+  data = agg_ds_aquatic,
+  family = gaussian(),
+  chains = 4, cores = 4, iter = 2000,
+  control = list(adapt_delta = 0.95)
+)
+summary(mod_aquatic_prod_brm)
+# It make a significant difference whether consider the AR(1) structure or not!
+# 
+#-------------consumer community
+mod_aquatic_prod_brm <- brm(
+  formula = bf(
+    con_stability_log_zscore ~
+      prod_richness_zscore_plot_mean_devi +
+      con_richness_zscore_plot_mean_devi +
+      prod_richness_zscore_plot_mean +
+      prod_richness_zscore_site_period_mean +
+      con_richness_zscore_plot_mean +
+      con_richness_zscore_site_period_mean +
+      (1 | plot_new) +
+      (1 | site_period),
+    autocor = cor_ar(~ period | plot_new, p = 1)
+  ),
+  data = agg_ds_aquatic,
+  family = gaussian(),
+  chains = 4, cores = 4, iter = 2000,
+  control = list(adapt_delta = 0.95)
+)
+summary(mod_aquatic_prod_brm)
+
+# when adding residual autocorrelation structure, diversity's effects are mostly non-significant. 
+# QUESTION: there may be some problems with those sites that have two consumer categories (data are not independent). 
+
+
+```
+
+

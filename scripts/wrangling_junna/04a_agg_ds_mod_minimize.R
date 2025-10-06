@@ -9,10 +9,10 @@ tmp <- tempfile(fileext = ".csv")
 
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"), type='csv')
 drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
-mar <- read.csv(tmp)
+terr <- read.csv(tmp)
 
 drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
-terr <- read.csv(tmp)
+mar <- read.csv(tmp)
 
 #-------------------------------------------------------------------------------
 # z_standard
