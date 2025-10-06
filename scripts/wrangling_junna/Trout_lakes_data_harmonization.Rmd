@@ -59,6 +59,10 @@ data_phyto_trout_out$abundance <- data_phyto_trout2005$biomass_conc
 data_phyto_trout_out$abundance[data_phyto_trout_out$abundance==0.0000] <- 0.0001
 data_phyto_trout_out$id_confidence <- TRUE
 data_phyto_trout_out$id_confidence[data_phyto_trout_out$species=="Miscellaneous"] <- FALSE
+
+# remove rows with empty taxon_name
+data_phyto_trout_out <- data_phyto_trout_out[data_phyto_trout_out$taxon_name != '', ]
+
 ####
 write.csv(data_phyto_trout_out, 'harmonized_data/phytoplankton_trout_lake_area.csv', row.names = F)
 ####
@@ -118,6 +122,9 @@ data_zoop_trout_out$id_confidence[data_zoop_trout_out$species==''] <- FALSE
 ###
 # ### merge duplicated rows
 # data_zoop_trout_out <- data_zoop_trout_out %>% group_by(site, taxa_type, ecosystem, habitat, biome, guild, year, month, day, plot, unique_ID, unit_abundance, scale_abundance, species) %>% summarise(abundance = sum(abundance))
+
+# remove rows 
+data_zoop_trout_out <- data_zoop_trout_out[data_zoop_trout_out$taxon_name != '', ]
 
 ####
 write.csv(data_zoop_trout_out, 'harmonized_data/zooplankton_trout_lake_area.csv', row.names = F)

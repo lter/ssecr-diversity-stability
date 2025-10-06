@@ -119,8 +119,6 @@ plot(residuals(mod_mar_con2), predict(mod_mar_con2))
 
 
 ```{r using the non-overlapping temporal method to calculate diversity and stability relationship}
-# auto-correlation in the residuals is not considered in this case. 
-
 library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms)
@@ -299,7 +297,7 @@ for (isite in 1:length(sites)) {
   nyears <- length(years)
   
   # need to test the effect of the by value here!
-  period <- data.frame(start = seq(1, nyears - duration + 1, by = 1), end = seq(duration, nyears, by = 1))
+  period <- data.frame(start = seq(1, nyears - duration + 1, by = 2), end = seq(duration, nyears, by = 2))
 
   period$start <- years[period$start]
   period$end <- years[period$end]
@@ -415,7 +413,7 @@ mod_aquatic_prod_brm <- brm(
 )
 summary(mod_aquatic_prod_brm)
 
-
+# when adding residual autocorrelation structure, diversity's effects are mostly non-significant. 
 # QUESTION: there may be some problems with those sites that have two consumer categories (data are not independent). 
 
 

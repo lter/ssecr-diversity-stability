@@ -1,0 +1,303 @@
+---
+title: "Madison_lakes_data_harmonization"
+output: pdf_document
+date: "2025-03-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(librarian)
+shelf('tidyverse', 'vegan', 'ggpubr', "terra", googlesheets4, googledrive)
+
+```
+
+
+```{r geographical location of these lakes}
+lake_maps <- terra::vect("/Users/junnawang/courses/SSECR/data_discovery/adk_lake_data/lake_polygons.shp")
+plot(lake_maps)
+ext(lake_maps)
+
+# (xmin, xmax): 1739818.17409298 - 1662021.62320784; 78km
+# (ymin, ymax): 2516942.64106795 - 2450218.5264566; 67km
+
+# they are in the same area of the new york state. The region has ~ 2800 lakes. 
+
+```
+
+
+```{r phytoplankton in ADK Lake area}
+# 28 lakes in the Adirondack Mountains of northern New York State.
+# Paper related to this dataset: 
+# Long-term dataset on aquatic responses to concurrent climate change and recovery from acidification
+path <- "/Users/junnawang/courses/SSECR/data_discovery/adk_lake_data/"
+data_phyto <- read.csv(file.path(path, 'phyto.csv'))  # crustacean; phyto; rotifer
+unique(data_phyto$lake.name) # 28 lakes
+unique(data_phyto$year) # 1994:2008, 2010:2012; 18 years; however, half number of lakes only have data before 2006
+
+# Years with full measurements
+data_phyto %>% group_by(lake.name, year) %>% summarise(n = n_distinct(date)) %>%
+  pivot_wider(names_from = year, values_from = n) %>% filter(is.na(`2008`))
+# Squash lake missed data in 1994.
+
+data_phyto_out <- data.frame(
+  site = 'ADK',
+  taxa_type = "producer",
+  ecosystem = "aquatic",
+  habitat_broad = 'lake',
+  habitat_fine = 'lake',
+  biome = 'temperate',
+  guild = 'plant',
+  herbivore = 'no',
+  year=data_phyto$year, 
+  month=data_phyto$month, 
+  day=data_phyto$day,
+  plot=data_phyto$lake.name
+)
+
+data_phyto_out <- data_phyto_out %>% 
+  mutate(unique_ID=paste(data_phyto_out$site, data_phyto_out$habitat_fine, data_phyto_out$plot, sep='_'), 
+         unit_abundance="um3/mL",
+         scale_abundance="1mL",
+         taxon_name=paste(data_phyto$Phylum, data_phyto$Class, data_phyto$Order, data_phyto$Family, data_phyto$Genus, data_phyto$Species, sep=" "), 
+         abundance=data_phyto$biovol.um3.per.ml)
+
+
+data_phyto_out$id_confidence <- TRUE
+data_phyto_out$id_confidence[data_phyto$Phylum == "unknown" | data_phyto$Class == "unknown" | data_phyto$Order == "unknown" | data_phyto$Family == "unknown" | data_phyto$Genus == "unknown" | data_phyto$Species == "unknown"] <- FALSE
+####
+write.csv(data_phyto_out, 'harmonized_data/phytoplankton_ADK_lake_area.csv', row.names = F)
+####
+googledrive::drive_upload(media = file.path("harmonized_data/phytoplankton_ADK_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1s8rFT3MJPAeO58q8UwZl5agynehujBbf"))
+
+####note: the data is not aggregated to annual average####
+
+```
+
+
+```{r zooplankton in ADK Lake area}
+library(tidyverse)
+# zooplankton identification is very coarse
+
+# data_zoop_madison <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.90.36&entityid=5880c7ba184589e239aec9c55f9d313b')
+path <- "/Users/junnawang/courses/SSECR/data_discovery/adk_lake_data/"
+data_zoop <- read.csv(file.path(path, 'crustacean.csv'))
+sum(duplicated(data_zoop))
+
+
+#### prepare for output datasets
+data_zoop_out <- data.frame(
+  site = "ADK",
+  taxa_type = "consumer",
+  ecosystem = "aquatic",
+  habitat_broad = 'lake',
+  habitat_fine = 'lake',
+  biome = 'temperate',
+  guild = 'zooplankton',
+  herbivore = 'unsure',
+  year=data_zoop$year,
+  month=data_zoop$month,
+  day=data_zoop$day,
+  plot=data_zoop$lake.name
+)
+
+data_zoop_out <- data_zoop_out %>% 
+  mutate(unique_ID=paste(data_zoop_out$site, data_zoop_out$habitat_fine, data_zoop_out$plot, sep='_'), 
+         unit_abundance="mg wet weight/L",
+         scale_abundance="1L",
+         taxon_name=paste(data_zoop$Group, data_zoop$Taxa, data_zoop$Genus, data_zoop$Species, sep=' '), 
+         abundance=data_zoop$mgWW.l,
+         id_confidence=TRUE
+         )
+# these unknown should be used in my opinion. 
+data_zoop_out$id_confidence[data_zoop$Group=='unknown' | data_zoop$Taxa=='unknown' | data_zoop$Genus=='unknown' | data_zoop$Species=='unknown'] <- FALSE
+
+# only use the rows with numbers. 
+data_zoop_out <- data_zoop_out[data_zoop_out$abundance > 0, ]
+# write out
+write.csv(data_zoop_out, 'harmonized_data/zooplankton_ADK_lake_area.csv', row.names = F)
+googledrive::drive_upload(media = file.path("harmonized_data/zooplankton_ADK_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1s8rFT3MJPAeO58q8UwZl5agynehujBbf"))
+
+####trophic information####
+
+```
+
+
+```{r rotifer in ADK Lake area}
+library(tidyverse)
+
+# data_zoop_madison <- read.csv('https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-ntl.90.36&entityid=5880c7ba184589e239aec9c55f9d313b')
+path <- "/Users/junnawang/courses/SSECR/data_discovery/adk_lake_data/"
+data_rotifer <- read.csv(file.path(path, 'rotifer.csv'))
+sum(duplicated(data_rotifer))
+
+
+#### prepare for output datasets
+data_rotifer_out <- data.frame(
+  site = "ADK",
+  taxa_type = "consumer",
+  ecosystem = "aquatic",
+  habitat_broad = 'lake',
+  habitat_fine = 'lake',
+  biome = 'temperate',
+  guild = 'rotifer',
+  herbivore = 'herbivore&detritivore',
+  year=data_rotifer$year,
+  month=data_rotifer$month,
+  day=data_rotifer$day,
+  plot=data_rotifer$lake.name
+)
+
+data_rotifer_out <- data_rotifer_out %>% 
+  mutate(unique_ID=paste(data_rotifer_out$site, data_rotifer_out$habitat_fine, data_rotifer_out$plot, sep='_'), 
+         unit_abundance="mg wet weight/L",
+         scale_abundance="1L",
+         taxon_name=paste(data_rotifer$Group, data_rotifer$Family, data_rotifer$Genus, data_rotifer$Species, sep=' '), 
+         abundance=data_rotifer$mgWW.l,
+         id_confidence=TRUE
+         )
+data_rotifer_out$id_confidence[data_rotifer$Group=='unknown' | data_rotifer$Family=='unknown' | data_rotifer$Genus=='unknown' | data_rotifer$Species=='unknown'] <- FALSE
+
+# only use the rows with numbers. 
+data_rotifer_out <- data_rotifer_out[data_rotifer_out$abundance > 0, ]
+# write out
+write.csv(data_rotifer_out, 'harmonized_data/rotifer_ADK_lake_area.csv', row.names = F)
+googledrive::drive_upload(media = file.path("harmonized_data/rotifer_ADK_lake_area.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1s8rFT3MJPAeO58q8UwZl5agynehujBbf"))
+
+
+```
+
+```{r simple analysis of all lake datasets}
+path = '/Users/junnawang/courses/SSECR/Diversity_stability'
+source(file.path(path, "scripts/00_functions_minimize.R"))
+
+# filter data
+filter_data('ADK_zoop', # site name as string
+                        data_phyto_out, # producer df
+                        data_zoop_out, # consumer df
+                        "mean", # c("mean", "sum") 
+                        minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                        output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                        write_csv = FALSE)
+# 28 lakes, 10 years 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2004, 2005, 2006
+
+filter_data('ADK_rotifer', # site name as string
+                        data_phyto_out, # producer df
+                        data_rotifer_out, # consumer df
+                        "mean", # c("mean", "sum") 
+                        minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                        output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                        write_csv = FALSE)
+
+tmp <- tempfile(fileext = ".csv")
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1zzesyCB6l88ZqG7rB5uYpIUUe81LCzOx"), type='csv')
+# two lakes in Trout area
+drive_download(drive_folder[drive_folder$name == "phytoplankton_trout_lake_area.csv",], path = tmp, overwrite = TRUE)
+NTL_trout_phyto <- read.csv(tmp)
+
+drive_download(drive_folder[drive_folder$name == "zooplankton_trout_lake_area.csv",], path = tmp, overwrite = TRUE)
+NTL_trout_zoop <- read.csv(tmp)
+
+# two lakes in Madison area
+drive_download(drive_folder[drive_folder$name == "zooplankton_madison_lake_area.csv",], path = tmp, overwrite = TRUE)
+NTL_madison_zoop <- read.csv(tmp)
+
+drive_download(drive_folder[drive_folder$name == "phytoplankton_madison_lake_area.csv",], path = tmp, overwrite = TRUE)
+NTL_madison_phyto <- read.csv(tmp)
+
+filter_data('NTL_madison', # site name as string
+                        NTL_madison_phyto, # producer df
+                        NTL_madison_zoop, # consumer df
+                        "mean", # c("mean", "sum") 
+                        minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                        output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                        write_csv = FALSE)
+
+filter_data('NTL_trout', # site name as string
+                        NTL_trout_phyto, # producer df
+                        NTL_trout_zoop, # consumer df
+                        "mean", # c("mean", "sum") 
+                        minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                        output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                        write_csv = FALSE)
+
+#
+calculate_agg_stability(ADK_zoop_producers_wide_sub, # synthesized producer data after filtering
+                        ADK_zoop_consumers_wide_sub, # synthesized consumer data after filtering
+                                    site_name = "ADK_zoop", # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                                    write_csv = FALSE) # option to automatically write csv
+
+calculate_agg_stability(ADK_rotifer_producers_wide_sub, # synthesized producer data after filtering
+                        ADK_rotifer_consumers_wide_sub, # synthesized consumer data after filtering
+                                    site_name = "ADK_rotifer", # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                                    write_csv = FALSE) # option to automatically write csv
+
+calculate_agg_stability(NTL_madison_producers_wide_sub, # synthesized producer data after filtering
+                        NTL_madison_consumers_wide_sub, # synthesized consumer data after filtering
+                                    site_name = "NTL_madison", # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                                    write_csv = FALSE) # option to automatically write csv
+
+calculate_agg_stability(NTL_trout_producers_wide_sub, # synthesized producer data after filtering
+                        NTL_trout_consumers_wide_sub, # synthesized consumer data after filtering
+                                    site_name = "NTL_trout", # vector c("Terrestrial", "Marine") indictaing ecosystem type
+                                    output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
+                                    write_csv = FALSE) # option to automatically write csv
+
+# no such relationships for rotifers; mostly detrivores. so may be only using zooplankton. 
+plot(ADK_rotifer_aggregate_dss$prod_richness, ADK_rotifer_aggregate_dss$con_stability)
+plot(ADK_rotifer_aggregate_dss$con_richness, ADK_rotifer_aggregate_dss$con_stability)  # 
+
+
+plot(ADK_zoop_aggregate_dss$prod_richness, ADK_zoop_aggregate_dss$prod_stability)
+
+plot(ADK_zoop_aggregate_dss$prod_richness, ADK_zoop_aggregate_dss$con_stability)
+
+plot(ADK_zoop_aggregate_dss$con_richness, ADK_zoop_aggregate_dss$con_stability)
+
+plot(ADK_zoop_aggregate_dss$prod_richness, ADK_zoop_aggregate_dss$con_richness)
+
+# Rotifers
+plot(ADK_rotifer_aggregate_dss$prod_richness, ADK_rotifer_aggregate_dss$con_richness)
+
+plot(ADK_rotifer_aggregate_dss$prod_stability, ADK_rotifer_aggregate_dss$con_stability)
+
+plot(ADK_zoop_aggregate_dss$prod_stability, ADK_zoop_aggregate_dss$con_stability)
+
+lake_aggregate_dss <- rbind(NTL_madison_aggregate_dss, NTL_trout_aggregate_dss, ADK_zoop_aggregate_dss)
+
+plot(lake_aggregate_dss$prod_richness, lake_aggregate_dss$prod_stability)
+plot(lake_aggregate_dss$con_richness, lake_aggregate_dss$con_stability)
+
+ggplot(lake_aggregate_dss, aes(x=prod_richness, y=prod_stability, col=site)) +
+  geom_point()
+
+ggplot(lake_aggregate_dss, aes(x=con_richness, y=con_stability, col=site)) +
+  geom_point()
+
+# calculate effect size by controlling confounding effect
+summary(lm(data=lake_aggregate_dss, prod_stability ~ prod_richness + con_richness + site))
+summary(lm(data=lake_aggregate_dss, con_stability ~ prod_richness + con_richness + site))
+
+site_mean <- lake_aggregate_dss %>% group_by(site) %>% summarise(prod_richness_mean = mean(prod_richness), con_richness_mean = mean(con_richness), prod_stability_mean = mean(prod_stability), con_stability_mean = mean(con_stability))
+
+if (!"prod_stability_mean" %in% names(lake_aggregate_dss)) {
+  lake_aggregate_dss <- left_join(lake_aggregate_dss, site_mean, by = 'site')
+}
+lake_aggregate_dss$prod_richness_dev <- lake_aggregate_dss$prod_richness - lake_aggregate_dss$prod_richness_mean
+lake_aggregate_dss$con_richness_dev <- lake_aggregate_dss$con_richness - lake_aggregate_dss$con_richness_mean
+lake_aggregate_dss$prod_stability_dev <- lake_aggregate_dss$prod_stability - lake_aggregate_dss$prod_stability_mean
+lake_aggregate_dss$con_stability_dev <- lake_aggregate_dss$con_stability - lake_aggregate_dss$con_stability_mean
+
+summary(lm(data=lake_aggregate_dss, prod_stability_dev ~ prod_richness_dev + con_richness_dev))
+summary(lm(data=lake_aggregate_dss, con_stability_dev ~ prod_richness_dev + con_richness_dev))
+
+
+
+
+```
+

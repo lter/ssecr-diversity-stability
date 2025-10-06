@@ -6,6 +6,9 @@ rm(list=ls())
 source('scripts/00_functions_minimize.R')
 
 
+# References related to this study: 
+# Changes in plant-herbivore network structure and robustness along land-use intensity gradients in grasslands and forests
+
 tmp <- tempfile(fileext = ".csv")
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1aNuNslzIM4g03cZ85rjgsG-bbE1fuGec"), type='csv')
 
