@@ -149,12 +149,27 @@ fish_3 %>%
   is.na() %>% 
   unique() # now no NA's except the two swaths with no fish on them (those are the NA's in id_confidence)
 
+## -------------------------------------------- ##
+#            Designate herbivores ----
+## -------------------------------------------- ##
+
+# look to see what groups we want to include as herbivores
+# what species are in these groups?
+fish_3 %>% 
+  filter(Coarse_Trophic == "Primary Consumer") %>% 
+  group_by(Coarse_Trophic, Fine_Trophic, Taxonomy) %>% 
+  summarize(n = n()) # Based on these, just going to include all that are technically "primary consumers"
+
+# assign herbivore designation
+fish_3 %>% 
+  mutate(herbivore = case_when(Coarse_Trophic == "Primary Consumer" ~ "y",
+                               TRUE ~ "n")) -> fish_4
 
 ## -------------------------------------------- ##
 #             SSECR format ----
 ## -------------------------------------------- ##
 
-fish_3 %>% 
+fish_4 %>% 
   rowwise() %>% 
   mutate(site = "mcr",
          taxa_type = str_to_lower(Fine_Trophic),
@@ -163,7 +178,6 @@ fish_3 %>%
          habitat_fine = str_to_lower(Habitat),
          biome = "tropical",
          guild = "fish",
-         herbivore = NA,
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
@@ -179,7 +193,7 @@ fish_3 %>%
   ) %>%
   select(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, herbivore,
          year, month, day, plot, subplot, unique_ID, unit_abundance,
-         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> fish_4
+         scale_abundance, taxon_name, taxon_resolution, abundance, id_confidence) -> fish_5
 
 
 ## -------------------------------------------- ##
@@ -187,12 +201,12 @@ fish_3 %>%
 ## -------------------------------------------- ##
 
 # year range
-fish_4 %>% 
+fish_5 %>% 
   select(year) %>% 
   range()
 
 # number of taxa
-fish_4 %>% 
+fish_5 %>% 
   select(taxon_name) %>% 
   unique() %>% 
   dim()
@@ -201,7 +215,7 @@ fish_4 %>%
 #             Write CSV ----
 ## -------------------------------------------- ##
 
-write_csv(fish_4, here("../cleaned_data/mcr_fish.csv"))
+write_csv(fish_5, here("../cleaned_data/mcr_fish.csv"))
 
 
 
