@@ -159,7 +159,6 @@ invert_4 %>%
          habitat_fine = str_to_lower(Habitat),
          biome = "tropical",
          guild = "invertebrate",
-         herbivore = NA,
          year = Year,
          month = month(as.Date(Date)),
          day = day(as.Date(Date)),
