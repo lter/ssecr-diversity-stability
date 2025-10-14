@@ -1,0 +1,60 @@
+---
+title: "Explore neonPlantEcology"
+author: "Julianna Renzi"
+date: "2025-07-23"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Clear environment for maximum reproducibility
+rm(list=ls())
+
+# load librarian (package for installing/loading packages)
+if (!require("librarian")) install.packages("librarian")
+
+# Load other necessary libraries
+librarian::shelf(#here, # relative file paths
+                 #tidyverse, # data wrangling
+                 #neonPlantEcology,
+                 neonUtilities
+) 
+```
+
+# Load data for all sites
+
+npe_download and loadByProduct not working for me. Getting this error: 
+
+**Error in data.table::rbindlist(list(vlist[[vtable]], c(table = tables[i],  : 
+  unused argument (ignore.attr = TRUE)**
+
+```{r}
+d <- zipsByProduct(dpID = "DP1.10058.001", # data product ID for plant presence & cover
+              site = c("BART", "CPER"),
+              package = "basic",
+              include.provisional = FALSE,
+              startdate=NA,
+              enddate=NA,
+              check.size = F)
+
+tst <- stackByTable(filepath = here("filesToStack10058"),
+                    savepath = here("filesToSave"))
+```
+
+Problem:
+
+```{r}
+bart <- loadByProduct(dpID = "DP1.10058.001",
+              site = "BART",
+              package = "basic",
+              check.size = F)
+
+```
+
+#
+
+
+
