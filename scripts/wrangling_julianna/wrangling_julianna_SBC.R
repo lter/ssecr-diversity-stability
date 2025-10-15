@@ -111,7 +111,6 @@ sbc_2 %>%
   mutate(ecosystem = "aquatic") %>% 
   mutate(habitat_broad = "kelp_forest") %>% 
   mutate(biome = "temperate") %>% 
-  mutate(herbivore = NA) %>% 
   mutate(habitat_fine = NA) %>% 
   mutate(date = as.Date(DATE)) %>% 
   rename(year = YEAR) %>% 
