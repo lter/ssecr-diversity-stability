@@ -319,6 +319,34 @@ mcr_invert_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_invert_
 mcr_fish_prod_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_producers_wide_sub.csv"))
 mcr_fish_wide <- read.csv(here::here("data/wide_output_minimize", "mcr_fish_consumers_wide_sub.csv"))
 
+# JRN #
+jrn_prod_wide <- read.csv(here::here("data/wide_output_minimize", "producer_Jornada.csv"))
+jrn_con_wide <- read.csv(here::here("data/wide_output_minimize", "consumer_Jornada.csv"))
+
+jrn_con_wide <- jrn_con_wide %>%
+  group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild,
+           plot, year, unit_abundance, scale_abundance, taxon_name) %>%
+  summarize(abundance = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(
+    names_from = taxon_name,
+    values_from = abundance,
+    values_fill = 0
+  )
+
+jrn_prod_wide <- jrn_prod_wide %>%
+  group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild,
+           plot, year, unit_abundance, scale_abundance, taxon_name) %>%
+  summarize(abundance = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(
+    names_from = taxon_name,
+    values_from = abundance,
+    values_fill = 0
+  )
+
+jrn_prod_wide <- jrn_prod_wide %>%
+  mutate(plot = str_replace(plot, "_E$", "_ecotone"),
+         plot = str_replace(plot, "_G$", "_grassland"),
+         plot = str_replace(plot, "_S$", "_shrubland"))
 
 # 8. Diagnostic check that all plots surveyed have harmonized site-year combinations ----
 
@@ -387,6 +415,12 @@ matched <- match_site_years(mcr_invert_prod_wide, mcr_invert_wide)
 save_diag(matched$diagnostics, here::here("diagnostics", "mcr_producer_invert_consumer_year_matching.csv"))
 mcr_invert_prod_matched <- matched$prod
 mcr_invert_con_matched  <- matched$con
+
+# JRN Match
+matched <- match_site_years(jrn_prod_wide, jrn_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "gce_producer_consumer_year_matching.csv"))
+jrn_prod_matched <- matched$prod
+jrn_con_matched  <- matched$con
 
 # 9. Run analysis pipeline ----
 # Methods to run
@@ -679,6 +713,36 @@ for (m in methods) {
   )
 }
 
+# JRN 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("jrn_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "jrn", "producer", m)
+  message("Running JRN producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = jrn_prod_matched,
+    site_id = "jrn",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("jrn_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "jrn", "consumer", m)
+  message("Running JRN consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = jrn_con_matched,
+    site_id = "jrn",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
 # 10. Load model output files for compositional stability metrics ----
 
 knz_lengths <- bind_rows(
@@ -740,6 +804,16 @@ sbc_lengths <- bind_rows(
   load_lengths(here("outputs/cta/sbc/producer/hellinger/sbc_lengths_hellinger.csv"), "producer", "hellinger")
 )
 
+jrn_lengths <- bind_rows(
+  load_lengths(here("outputs/cta/jrn/consumer/bray/jrn_lengths_bray.csv"), "consumer", "bray"),
+  load_lengths(here("outputs/cta/jrn/consumer/jaccard/jrn_lengths_jaccard.csv"), "consumer", "jaccard"),
+  load_lengths(here("outputs/cta/jrn/consumer/chord/jrn_lengths_chord.csv"), "consumer", "chord"),
+  load_lengths(here("outputs/cta/jrn/consumer/hellinger/jrn_lengths_hellinger.csv"), "consumer", "hellinger"),
+  load_lengths(here("outputs/cta/jrn/producer/bray/jrn_lengths_bray.csv"), "producer", "bray"),
+  load_lengths(here("outputs/cta/jrn/producer/jaccard/jrn_lengths_jaccard.csv"), "producer", "jaccard"),
+  load_lengths(here("outputs/cta/jrn/producer/chord/jrn_lengths_chord.csv"), "producer", "chord"),
+  load_lengths(here("outputs/cta/jrn/producer/hellinger/jrn_lengths_hellinger.csv"), "producer", "hellinger")
+)
 # 11. Summary tables ----
 knz_length_summary <- knz_lengths %>%
   group_by(trophic, method) %>%
@@ -787,7 +861,14 @@ sbc_length_summary <- sbc_lengths %>%
   )
 print(sbc_length_summary)
 
-
+jrn_length_summary <- jrn_lengths %>%
+  group_by(trophic, method) %>%
+  summarise(
+    mean_length = mean(total_trajectory, na.rm = TRUE),
+    sd_length   = sd(total_trajectory, na.rm = TRUE),
+    .groups = "drop"
+  )
+print(jrn_length_summary)
 # 12. Figures: Boxplots of total and mean compositional stability across models ----
 plot_knz_tl_metric_comp <- ggplot(knz_lengths, aes(x = method, y = total_trajectory, fill = method)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +
@@ -947,6 +1028,43 @@ ggsave(
   dpi = 600
 )
 
+plot_jrn_tl_metric_comp <- ggplot(jrn_lengths, aes(x = method, y = total_trajectory, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "Total trajectory length", x = "Distance method",
+       title = "Compositional stability across distance methods (JRN)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_jrn_tl_metric_comp.png",
+  plot = plot_jrn_tl_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
 
+
+plot_jrn_mean_metric_comp <- ggplot(jrn_lengths, aes(x = method, y = mean_segment_length, fill = method)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 1) +
+  facet_wrap(~trophic, scales = "free_y") +
+  labs(y = "mean segment length", x = "Distance method",
+       title = "Compositional stability across distance methods (JRN)") +
+  theme_bw(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"),
+    strip.text = element_text(face = "bold")
+  )
+ggsave(
+  filename = "figures/cta/plot_jrn_mean_metric_comp.png",
+  plot = plot_jrn_mean_metric_comp,
+  width = 10,
+  height = 7,
+  dpi = 600
+)
 
   # End of script ----
