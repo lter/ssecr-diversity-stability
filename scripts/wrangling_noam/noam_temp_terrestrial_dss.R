@@ -91,7 +91,7 @@ Anova(terr_con_stab_mod)
 performance::r2(terr_con_stab_mod) # 0.144, 0.169
 
 
-aquatic_prod_stab_mod <- lmer(prod_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = aquatic_comb)
+aquatic_prod_stab_mod <- lmer(1/prod_stability  ~ prod_mean_cent + con_mean_cent + (1|site),  data = aquatic_comb)
 summary(aquatic_prod_stab_mod)
 # Estimate Std. Error t value
 # (Intercept)     6.81148    2.66280   2.558

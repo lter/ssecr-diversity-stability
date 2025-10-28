@@ -379,6 +379,99 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# JRN: Jordana
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1NPNdNCa2RJgTyiQmSZRURHCqVmFLrCR1"), type='csv')
+drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
+jrn_prod <- read_csv(tmp)
+
+drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
+jrn_con <- read_csv(tmp)
+
+# convert all spp to factors
+jrn_con$taxon_name <- as.factor(jrn_con$taxon_name)
+jrn_prod$taxon_name <- as.factor(jrn_prod$taxon_name)
+
+# convert names to lower case
+jrn_con$site <- as.factor(tolower(jrn_con$site))
+jrn_prod$site <- as.factor(tolower(jrn_prod$site))
+
+# convert producer plotnames to match consumer plotnames
+jrn_prod <- jrn_prod %>%
+  mutate(plot = str_replace(plot, "_E$", "_ecotone"),
+         plot = str_replace(plot, "_G$", "_grassland"),
+         plot = str_replace(plot, "_S$", "_shrubland"))
+
+
+result <- filter_data(site_name = 'jrn', # site name as string
+                      producer_data = jrn_prod, # producer df
+                      consumer_data = jrn_con, # consumer df
+                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                      output_folder = 'data/JRN', # string for output folder if writing csv 
+                      write_csv = TRUE)
+
+# NOAM NOTE: MANUALLY UPLOADED WIDE DATAFRAMES!
+
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# NTL_Trout: Northern Temperate Lakes LTER Trout Lake
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1_YcfL5sht-B0LOJH3gjdYozilxMLHmi6"), type='csv')
+drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
+ntl_trout_prod <- read_csv(tmp)
+
+drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
+ntl_trout_con <- read_csv(tmp)
+
+# convert all spp to factors
+ntl_trout_con$taxon_name <- as.factor(ntl_trout_con$taxon_name)
+ntl_trout_prod$taxon_name <- as.factor(ntl_trout_prod$taxon_name)
+
+# convert names to lower case
+ntl_trout_con$site <- as.factor(tolower(ntl_trout_con$site))
+ntl_trout_prod$site <- as.factor(tolower(ntl_trout_prod$site))
+
+# remove 2005 and 2006 as they are not consecutive with the rest of the data (ends in 1993 otherwise)
+ntl_trout_con <- ntl_trout_con[!ntl_trout_con$year %in% c(2005, 2006),]
+ntl_trout_prod <- ntl_trout_prod[!ntl_trout_prod$year %in% c(2005, 2006),]
+
+result <- filter_data(site_name = 'ntl_trout', # site name as string
+                      producer_data = ntl_trout_prod, # producer df
+                      consumer_data = ntl_trout_con, # consumer df
+                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                      output_folder = 'data/ntl', # string for output folder if writing csv 
+                      write_csv = TRUE)
+
+# NOAM NOTE: MANUALLY UPLOADED WIDE DATAFRAMES!
+
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# ntl_madison: Northern Temperate Lakes LTER Trout Lake
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1l9tGFwQOyak7bCSn1K5wYqC-xJhodnZt"), type='csv')
+drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
+ntl_madison_prod <- read_csv(tmp)
+
+drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
+ntl_madison_con <- read_csv(tmp)
+
+# convert all spp to factors
+ntl_madison_con$taxon_name <- as.factor(ntl_madison_con$taxon_name)
+ntl_madison_prod$taxon_name <- as.factor(ntl_madison_prod$taxon_name)
+
+# convert names to lower case
+ntl_madison_con$site <- as.factor(tolower(ntl_madison_con$site))
+ntl_madison_prod$site <- as.factor(tolower(ntl_madison_prod$site))
+
+result <- filter_data(site_name = 'ntl_madison', # site name as string
+                      producer_data = ntl_madison_prod, # producer df
+                      consumer_data = ntl_madison_con, # consumer df
+                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                      output_folder = 'data/ntl', # string for output folder if writing csv 
+                      write_csv = TRUE)
+
+# NOAM NOTE: MANUALLY UPLOADED WIDE DATAFRAMES!
+
+
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # CDR-Old field: cedar creek
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1yeKgZ8LMfDUS_N2iUJoBLb-u-SNctnhp"), type='csv')
 drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)

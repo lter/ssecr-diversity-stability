@@ -40,20 +40,31 @@ cdr_of_con_wide <- read.csv(tmp)
 
 calculate_agg_stability(producer_data = cdr_of_prod_wide, consumer_data = cdr_of_con_wide, "cdr_of")
 
-# add one more column, because some marine sites have two sets of producer-consumer data
+###### JRN ######
+drive_download(drive_folder[grepl('jrn_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+jrn_prod_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('jrn_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+jrn_con_wide <- read.csv(tmp)
+
+calculate_agg_stability(producer_data = jrn_prod_wide, consumer_data = jrn_con_wide, "jrn")
+
+# correct names
 knz_aggregate_dss <- knz_aggregate_dss %>% mutate(site_new = 'knz')
 kbs_aggregate_dss <- kbs_aggregate_dss %>% mutate(site_new = 'kbs')
 cdr_of_aggregate_dss <- cdr_of_aggregate_dss %>% mutate(site_new = 'cdr-of')
+jrn_aggregate_dss <- jrn_aggregate_dss %>% mutate(site_new = 'jrn')
 
 ###### COMBINE TERRESTRIAL AGGREGATE DFS ######
 terrestrial_agg_stability <- rbind(
   knz_aggregate_dss,
   kbs_aggregate_dss,
-  cdr_of_aggregate_dss
+  cdr_of_aggregate_dss,
+  jrn_aggregate_dss
 )
 
-write.csv(row.names = F, terrestrial_agg_stability, 'scripts/wrangling_junna/synthesized_data/terrestrial_agg_dss.csv')
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/synthesized_data/terrestrial_agg_dss.csv"), overwrite = T,
+write.csv(row.names = F, terrestrial_agg_stability, 'data/synthesized_data/terrestrial_agg_dss_10282025.csv')
+googledrive::drive_upload(media = file.path("data/synthesized_data/terrestrial_agg_dss_10282025.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 #### MARINE DATA ####
@@ -131,6 +142,24 @@ aims_con_wide <- read.csv(tmp)
 #
 calculate_agg_stability(producer_data = aims_prod_wide, consumer_data = aims_con_wide, "aims")
 
+###### NTL_TROUT ######
+drive_download(drive_folder[grepl('ntl_trout_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+ntl_trout_prod_wide <- read.csv(tmp)
+#
+drive_download(drive_folder[grepl('ntl_trout_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+ntl_trout_con_wide <- read.csv(tmp)
+#
+calculate_agg_stability(producer_data = ntl_trout_prod_wide, consumer_data = ntl_trout_con_wide, "ntl_trout")
+
+###### NTL_MADISON ######
+drive_download(drive_folder[grepl('ntl_madison_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+ntl_madison_prod_wide <- read.csv(tmp)
+#
+drive_download(drive_folder[grepl('ntl_madison_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+ntl_madison_con_wide <- read.csv(tmp)
+#
+calculate_agg_stability(producer_data = ntl_madison_prod_wide, consumer_data = ntl_madison_con_wide, "ntl_madison")
+
 ###### COMBINE MARINE AGGREGATE DFS ######
 # add one more column, because some marine sites have two sets of producer-consumer data
 gce_aggregate_dss <- gce_aggregate_dss %>% mutate(site_new = 'gce_invert')
@@ -140,24 +169,28 @@ sbc_fish_aggregate_dss <- sbc_fish_aggregate_dss %>% mutate(site_new = 'sbc_fish
 mcr_invert_aggregate_dss <- mcr_invert_aggregate_dss %>% mutate(site_new = 'mcr_invert')
 mcr_fish_aggregate_dss <- mcr_fish_aggregate_dss %>% mutate(site_new = 'mcr_fish')
 aims_aggregate_dss <- aims_aggregate_dss %>% mutate(site_new = 'aims_fish')
+ntl_trout_aggregate_dss <- ntl_trout_aggregate_dss %>% mutate(site_new = 'ntl_trout')
+ntl_madison_aggregate_dss <- ntl_madison_aggregate_dss %>% mutate(site_new = 'ntl_madison')
 
 marine_agg_stability <- rbind(
-  gce_aggregate_dss,
+#  gce_aggregate_dss,
   usvi_fish_aggregate_dss,
   sbc_invert_aggregate_dss,
   sbc_fish_aggregate_dss,
   mcr_invert_aggregate_dss,
   mcr_fish_aggregate_dss, 
-  aims_aggregate_dss
+  aims_aggregate_dss,
+  ntl_trout_aggregate_dss,
+  ntl_madison_aggregate_dss
 )
 
-write.csv(row.names = F, marine_agg_stability, 'scripts/wrangling_junna/synthesized_data/marine_agg_dss.csv')
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/synthesized_data/marine_agg_dss.csv"), overwrite = T,
+write.csv(row.names = F, marine_agg_stability, 'data/synthesized_data/marine_agg_dss_10282025.csv')
+googledrive::drive_upload(media = file.path("data/synthesized_data/marine_agg_dss_10282025.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 combined_agg_stability <- rbind(terrestrial_agg_stability, marine_agg_stability)
-write.csv(row.names = F, combined_agg_stability, 'scripts/wrangling_junna/synthesized_data/combined_agg_dss.csv')
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/synthesized_data/combined_agg_dss.csv"), overwrite = T,
+write.csv(row.names = F, combined_agg_stability, 'data/synthesized_data/combined_agg_dss_10282025.csv')
+googledrive::drive_upload(media = file.path("data/synthesized_data/combined_agg_dss_10282025.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 

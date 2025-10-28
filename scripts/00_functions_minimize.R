@@ -240,6 +240,12 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
     dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
     dplyr::summarise(
       prod_richness = mean(richness), 
+      # total number of species observed over the course of the time series:
+      prod_richness_total = {
+        species_cols <- setdiff(names(producer_data), meta_cols)
+        data_plot <- producer_data[producer_data$plot == unique(plot), species_cols]
+        sum(colSums(data_plot > 0) > 0)
+      },
       prod_shannon = mean(shannon), 
       prod_abundance = mean(abundance),
       prod_cv = CV(abundance),
@@ -249,6 +255,12 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
     dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
     dplyr::summarise(
       con_richness = mean(richness), 
+      # total number of species observed over the course of the time series
+      con_richness_total = {
+        species_cols <- setdiff(names(consumer_data), meta_cols)
+        data_plot <- consumer_data[consumer_data$plot == unique(plot), species_cols]
+        sum(colSums(data_plot > 0) > 0)
+      },
       con_shannon = mean(shannon), 
       con_abundance = mean(abundance),
       con_cv = CV(abundance),
