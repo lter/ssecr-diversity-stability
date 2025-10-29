@@ -94,7 +94,7 @@ data_zoop_out <- data.frame(
   habitat_fine = 'lake',
   biome = 'temperate',
   guild = 'zooplankton',
-  herbivore = 'unsure',
+  herbivore = 'yes',
   year=data_zoop$year,
   month=data_zoop$month,
   day=data_zoop$day,

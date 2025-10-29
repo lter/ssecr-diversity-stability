@@ -30,7 +30,7 @@ shelf('tidyverse', 'vegan', 'ggpubr', "terra", googlesheets4, googledrive)
 ```
 
 
-```{r rodent data}
+```{r rodent data - removel method not used}
 library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, googlesheets4, googledrive, readxl, FSA)
@@ -93,7 +93,10 @@ data <- raw_data_valid %>% group_by(Year, Site, Habitat) %>%
 species_name <- unique(raw_data_valid[, c("Species_code", "Species_binomial", "Common_name")])
 species_name <- species_name %>% mutate(trophic = case_when(Species_binomial %in% c("Peromyscus maniculatus", "Peromyscus leucopus", "Peromyscus eremicus", "Mus musculus") ~ "omnivore", 
                                                             Species_binomial %in% c("Onychomys leucogaster", "Onychomys arenicola") ~ "carnivore",
-                                                            TRUE ~ "herbivore"))
+                                                            TRUE ~ "herbivore")) %>%
+  mutate(herbivore = case_when(trophic == "herbivore" ~ 'yes', 
+                               trophic == "omnivore" ~ 'o', 
+                               trophic == "carnivore" ~ 'no') )
 
 data <- left_join(data, species_name, by = "Species_code") %>% 
   mutate(habitat = case_when(Habitat == 'G' ~ 'grassland', 
@@ -116,13 +119,83 @@ data_consumer_out$scale_abundance <- "per habitat site"
 ###
 ### set the rows without species name as not confident
 data_consumer_out$id_confidence <- TRUE
-data_consumer_out$herbivore <- data$trophic
+data_consumer_out$herbivore <- data$herbivore
+data_consumer_out$trophic <- data$trophic
 data_consumer_out$taxon_code <- data$Species_code
 
 write.csv(data_consumer_out, 'harmonized_data/consumer_Jornada.csv', row.names = F)
 googledrive::drive_upload(media = file.path("harmonized_data/consumer_Jornada.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1NPNdNCa2RJgTyiQmSZRURHCqVmFLrCR1"))
 
+
+```
+
+
+```{r rodent data used}
+library(librarian)
+# Install missing packages and load needed libraries
+shelf(tidyverse, googlesheets4, googledrive, readxl, FSA)
+rm(list=ls())
+
+# Design the workflow
+# 1. remove missing species, because these records missed weights sometimes. 
+# 2. remove recaptured species
+# 3. calculate abundance and biomass for each site-habitat using Zippin removal methods
+
+raw_data <- read.csv('/Users/junnawang/courses/SSECR/data_discovery/Jornada_Basin_LTER/knb-lter-jrn.210262008.141/Ecotone_Rodent_Capture.csv')
+
+# remove species with missing tags
+raw_data_valid <- raw_data[raw_data$Tag != ".", ]
+raw_data_valid$Weight <- as.numeric(raw_data_valid$Weight)
+
+# remove recaptured species during each year site habitat capture
+raw_data_valid_1capture <- raw_data_valid %>% group_by(Year, Site, Habitat) %>% 
+  distinct(Tag, .keep_all = TRUE) %>% 
+  select("Tag", "Species_code", "Weight") %>% 
+  ungroup()
+
+
+data <- raw_data_valid_1capture %>% group_by(Year, Site, Habitat, Species_code) %>% 
+  summarise(biomass = sum(Weight, na.rm = T), .groups = 'drop')
+
+
+# add Species_binomial, Common_name: we only have 16 species. 
+species_name <- unique(raw_data_valid[, c("Species_code", "Species_binomial", "Common_name")])
+species_name <- species_name %>% mutate(trophic = case_when(Species_binomial %in% c("Peromyscus maniculatus", "Peromyscus leucopus", "Peromyscus eremicus", "Mus musculus") ~ "omnivore", 
+                                                            Species_binomial %in% c("Onychomys leucogaster", "Onychomys arenicola") ~ "carnivore",
+                                                            TRUE ~ "herbivore")) %>%
+  mutate(herbivore = case_when(trophic == "herbivore" ~ 'yes', 
+                               trophic == "omnivore" ~ 'o', 
+                               trophic == "carnivore" ~ 'no') )
+
+data <- left_join(data, species_name, by = "Species_code") %>% 
+  mutate(habitat = case_when(Habitat == 'G' ~ 'grassland', 
+                             Habitat == 'E' ~ 'ecotone', 
+                             Habitat == 'S' ~ 'shrubland'))
+
+# output data use the right format
+data_consumer_out <- data.frame(site="JRN", taxa_type="consumer", ecosystem="terrestrial", habitat_broad='dryland', habitat_fine=data$habitat, biome='temperate', guild='rodent')
+####
+data_consumer_out$plot  <- paste(data$Site, data_consumer_out$habitat_fine, sep = '_')
+data_consumer_out$unique_ID <- paste(data_consumer_out$site, data_consumer_out$plot, sep='_')
+####
+data_consumer_out$year <- data$Year
+# no month and day because frequency is once a year 
+
+data_consumer_out$taxon_name <- data$Species_binomial
+data_consumer_out$abundance  <- data$biomass
+data_consumer_out$unit_abundance  <- "g"
+data_consumer_out$scale_abundance <- "per habitat site"
+###
+### set the rows without species name as not confident
+data_consumer_out$id_confidence <- TRUE
+data_consumer_out$herbivore <- data$herbivore
+data_consumer_out$trophic <- data$trophic
+data_consumer_out$taxon_code <- data$Species_code
+
+write.csv(data_consumer_out, 'harmonized_data/consumer_Jornada.csv', row.names = F)
+googledrive::drive_upload(media = file.path("harmonized_data/consumer_Jornada.csv"), overwrite = T,
+                          path = googledrive::as_id("https://drive.google.com/drive/folders/1NPNdNCa2RJgTyiQmSZRURHCqVmFLrCR1"))
 
 ```
 
@@ -139,9 +212,13 @@ raw_plant_data <- read.csv('/Users/junnawang/courses/SSECR/data_discovery/Jornad
 # data in 2005 cannot be used, because fall data is not available
 plant_data <- raw_plant_data %>% filter(year != 2005)
 
+# 192 species.
+# 
 # How to deal with "missing", "Missing value", "unidentified cactus species", "unidentified forb", "unidentified grass", "unidentified plant", "unidentified subshrub"? use filter out these records
 plant_data <- plant_data %>% filter(!Species_binomial %in% c("missing", "Missing value", "unidentified cactus species", "unidentified forb", "unidentified grass", "unidentified plant", "unidentified subshrub")) %>% 
   filter(LTER_code != "NONE")
+# we filtered 2697 / 148772; 1.8% of data; this should be good. 
+
 
 # How to deal with quadrats with no vegetation cover?
 # The averaging across quadrats was done here. so filter out these records, do the sum and then divided by 32 because each habitat site has 32 quadrats. 
@@ -174,6 +251,17 @@ plant_data_out$taxon_code <- plant_data_plot$LTER_code
 write.csv(plant_data_out, 'harmonized_data/producer_Jornada.csv', row.names = F)
 googledrive::drive_upload(media = file.path("harmonized_data/producer_Jornada.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1NPNdNCa2RJgTyiQmSZRURHCqVmFLrCR1"))
+
+```
+
+```{r}
+# play with the data
+plot_data <- plant_data_plot %>% group_by(plot, year) %>% summarise(total_cover = sum(cover))
+
+ggplot(plot_data, aes(x=year, y=total_cover, col=plot)) +
+  geom_point() +
+  geom_line()
+
 
 ```
 
