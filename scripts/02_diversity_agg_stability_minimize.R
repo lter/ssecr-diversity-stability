@@ -160,6 +160,15 @@ ntl_madison_con_wide <- read.csv(tmp)
 #
 calculate_agg_stability(producer_data = ntl_madison_prod_wide, consumer_data = ntl_madison_con_wide, "ntl_madison")
 
+###### ADK ######
+drive_download(drive_folder[grepl('adk_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+adk_prod_wide <- read.csv(tmp)
+#
+drive_download(drive_folder[grepl('adk_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+adk_con_wide <- read.csv(tmp)
+#
+calculate_agg_stability(producer_data = adk_con_wide, consumer_data = adk_con_wide, "adk")
+
 ###### COMBINE MARINE AGGREGATE DFS ######
 # add one more column, because some marine sites have two sets of producer-consumer data
 gce_aggregate_dss <- gce_aggregate_dss %>% mutate(site_new = 'gce_invert')
@@ -171,6 +180,7 @@ mcr_fish_aggregate_dss <- mcr_fish_aggregate_dss %>% mutate(site_new = 'mcr_fish
 aims_aggregate_dss <- aims_aggregate_dss %>% mutate(site_new = 'aims_fish')
 ntl_trout_aggregate_dss <- ntl_trout_aggregate_dss %>% mutate(site_new = 'ntl_trout')
 ntl_madison_aggregate_dss <- ntl_madison_aggregate_dss %>% mutate(site_new = 'ntl_madison')
+adk_aggregate_dss <- adk_aggregate_dss %>% mutate(site_new = 'adk')
 
 marine_agg_stability <- rbind(
 #  gce_aggregate_dss,
@@ -181,7 +191,8 @@ marine_agg_stability <- rbind(
   mcr_fish_aggregate_dss, 
   aims_aggregate_dss,
   ntl_trout_aggregate_dss,
-  ntl_madison_aggregate_dss
+  ntl_madison_aggregate_dss,
+  adk_aggregate_dss
 )
 
 write.csv(row.names = F, marine_agg_stability, 'data/synthesized_data/marine_agg_dss_10282025.csv')

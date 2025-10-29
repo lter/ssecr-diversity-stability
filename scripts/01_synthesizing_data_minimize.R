@@ -470,6 +470,33 @@ result <- filter_data(site_name = 'ntl_madison', # site name as string
 
 # NOAM NOTE: MANUALLY UPLOADED WIDE DATAFRAMES!
 
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# adk: Northern Temperate Lakes LTER Trout Lake
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1s8rFT3MJPAeO58q8UwZl5agynehujBbf"), type='csv')
+drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
+adk_prod <- read_csv(tmp)
+
+drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
+adk_con <- read_csv(tmp)
+
+# convert all spp to factors
+adk_con$taxon_name <- as.factor(adk_con$taxon_name)
+adk_prod$taxon_name <- as.factor(adk_prod$taxon_name)
+
+# convert names to lower case
+adk_con$site <- as.factor(tolower(adk_con$site))
+adk_prod$site <- as.factor(tolower(adk_prod$site))
+
+result <- filter_data(site_name = 'adk', # site name as string
+                      producer_data = adk_prod, # producer df
+                      consumer_data = adk_con, # consumer df
+                      mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
+                      minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
+                      output_folder = 'data/ADK', # string for output folder if writing csv 
+                      write_csv = TRUE)
+
+# NOAM NOTE: MANUALLY UPLOADED WIDE DATAFRAMES!
+
 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # CDR-Old field: cedar creek
