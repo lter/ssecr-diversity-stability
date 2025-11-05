@@ -652,6 +652,11 @@ bex_he_prod <- read.csv(tmp)
 download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_consumer.csv",], path = tmp, overwrite = TRUE)
 bex_he_con <- read.csv(tmp)
 
+# bex_he and bex_ae and ae have NA abundances - set to 0
+bex_ae_con$abundance[is.na(bex_ae_con$abundance)] <- 0
+bex_he_con$abundance[is.na(bex_he_con$abundance)] <- 0
+bex_ae_prod$abundance[is.na(bex_ae_prod$abundance)] <- 0
+bex_he_prod$abundance[is.na(bex_he_prod$abundance)] <- 0
 
 filter_data(site_name = "bex_se", producer_data = bex_se_prod, consumer_data = bex_se_con, mean_sum = "mean",
             output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
