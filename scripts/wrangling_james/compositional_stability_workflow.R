@@ -348,6 +348,32 @@ jrn_prod_wide <- jrn_prod_wide %>%
          plot = str_replace(plot, "_G$", "_grassland"),
          plot = str_replace(plot, "_S$", "_shrubland"))
 
+
+# ADK
+adk_prod_wide <- readr::read_csv(here::here("data/wide_output_minimize", "adk_producers_wide_sub.csv"))
+adk_con_wide  <- readr::read_csv(here::here("data/wide_output_minimize", "adk_consumers_wide_sub.csv"))
+
+#NTL Madison
+ntl_madison_prod_wide <- read.csv(here::here("data/wide_output_minimize", "ntl_madison_producers_wide_sub.csv"))
+ntl_madison_con_wide <- read.csv(here::here("data/wide_output_minimize", "ntl_madison_consumers_wide_sub.csv"))
+
+#NTL Trout
+ntl_trout_prod_wide <- read.csv(here::here("data/wide_output_minimize", "ntl_trout_producers_wide_sub.csv"))
+ntl_trout_con_wide <- read.csv(here::here("data/wide_output_minimize", "ntl_trout_consumers_wide_sub.csv"))
+
+
+#BEX SE
+bex_se_prod_wide <- read.csv(here::here("data/wide_output_minimize", "bex_se_producers_wide_sub.csv"))
+bex_se_con_wide <- read.csv(here::here("data/wide_output_minimize", "bex_se_consumers_wide_sub.csv"))
+
+#BEX AE
+bex_ae_prod_wide <- read.csv(here::here("data/wide_output_minimize", "bex_ae_producers_wide_sub.csv"))
+bex_ae_con_wide <- read.csv(here::here("data/wide_output_minimize", "bex_ae_consumers_wide_sub.csv"))
+
+#BEX SE
+bex_he_prod_wide <- read.csv(here::here("data/wide_output_minimize", "bex_he_producers_wide_sub.csv"))
+bex_he_con_wide <- read.csv(here::here("data/wide_output_minimize", "bex_he_consumers_wide_sub.csv"))
+
 # 8. Diagnostic check that all plots surveyed have harmonized site-year combinations ----
 
 # KNZ Match
@@ -418,9 +444,50 @@ mcr_invert_con_matched  <- matched$con
 
 # JRN Match
 matched <- match_site_years(jrn_prod_wide, jrn_con_wide)
-save_diag(matched$diagnostics, here::here("diagnostics", "gce_producer_consumer_year_matching.csv"))
+save_diag(matched$diagnostics, here::here("diagnostics", "jrn_producer_consumer_year_matching.csv"))
 jrn_prod_matched <- matched$prod
 jrn_con_matched  <- matched$con
+
+
+# ADK Match
+matched <- match_site_years(adk_prod_wide, adk_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "adk_producer_consumer_year_matching.csv"))
+adk_prod_matched <- matched$prod
+adk_con_matched  <- matched$con
+
+
+# NTL Madison Match
+matched <- match_site_years(ntl_madison_prod_wide, ntl_madison_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "ntl_madison_producer_consumer_year_matching.csv"))
+ntl_madison_prod_matched <- matched$prod
+ntl_madison_con_matched  <- matched$con
+
+
+# NTL Trout Match
+matched <- match_site_years(ntl_trout_prod_wide, ntl_trout_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "ntl_trout_producer_consumer_year_matching.csv"))
+ntl_trout_prod_matched <- matched$prod
+ntl_trout_con_matched  <- matched$con
+
+# BEX SE Match
+matched <- match_site_years(bex_se_prod_wide, bex_se_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "bex_se_producer_consumer_year_matching.csv"))
+bex_se_prod_matched <- matched$prod
+bex_se_con_matched  <- matched$con
+
+
+# BEX AE Match
+matched <- match_site_years(bex_ae_prod_wide, bex_ae_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "bex_ae_producer_consumer_year_matching.csv"))
+bex_ae_prod_matched <- matched$prod
+bex_ae_con_matched  <- matched$con
+
+
+# BEX HE Match
+matched <- match_site_years(bex_he_prod_wide, bex_he_con_wide)
+save_diag(matched$diagnostics, here::here("diagnostics", "bex_he_producer_consumer_year_matching.csv"))
+bex_he_prod_matched <- matched$prod
+bex_he_con_matched  <- matched$con
 
 # 9. Run analysis pipeline ----
 # Methods to run
@@ -743,6 +810,188 @@ for (m in methods) {
   )
 }
 
+# ADK 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("adk_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "adk", "producer", m)
+  message("Running ADK producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = adk_prod_matched,
+    site_id = "ADK",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("adk_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "adk", "consumer", m)
+  message("Running ADK consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = adk_con_matched,
+    site_id = "ADK",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# NTL Madison 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("ntl_madison_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "ntl_madison", "producer", m)
+  message("Running NTL Madison producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = ntl_madison_prod_matched,
+    site_id = "NTL",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("ntl_madison_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "ntl_madison", "consumer", m)
+  message("Running NTL Madison consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = ntl_madison_con_matched,
+    site_id = "NTL",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+# NTL Trout 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("ntl_trout_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "ntl", "producer", m)
+  message("Running NTL Trout producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = ntl_trout_prod_matched,
+    site_id = "NTL",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("ntl_trout_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "ntl", "consumer", m)
+  message("Running NTL Trout consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = ntl_trout_con_matched,
+    site_id = "NTL",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+# BEX SE 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_se_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_se", "producer", m)
+  message("Running BEX SE producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_se_prod_matched,
+    site_id = "BEX_SE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_se_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_se", "consumer", m)
+  message("Running BEX SE consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_se_con_matched,
+    site_id = "BEX_SE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+# BEX AE 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_ae_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_ae", "producer", m)
+  message("Running BEX AE producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_ae_prod_matched,
+    site_id = "BEX_AE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_ae_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_ae", "consumer", m)
+  message("Running BEX AE consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_ae_con_matched,
+    site_id = "BEX_SE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+# BEX HE 
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_he_producer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_he", "producer", m)
+  message("Running BEX HE producer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_he_prod_matched,
+    site_id = "BEX_HE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
+
+
+for (m in methods) {
+  fig_path <- here::here("figures", "cta", paste0("bex_he_consumer_trajectory_", m, ".png"))
+  output_dir <- here::here("outputs", "cta", "bex_he", "consumer", m)
+  message("Running BEX HE consumer CTA (method = ", m, ") ...")
+  run_cta_pipeline(
+    df = bex_he_con_matched,
+    site_id = "BEX_HE",
+    fig_path = fig_path,
+    output_dir = output_dir,
+    method = m,
+    nmds_trymax = 100
+  )
+}
 # 10. Load model output files for compositional stability metrics ----
 
 knz_lengths <- bind_rows(
