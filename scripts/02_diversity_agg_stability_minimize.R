@@ -49,22 +49,52 @@ jrn_con_wide <- read.csv(tmp)
 
 calculate_agg_stability(producer_data = jrn_prod_wide, consumer_data = jrn_con_wide, "jrn")
 
+##### BEX #####
+drive_download(drive_folder[grepl('bex_he_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_he_prod_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('bex_he_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_he_con_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('bex_ae_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_ae_prod_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('bex_ae_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_ae_con_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('bex_se_producers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_se_prod_wide <- read.csv(tmp)
+
+drive_download(drive_folder[grepl('bex_se_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
+bex_se_con_wide <- read.csv(tmp)
+
+calculate_agg_stability(producer_data = bex_he_prod_wide, consumer_data = bex_he_con_wide, "bex_he")
+calculate_agg_stability(producer_data = bex_ae_prod_wide, consumer_data = bex_ae_con_wide, "bex_ae")
+calculate_agg_stability(producer_data = bex_se_prod_wide, consumer_data = bex_se_con_wide, "bex_se")
+
 # correct names
 knz_aggregate_dss <- knz_aggregate_dss %>% mutate(site_new = 'knz')
 kbs_aggregate_dss <- kbs_aggregate_dss %>% mutate(site_new = 'kbs')
 cdr_of_aggregate_dss <- cdr_of_aggregate_dss %>% mutate(site_new = 'cdr-of')
 jrn_aggregate_dss <- jrn_aggregate_dss %>% mutate(site_new = 'jrn')
+bex_he_aggregate_dss <- bex_he_aggregate_dss %>% mutate(site_new = 'bex_he')
+bex_ae_aggregate_dss <- bex_ae_aggregate_dss %>% mutate(site_new = 'bex_ae')
+bex_se_aggregate_dss <- bex_se_aggregate_dss %>% mutate(site_new = 'bex_se')
+
 
 ###### COMBINE TERRESTRIAL AGGREGATE DFS ######
 terrestrial_agg_stability <- rbind(
   knz_aggregate_dss,
   kbs_aggregate_dss,
   cdr_of_aggregate_dss,
-  jrn_aggregate_dss
+  jrn_aggregate_dss,
+  bex_he_aggregate_dss,
+  bex_ae_aggregate_dss,
+  bex_se_aggregate_dss
 )
 
-write.csv(row.names = F, terrestrial_agg_stability, 'data/synthesized_data/terrestrial_agg_dss_10282025.csv')
-googledrive::drive_upload(media = file.path("data/synthesized_data/terrestrial_agg_dss_10282025.csv"), overwrite = T,
+write.csv(row.names = F, terrestrial_agg_stability, 'data/synthesized_data/terrestrial_agg_dss_11052025.csv')
+googledrive::drive_upload(media = file.path("data/synthesized_data/terrestrial_agg_dss_11052025.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 #### MARINE DATA ####
@@ -167,7 +197,7 @@ adk_prod_wide <- read.csv(tmp)
 drive_download(drive_folder[grepl('adk_consumers', drive_folder$name),], path = tmp, overwrite = TRUE)
 adk_con_wide <- read.csv(tmp)
 #
-calculate_agg_stability(producer_data = adk_con_wide, consumer_data = adk_con_wide, "adk")
+calculate_agg_stability(producer_data = adk_prod_wide, consumer_data = adk_con_wide, "adk")
 
 ###### COMBINE MARINE AGGREGATE DFS ######
 # add one more column, because some marine sites have two sets of producer-consumer data
@@ -200,8 +230,8 @@ googledrive::drive_upload(media = file.path("data/synthesized_data/marine_agg_ds
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 combined_agg_stability <- rbind(terrestrial_agg_stability, marine_agg_stability)
-write.csv(row.names = F, combined_agg_stability, 'data/synthesized_data/combined_agg_dss_10282025.csv')
-googledrive::drive_upload(media = file.path("data/synthesized_data/combined_agg_dss_10282025.csv"), overwrite = T,
+write.csv(row.names = F, combined_agg_stability, 'data/synthesized_data/combined_agg_dss_11052025.csv')
+googledrive::drive_upload(media = file.path("data/synthesized_data/combined_agg_dss_11052025.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"))
 
 

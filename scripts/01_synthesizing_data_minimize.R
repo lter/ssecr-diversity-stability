@@ -628,3 +628,41 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_biodiv_16_consumers_wide_sub.csv"), overwrite = T,
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 # producer data in before 2001 are excluded because of id_confidence = 0
+
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# BEX
+
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1aNuNslzIM4g03cZ85rjgsG-bbE1fuGec"), type='csv')
+tmp <- tempfile(fileext = ".csv")
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_se_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_se_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_he_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_he_con <- read.csv(tmp)
+
+# bex_he and bex_ae and ae have NA abundances - set to 0
+bex_ae_con$abundance[is.na(bex_ae_con$abundance)] <- 0
+bex_he_con$abundance[is.na(bex_he_con$abundance)] <- 0
+bex_ae_prod$abundance[is.na(bex_ae_prod$abundance)] <- 0
+bex_he_prod$abundance[is.na(bex_he_prod$abundance)] <- 0
+
+filter_data(site_name = "bex_se", producer_data = bex_se_prod, consumer_data = bex_se_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_ae", producer_data = bex_ae_prod, consumer_data = bex_ae_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_he", producer_data = bex_he_prod, consumer_data = bex_he_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
