@@ -229,6 +229,8 @@ summary(mod_aquatic_prod)
 plot(DHARMa::simulateResiduals(mod_aquatic_prod)) # failed in KS test for aquatic ecosystems
 
 # use other linear mixed models: brms
+# try to specify non-informative prior and see if the results are different. Junna, Nov 8, 2025
+
 mod_aquatic_prod_brm <- brm(data=agg_ds_aquatic, prod_stability_log_zscore ~ prod_richness_zscore_plot_mean_devi + con_richness_zscore_plot_mean_devi + prod_richness_zscore_plot_mean + prod_richness_zscore_site_period_mean + con_richness_zscore_plot_mean + con_richness_zscore_site_period_mean + (1|plot) + (1|site_period),
                             family = gaussian(),
                             chains = 4, cores = 4, control = list(adapt_delta = 0.95))
