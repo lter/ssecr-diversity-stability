@@ -218,6 +218,7 @@ arthropod_taxonomy <- read_csv(here("../BEX/taxa_tables/BEX_consumer_taxa_table_
 # update taxonomy, if needed
 arthropod_comm2 <- arthropod_comm %>% 
   left_join(arthropod_taxonomy %>% select(Species, Taxa_Resolution, Mean_BodySize, Feeding_guild, id_confidence), by = "Species")
+#feeding_guilds: c-carnivore, d - detritivore, f - fungivore, h-herbivore, m- mycetophagous, o-omnivore
 
 ## -------------------------------------------- ##
 #             SSECR format ----
@@ -232,7 +233,15 @@ BEX_AE_consumer <- arthropod_comm2 %>%  #Add to filter if we want only herbivore
          habitat_broad = "grassland",
          biome = "temperate",
          guild = "arthropod",
-         herbivore = "can check", 
+         herbivore = case_when(
+           Feeding_guild == "h" ~ "herbivore",
+           Feeding_guild == "c" ~ "carnivore",
+           Feeding_guild == "d" ~ "detritivore",
+           Feeding_guild == "f" ~ "fungivore",
+           Feeding_guild == "m" ~ "mycetophagous",
+           Feeding_guild == "o" ~ "omnivore",
+           TRUE ~ "NA" # Assign a default value for all other feeding guilds
+         ), 
          habitat_fine = NA,
          year = CollectionYear,
          month = CollectionMonth, # Not in Data month(Date)
@@ -258,7 +267,15 @@ BEX_HE_consumer <- arthropod_comm2 %>%
          habitat_broad = "grassland",
          biome = "temperate",
          guild = "arthropod",
-         herbivore = "can check", 
+         herbivore = case_when(
+           Feeding_guild == "h" ~ "herbivore",
+           Feeding_guild == "c" ~ "carnivore",
+           Feeding_guild == "d" ~ "detritivore",
+           Feeding_guild == "f" ~ "fungivore",
+           Feeding_guild == "m" ~ "mycetophagous",
+           Feeding_guild == "o" ~ "omnivore",
+           TRUE ~ "NA" # Assign a default value for all other feeding guilds
+         ), 
          habitat_fine = NA,
          year = CollectionYear,
          month = CollectionMonth, # Not in Data month(Date)
@@ -284,7 +301,15 @@ BEX_SE_consumer <- arthropod_comm2 %>%
          habitat_broad = "grassland",
          biome = "temperate",
          guild = "arthropod",
-         herbivore = "can check", 
+         herbivore = case_when(
+           Feeding_guild == "h" ~ "herbivore",
+           Feeding_guild == "c" ~ "carnivore",
+           Feeding_guild == "d" ~ "detritivore",
+           Feeding_guild == "f" ~ "fungivore",
+           Feeding_guild == "m" ~ "mycetophagous",
+           Feeding_guild == "o" ~ "omnivore",
+           TRUE ~ "NA" # Assign a default value for all other feeding guilds
+         ),  
          habitat_fine = NA,
          year = CollectionYear,
          month = CollectionMonth, # Not in Data month(Date)

@@ -150,21 +150,24 @@ Fish_taxonomy <- read_csv(here("../AIMS/taxa_tables/AIMS_FISH_TAXA_TABLE.csv"))
 ## -------------------------------------------- ##
 # update taxonomy, if needed
 FishComm2 <- FishComm %>% 
-  left_join(Fish_taxonomy %>% select(FISH_CODE, id_confidence, transect_type), by = "FISH_CODE") 
+  left_join(Fish_taxonomy %>% select(FISH_CODE, id_confidence, transect_type, herbivore), by = "FISH_CODE") 
 
 ## -------------------------------------------- ##
 #             SSECR format ----
 ## -------------------------------------------- ##
 # now format in the style we need
 AIMS_FISH <- FishComm2 %>% 
-  filter(id_confidence == 1) %>% ##filtering out taxa observations that are not to required taxonomic resolution
+  filter(id_confidence == 1 & transect_type != "") %>% ##filtering out taxa observations that are not to required taxonomic resolution and we do not know on what swathe scale they were sampled.
   mutate(site = "aims",
          taxa_type = "consumer",
          ecosystem = "aquatic",
          habitat_broad = "coral_reef",
          biome = "tropical",
          guild = "fish",
-         herbivore = "maybe", 
+         herbivore = case_when(
+           herbivore == "yes" ~ "herbivore",
+           TRUE ~ "no" # Assign a default value for all other feeding guilds
+         ), 
          habitat_fine = SHELF,
          year = REPORT_YEAR,
          month = "NA", # Not in Data month(Date)
@@ -175,8 +178,7 @@ AIMS_FISH <- FishComm2 %>%
          unit_abundance = "count",
          scale_abundance = case_when(
            transect_type == "50m_by_5m" ~ "250m2",
-           transect_type == "50m_by_1m" ~ "50m2",
-           transect_type == "" ~ "TBD"),
+           transect_type == "50m_by_1m" ~ "50m2"),
          taxon_name = TAXA,
          abundance = ABUNDANCE,
          id_confidence = id_confidence) %>%   # add a column saying we're confident in all the spp taxonomies
