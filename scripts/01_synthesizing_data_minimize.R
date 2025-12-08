@@ -6,7 +6,7 @@ shelf('tidyverse', 'vegan', 'ggpubr', "googledrive")
 
 rm(list=ls())
 
-source('scripts/00_functions.R')
+source('scripts/00_functions_minimize.R')
 
 tmp <- tempfile(fileext = ".csv")
 
@@ -29,7 +29,7 @@ result <- filter_data(site_name = 'usvi_fish', # site name as string
                       consumer_data = fish_data, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/USVI', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
 # write data to google drive
@@ -119,7 +119,7 @@ result <- filter_data(site_name = 'sbc_fish', # site name as string
                       consumer_data = sbc_fish, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/SBC', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_fish_producers_wide_sub.csv"), overwrite = T,
@@ -134,7 +134,7 @@ result <- filter_data(site_name = 'sbc_invert', # site name as string
                       consumer_data = sbc_invert, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/SBC', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_invert_producers_wide_sub.csv"), overwrite = T,
@@ -148,13 +148,13 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1Cw47XY2FZwR9BkzeeGClLE4t8qMCaAUC"), type='csv')
 # only one dataset
 drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
-mcr_prod <- read_csv(tmp)
+mcr_fish <- read_csv(tmp)
 
 drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
 mcr_invert <- read_csv(tmp)
 
 drive_download(drive_folder[3,], path = tmp, overwrite = TRUE)
-mcr_fish <- read_csv(tmp)
+mcr_prod <- read_csv(tmp)
 
 # process these data
 # coerce macroalge = algae, as we do not make that distinction in our protocol anymore
@@ -185,7 +185,7 @@ result <- filter_data(site_name = 'mcr_fish', # site name as string
                       consumer_data = mcr_fish, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/MCR', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_fish_producers_wide_sub.csv"), overwrite = T,
@@ -200,7 +200,7 @@ result <- filter_data(site_name = 'mcr_invert', # site name as string
                       consumer_data = mcr_invert, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/MCR', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_invert_producers_wide_sub.csv"), overwrite = T,
@@ -226,12 +226,12 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
 #————————————————————————————————————————————————AIMS—————————————————————————————————————————————————————————————————
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1dk1hOI6pAudVoBXftKiFkx4oPEZkakJk"), type='csv')
 # only one dataset
-drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
+drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
 aims_prod <- read_csv(tmp)
 # only 7 taxa; all producers are macro-algae, no algae
 # how to deal with different scale_abundance in fish data: 50 m2; 250 m2
 
-drive_download(drive_folder[2,], path = tmp, overwrite = TRUE)
+drive_download(drive_folder[1,], path = tmp, overwrite = TRUE)
 aims_fish <- read_csv(tmp)
 # merge the fish data of scale abundance 250m2 and 50m2
 
@@ -250,7 +250,7 @@ result <- filter_data(site_name = 'aims', # site name as string
                       consumer_data = aims_fish, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/AIMS', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # we have 104 plots and 16 years of data
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_producers_wide_sub.csv"), overwrite = T,
@@ -315,7 +315,7 @@ result <- filter_data(site_name = 'gce', # site name as string
                       consumer_data = gce_con_mutated, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/GCE', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # it has 21 plots * 12 years
 
@@ -344,7 +344,7 @@ result <- filter_data(site_name = 'knz', # site name as string
                       consumer_data = knz_con, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/KNZ', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # 13 plots * 19 years
 
@@ -368,7 +368,7 @@ result <- filter_data(site_name = 'kbs', # site name as string
                       consumer_data = kbs_con, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/KBS', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # 6 plots * 26 years
 
@@ -515,7 +515,7 @@ result <- filter_data(site_name = 'cdr_of', # site name as string
                       consumer_data = cdr_of_con, # consumer df
                       mean_sum = 'mean', # c("mean", "sum") indicates whether plots should be averaged or summed when aggregating
                       minimize = TRUE, # subset for shortest possible time series based on spatio-temporally co-located plots
-                      output_folder = 'scripts/wrangling_junna/filtered_data', # string for output folder if writing csv (e.g. "data/CDR")
+                      output_folder = 'data/CDR_oldfield', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # 13 plots * 10 years
 googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_of_producers_wide_sub.csv"), overwrite = T,
