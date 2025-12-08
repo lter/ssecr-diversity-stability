@@ -33,11 +33,11 @@ result <- filter_data(site_name = 'usvi_fish', # site name as string
                       write_csv = TRUE)
 
 # write data to google drive
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+#googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_producers_wide_sub.csv"), overwrite = T,
+#                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+#
+#googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/usvi_fish_consumers_wide_sub.csv"), overwrite = T,
+#                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 
 # removed invert data for usvi because they are senssile
 # result <- filter_data(site_name = 'usvi_invert', # site name as string
@@ -122,12 +122,12 @@ result <- filter_data(site_name = 'sbc_fish', # site name as string
                       output_folder = 'data/SBC', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_fish_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_fish_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_fish_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_fish_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #
 result <- filter_data(site_name = 'sbc_invert', # site name as string
                       producer_data = sbc_prod, # producer df
@@ -137,12 +137,12 @@ result <- filter_data(site_name = 'sbc_invert', # site name as string
                       output_folder = 'data/SBC', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_invert_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_invert_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_invert_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/sbc_invert_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #—————————————————————————————————————————————————————————————————MCR—————————————————————————————————————————————————————
 # MCR: Moorea Coral Reef LTER
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1Cw47XY2FZwR9BkzeeGClLE4t8qMCaAUC"), type='csv')
@@ -188,12 +188,12 @@ result <- filter_data(site_name = 'mcr_fish', # site name as string
                       output_folder = 'data/MCR', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_fish_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_fish_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_fish_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_fish_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 # invertebrates
 result <- filter_data(site_name = 'mcr_invert', # site name as string
                       producer_data = mcr_prod, # producer df
@@ -203,12 +203,12 @@ result <- filter_data(site_name = 'mcr_invert', # site name as string
                       output_folder = 'data/MCR', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_invert_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_invert_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_invert_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/mcr_invert_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #------update non-filtering wide data
 # result <- filter_data(site_name = 'mcr_fish', # site name as string
 #                       producer_data = mcr_prod, # producer df
@@ -253,12 +253,12 @@ result <- filter_data(site_name = 'aims', # site name as string
                       output_folder = 'data/AIMS', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # we have 104 plots and 16 years of data
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/aims_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # # PIE
 # drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/16oEmL7Vf4WgjQCw4QacSa5Bl_wfVRCgH"), type='csv')
@@ -319,12 +319,12 @@ result <- filter_data(site_name = 'gce', # site name as string
                       write_csv = TRUE)
 # it has 21 plots * 12 years
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/gce_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/gce_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/gce_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/gce_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 # Terrestrial ecosystems
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # KNZ: Konza Prairie Long-Term Ecological Research
@@ -348,12 +348,12 @@ result <- filter_data(site_name = 'knz', # site name as string
                       write_csv = TRUE)
 # 13 plots * 19 years
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/knz_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/knz_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/knz_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/knz_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # KBS: Kellogg Biological Station Long-Term Ecological Research
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1O2n89tOIMNZGXTzCZNb0Qsj_C8dRI09l"), type='csv')
@@ -372,12 +372,12 @@ result <- filter_data(site_name = 'kbs', # site name as string
                       write_csv = TRUE)
 # 6 plots * 26 years
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/kbs_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/kbs_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
-
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/kbs_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/kbs_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # JRN: Jordana
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1NPNdNCa2RJgTyiQmSZRURHCqVmFLrCR1"), type='csv')
@@ -518,11 +518,51 @@ result <- filter_data(site_name = 'cdr_of', # site name as string
                       output_folder = 'data/CDR_oldfield', # string for output folder if writing csv (e.g. "data/CDR")
                       write_csv = TRUE)
 # 13 plots * 10 years
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_of_producers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_of_producers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
+# googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_of_consumers_wide_sub.csv"), overwrite = T,
+#                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+# 
 
-googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_data/cdr_of_consumers_wide_sub.csv"), overwrite = T,
-                          path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
+#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+# BEX
+
+drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1aNuNslzIM4g03cZ85rjgsG-bbE1fuGec"), type='csv')
+tmp <- tempfile(fileext = ".csv")
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_se_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_se_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_ae_con <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_producer.csv",], path = tmp, overwrite = TRUE)
+bex_he_prod <- read.csv(tmp)
+
+download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_consumer.csv",], path = tmp, overwrite = TRUE)
+bex_he_con <- read.csv(tmp)
+
+# bex_he and bex_ae and ae have NA abundances - set to 0
+bex_ae_con$abundance[is.na(bex_ae_con$abundance)] <- 0
+bex_he_con$abundance[is.na(bex_he_con$abundance)] <- 0
+bex_ae_prod$abundance[is.na(bex_ae_prod$abundance)] <- 0
+bex_he_prod$abundance[is.na(bex_he_prod$abundance)] <- 0
+
+filter_data(site_name = "bex_se", producer_data = bex_se_prod, consumer_data = bex_se_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_ae", producer_data = bex_ae_prod, consumer_data = bex_ae_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
+filter_data(site_name = "bex_he", producer_data = bex_he_prod, consumer_data = bex_he_con, mean_sum = "mean",
+            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
+
 
 #——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
 # CDR diversity experiment: cedar creek
@@ -629,40 +669,3 @@ googledrive::drive_upload(media = file.path("scripts/wrangling_junna/filtered_da
                           path = googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"))
 # producer data in before 2001 are excluded because of id_confidence = 0
 
-#——————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
-# BEX
-
-drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1aNuNslzIM4g03cZ85rjgsG-bbE1fuGec"), type='csv')
-tmp <- tempfile(fileext = ".csv")
-download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_producer.csv",], path = tmp, overwrite = TRUE)
-bex_se_prod <- read.csv(tmp)
-
-download <- drive_download(drive_folder[drive_folder$name=="BEX_SE_consumer.csv",], path = tmp, overwrite = TRUE)
-bex_se_con <- read.csv(tmp)
-
-download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_producer.csv",], path = tmp, overwrite = TRUE)
-bex_ae_prod <- read.csv(tmp)
-
-download <- drive_download(drive_folder[drive_folder$name=="BEX_AE_consumer.csv",], path = tmp, overwrite = TRUE)
-bex_ae_con <- read.csv(tmp)
-
-download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_producer.csv",], path = tmp, overwrite = TRUE)
-bex_he_prod <- read.csv(tmp)
-
-download <- drive_download(drive_folder[drive_folder$name=="BEX_HE_consumer.csv",], path = tmp, overwrite = TRUE)
-bex_he_con <- read.csv(tmp)
-
-# bex_he and bex_ae and ae have NA abundances - set to 0
-bex_ae_con$abundance[is.na(bex_ae_con$abundance)] <- 0
-bex_he_con$abundance[is.na(bex_he_con$abundance)] <- 0
-bex_ae_prod$abundance[is.na(bex_ae_prod$abundance)] <- 0
-bex_he_prod$abundance[is.na(bex_he_prod$abundance)] <- 0
-
-filter_data(site_name = "bex_se", producer_data = bex_se_prod, consumer_data = bex_se_con, mean_sum = "mean",
-            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
-
-filter_data(site_name = "bex_ae", producer_data = bex_ae_prod, consumer_data = bex_ae_con, mean_sum = "mean",
-            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
-
-filter_data(site_name = "bex_he", producer_data = bex_he_prod, consumer_data = bex_he_con, mean_sum = "mean",
-            output_folder = "data/bex", minimize = TRUE, write_csv = TRUE)
