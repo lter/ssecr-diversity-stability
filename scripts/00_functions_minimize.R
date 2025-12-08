@@ -39,7 +39,8 @@ filter_data <- function(site_name, # site name as string
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance,
+               scale_abundance) %>%
       summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
   } else {
     producer_agg <- producer_data %>%
@@ -47,7 +48,8 @@ filter_data <- function(site_name, # site name as string
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
     
     consumer_agg <- consumer_data %>%
-      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, scale_abundance) %>%
+      group_by(site, ecosystem, habitat_broad, habitat_fine, biome, guild, plot, year, taxon_name, unit_abundance, 
+               scale_abundance) %>%
       summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
   }
   
@@ -115,45 +117,72 @@ filter_data <- function(site_name, # site name as string
   }
   # Junna's add ends here.
   
-  # # Minimize — remove plots with < 10 years of data and then standardize remaining plots by shortest time series possible
-  # if (minimize) {
-  #   # Remove plots with <10 years of data
-  #   plot_year_counts <- producer_wide_sub %>%
-  #     group_by(plot) %>%
-  #     summarise(n_years = n_distinct(year), .groups = "drop") %>%
-  #     filter(n_years >= 10)
-  #   
-  #   valid_plots <- plot_year_counts$plot
-  #   
-  #   producer_wide_sub <- producer_wide_sub %>%
-  #     filter(plot %in% valid_plots)
-  #   
-  #   consumer_wide_sub <- consumer_wide_sub %>%
-  #     filter(plot %in% valid_plots)
-  #   
-  #   # Determine overlapping year range
-  #   year_ranges <- producer_wide_sub %>%
-  #     group_by(plot) %>%
-  #     summarise(min_year = min(year), max_year = max(year), .groups = "drop")
-  #   
-  #   min_range_start <- max(year_ranges$min_year)
-  #   max_range_end <- min(year_ranges$max_year)
-  #   
-  #   producer_wide_sub <- producer_wide_sub %>%
-  #     filter(year >= min_range_start, year <= max_range_end)
-  #   
-  #   consumer_wide_sub <- consumer_wide_sub %>%
-  #     filter(year >= min_range_start, year <= max_range_end)
-  # }
+  # subset herbivores if possible
+  print("Creating herbivore subset...")
+  message("Creating herbivore subset...")
+  agg_group <- c("site", "ecosystem", "habitat_broad", "habitat_fine",
+                 "biome", "guild", "plot", "year", "taxon_name",
+                 "unit_abundance", "scale_abundance")
+  if ("herbivore" %in% names(consumer_data)) {
+
+    herb_terms <- c("yes", "y", "herbivore", "o", "omnivore")
+
+    
+    herbivore_data <- consumer_data[consumer_data$herbivore %in% herb_terms, ]
+    
+    # if none match, warn and treat as empty herbivore set
+    if (nrow(herbivore_data) == 0) {
+      warning("herbivore column present but no rows matched herbivore terms; herbivore output will be empty.")
+      herbivore_wide <- tibble::tibble()  # empty tibble
+    } else {
+      # aggregate herbivore data the same way
+      if (mean_sum == "mean") {
+        herb_agg <- herbivore_data %>%
+          group_by(across(all_of(agg_group))) %>%
+          summarise(abundance = mean(abundance, na.rm = TRUE), .groups = "drop")
+      } else {
+        herb_agg <- herbivore_data %>%
+          group_by(across(all_of(agg_group))) %>%
+          summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop")
+      }
+      
+      herbivore_wide <- herb_agg %>%
+        pivot_wider(names_from = taxon_name, values_from = abundance,
+                    values_fill = list(abundance = 0))
+    }
+    
+  } else {
+    # No herbivore column -> treat all consumers as herbivores
+    message("No herbivore column found; treating all consumers as herbivores.")
+    herbivore_wide <- consumer_wide
+  }
+  
+  # Apply the same subset (valid plot-years) to herbivores
+  if (nrow(herbivore_wide) == 0) {
+    herbivore_wide_sub <- herbivore_wide  # keep empty
+  } else {
+    if (minimize) {
+      herbivore_wide_sub <- herbivore_wide %>%
+        filter(year %in% producer_wide_sub$year,
+               plot %in% producer_wide_sub$plot)
+    } else {
+      herbivore_wide_sub <- herbivore_wide %>%
+        inner_join(valid_plot_years, by = c("plot", "year")) %>%
+        mutate(site = site_name)
+    }
+  }
+
   
   # assign created dataframes to global environment
   print("Creating final object names...")
   producer_object_name <- paste0(site_name, "_producers_wide_sub")
   consumer_object_name <- paste0(site_name, "_consumers_wide_sub")
+  herbivore_object_name  <- paste0(site_name, "_herbivore_wide_sub") 
   
   print("Assigning objects to global environment...")
   assign(producer_object_name, producer_wide_sub, envir = .GlobalEnv)
   assign(consumer_object_name, consumer_wide_sub, envir = .GlobalEnv)
+  assign(herbivore_object_name, herbivore_wide_sub, envir = .GlobalEnv)
   
   # write csv
   if (write_csv) {
@@ -163,17 +192,19 @@ filter_data <- function(site_name, # site name as string
       } else {
         write.csv(row.names = F, producer_wide_sub, here::here(output_folder, paste0(producer_object_name, ".csv")))
         write.csv(row.names = F, consumer_wide_sub, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+        write.csv(row.names = F, herbivore_wide_sub, here::here(output_folder, paste0(herbivore_object_name, ".csv")))
       }
     } else {
       # fallback to working directory
       write.csv(row.names = F, producer_wide_sub, paste0(producer_object_name, ".csv"))
       write.csv(row.names = F, consumer_wide_sub, paste0(consumer_object_name, ".csv"))
+      write.csv(row.names = F, herbivore_wide_sub, paste0(herbivore_object_name, ".csv"))
     }
     
     print("Function execution complete. Returning results...")
     return(setNames(
-      list(producer_wide_sub, consumer_wide_sub),
-      c(producer_object_name, consumer_object_name)
+      list(producer_wide_sub, consumer_wide_sub, herbivore_wide_sub),
+      c(producer_object_name, consumer_object_name, herbivore_object_name)
     ))
   }
 }
@@ -193,6 +224,7 @@ filter_data <- function(site_name, # site name as string
 ####  create aggregate diversity stability dataframe ####
 calculate_agg_stability <- function(producer_data, # synthesized producer data after filtering
                                     consumer_data, # synthesized consumer data after filtering
+                                    herbivore_data, # synthesized herbivore data after filtering
                                     site_name, # site name as string
                                     output_folder = NULL, # string for output folder if writing csv (e.g. "data/CDR")
                                     write_csv = FALSE # option to automatically write csv
@@ -235,6 +267,23 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       shannon = vegan::diversity(consumer_data[, -which(names(consumer_data) %in% meta_cols)], "shannon")
     )
   
+  herbivore_diversity <- 
+    data.frame(
+      site = herbivore_data$site,
+      #     taxa_type = producer_data$taxa_type,
+      taxa_type = rep("herbivore", nrow(herbivore_data)),
+      ecosystem = herbivore_data$ecosystem,
+      habitat_broad = herbivore_data$habitat_broad,
+      habitat_fine = herbivore_data$habitat_fine,
+      biome = herbivore_data$biome,
+      guild = herbivore_data$guild,
+      plot = herbivore_data$plot,
+      year = herbivore_data$year,
+      richness = rowSums(herbivore_data[, -which(names(herbivore_data) %in% meta_cols)] > 0),
+      abundance = rowSums(herbivore_data[, -which(names(herbivore_data) %in% meta_cols)]),
+      shannon = vegan::diversity(herbivore_data[, -which(names(herbivore_data) %in% meta_cols)], "shannon")
+    )
+  
   # create dss dataframes for producers and consumers
   producer_dss <- producer_diversity %>%
     dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
@@ -265,6 +314,21 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       con_abundance = mean(abundance),
       con_cv = CV(abundance),
       con_stability = stability(abundance)) 
+  
+  herbivore_dss <- herbivore_diversity %>%
+    dplyr::group_by(site, taxa_type, ecosystem, habitat_broad, habitat_fine, biome, guild, plot) %>%
+    dplyr::summarise(
+      herb_richness = mean(richness), 
+      # total number of species observed over the course of the time series
+      herb_richness_total = {
+        species_cols <- setdiff(names(herbivore_data), meta_cols)
+        data_plot <- herbivore_data[herbivore_data$plot == unique(plot), species_cols]
+        sum(colSums(data_plot > 0) > 0)
+      },
+      herb_shannon = mean(shannon), 
+      herb_abundance = mean(abundance),
+      herb_cv = CV(abundance),
+      herb_stability = stability(abundance))
   
   # calculate multitrophic stability
   # combine producers and consumers
@@ -305,6 +369,8 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
     left_join(producer_dss[,-which(names(producer_dss) %in% c("taxa_type", "guild"))],
               consumer_dss[,-which(names(consumer_dss) %in% c("taxa_type", "guild"))], 
               by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
+      left_join(herbivore_dss[,-which(names(herbivore_dss) %in% c("taxa_type", "guild"))],
+                by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem")) %>%
       left_join(multitrophic_dss[,-which(names(multitrophic_dss) %in% c("taxa_type", "guild"))],
                 by = c("site", "plot", "habitat_broad", "habitat_fine", "biome", "ecosystem"))
   )
@@ -312,12 +378,14 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
   # create object names
   producer_object_name <- paste0(site_name, "_producer_dss")
   consumer_object_name <- paste0(site_name, "_consumer_dss")
+  herbivore_object_name <- paste0(site_name, "_herbivore_dss")
   multitrophic_object_name <- paste0(site_name, "_multitrophic_dss")
   aggregate_object_name <- paste0(site_name, "_aggregate_dss")
   
   # assign to global environment
   assign(producer_object_name, producer_dss, envir = .GlobalEnv)
   assign(consumer_object_name, consumer_dss, envir = .GlobalEnv)
+  assign(herbivore_object_name, herbivore_dss, envir = .GlobalEnv)
   assign(multitrophic_object_name, multitrophic_dss, envir = .GlobalEnv)
   assign(aggregate_object_name, aggregate_dss, envir = .GlobalEnv)
   
@@ -330,6 +398,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       } else {
         write.csv(row.names = F, producer_dss, here::here(output_folder, paste0(producer_object_name, ".csv")))
         write.csv(row.names = F, consumer_dss, here::here(output_folder, paste0(consumer_object_name, ".csv")))
+        write.csv(row.names = F, herbivore_dss, here::here(output_folder, paste0(herbivore_object_name, ".csv")))
         write.csv(row.names = F, multitrophic_dss, here::here(output_folder, paste0(multitrophic_object_name, ".csv")))
         write.csv(row.names = F, aggregate_dss, here::here(output_folder, paste0(aggregate_object_name, ".csv")))
       }
@@ -337,6 +406,7 @@ calculate_agg_stability <- function(producer_data, # synthesized producer data a
       # fallback to working directory
       write.csv(row.names = F, producer_dss, paste0(producer_object_name, ".csv"))
       write.csv(row.names = F, consumer_dss, paste0(consumer_object_name, ".csv"))
+      write.csv(row.names = F, herbivore_dss, paste0(herbivore_object_name, ".csv"))
       write.csv(row.names = F, multitrophic_dss, paste0(multitrophic_object_name, ".csv"))
       write.csv(row.names = F, aggregate_dss, paste0(aggregate_object_name, ".csv"))
     }
