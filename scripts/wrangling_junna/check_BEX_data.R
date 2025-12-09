@@ -17,18 +17,23 @@ BEX_SE_producer <- read.csv(tmp)
 
 drive_download(drive_folder[grepl('BEX_SE_consumer', drive_folder$name),], path = tmp, overwrite = TRUE)
 BEX_SE_consumer <- read.csv(tmp)
+# two species do not have assigned herbivore value: "Homoptera spec."     "Typhlocybinae spec."
+
 
 drive_download(drive_folder[grepl('BEX_HE_producer', drive_folder$name),], path = tmp, overwrite = TRUE)
 BEX_HE_producer <- read.csv(tmp)
 
 drive_download(drive_folder[grepl('BEX_HE_consumer', drive_folder$name),], path = tmp, overwrite = TRUE)
 BEX_HE_consumer <- read.csv(tmp)
+# 3 species do not have assigned herbivore value:"Delphacidae spec.", "Homoptera spec.", "Typhlocybinae spec." 
+
 
 drive_download(drive_folder[grepl('BEX_AE_producer', drive_folder$name),], path = tmp, overwrite = TRUE)
 BEX_AE_producer <- read.csv(tmp)
 
 drive_download(drive_folder[grepl('BEX_AE_consumer', drive_folder$name),], path = tmp, overwrite = TRUE)
 BEX_AE_consumer <- read.csv(tmp)
+# 3 species do not have assigned herbivore value: "Homoptera spec.", "Delphacidae spec.", "Typhlocybinae spec.", 
 
 ##
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/14ng9TmoBsTR0PHhbU_HNtbpZ6XcU5_fE"), type='csv')
