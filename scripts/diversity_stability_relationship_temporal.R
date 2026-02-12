@@ -1,14 +1,10 @@
----
-title: "diversity_stability_relationship_temporal"
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
+# We have tried two temporal methods. 
+# One is to use non-overlapping moving window to calculate diversity and stability metrics, where auto-correlation in residuals is not considered;
+# the other is use overlapping moving window to calculate diversity and stability metrics, where auto-correlation in the residuals is considered. 
+# Author: Junna Wang, 2/12/2026
 
 
-```{r using the non-overlapping temporal method to calculate diversity and stability relationship}
-# auto-correlation in the residuals is not considered in this case. 
-
+#-----------------------------------non-overlapping moving window----------------------------------
 library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms, nlme)
@@ -74,18 +70,11 @@ for (isite in 1:length(sites)) {
 }
 #
 agg_ds_allsites$site_period <- paste(agg_ds_allsites$site, agg_ds_allsites$period, sep="_")
-# we have 800 site_period in total
 
 # rename plot to ensure every plot is unique across these sites
 agg_ds_allsites$plot_new <- paste(agg_ds_allsites$site_new, agg_ds_allsites$plot, sep="_")
 
-# get period index
-agg_ds_allsites <- agg_ds_allsites %>% group_by(plot_new) %>%
-  arrange(site_period) %>%   # or mid_year
-  mutate(period_index = row_number()) %>%
-  ungroup()
 
-# the study site "aims", "GCE" caused the residual problem. use ecosystem to select??
 agg_ds_aquatic <- agg_ds_allsites %>% filter(ecosystem == 'aquatic')
 agg_ds_terrestrial <- agg_ds_allsites %>% filter(ecosystem == 'terrestrial')
 
@@ -94,19 +83,13 @@ agg_ds_terrestrial <- control_confounder_temporal(agg_ds_terrestrial)
 
 
 #--------------------------------test for different ecosystems------------------------------------------------
-# agg_ds_ecosystem <- agg_ds_aquatic
-# %>% filter(site_new %in% c('adk', "ntl_trout", "ntl_madison", "mcr_fish", "aims", "sbc_invert", 'usvi_fish'))
-# 'adk', "ntl_trout", "ntl_madison", "mcr_fish", "aims", "sbc_invert", 
-# 'usvi_fish' is different from other sites. 
-agg_ds_ecosystem <- agg_ds_terrestrial
+# choose the ecosystem you want to work on
+agg_ds_ecosystem <- agg_ds_aquatic
+# agg_ds_ecosystem <- agg_ds_terrestrial
 
-# # look at the data
-# ggplot(data=agg_ds_ecosystem, aes(x = prod_richness, y = prod_stability_log, col = plot_new)) +
-#   geom_point() +
-#   geom_smooth(method = 'lm')
 
 #-------------------For producer stability
-# use a linear mixed model
+# use a linear mixed model (a variation on the Two-way Mundlak model design; Box 2 in Byrnes and Dee, 2025)
 mod_prod <- lmer(data=agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi + prod_richness_log_zscore_plot_mean + prod_richness_log_zscore_site_period_mean + con_richness_log_zscore_plot_mean_devi + con_richness_log_zscore_plot_mean + con_richness_log_zscore_site_period_mean + (1|plot_new) + (1|site_period))
 summary(mod_prod)
 plot(DHARMa::simulateResiduals(mod_prod))
@@ -122,11 +105,12 @@ plot(DHARMa::simulateResiduals(mod_prod))
 #   }
 # }
 
-# use a linear model
+# use a linear model (using fixed effects to address confounding effects)
 summary(lm(data=agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore + con_richness_log_zscore + plot_new + site_period))
+# essentially, the linear mixed model and the linear model are equivalent. 
 
-
-# use herbivore data; herbivore richness data has infinity and NA values, so I cannot use log transferred data. 
+#-------
+# use herbivore data instead of consumer data
 summary(lm(data=agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore + herb_richness_log_zscore + plot_new + site_period))
 
 mod_prod3 <- lmer(data=agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi + prod_richness_log_zscore_plot_mean + prod_richness_log_zscore_site_period_mean + herb_richness_log_zscore_plot_mean_devi + herb_richness_log_zscore_plot_mean + herb_richness_log_zscore_site_period_mean + (1|plot_new) + (1|site_period))
@@ -134,28 +118,27 @@ summary(mod_prod3)
 plot(DHARMa::simulateResiduals(mod_prod3))
 
 #-------------------For consumer stability
-# use a simple linear mixed model
+# use a linear mixed model (a variation on the Two-way Mundlak model design; Box 2 in Byrnes and Dee, 2025)
 mod_con <- lmer(data=agg_ds_ecosystem, con_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi + prod_richness_log_zscore_plot_mean + prod_richness_log_zscore_site_period_mean + con_richness_log_zscore_plot_mean_devi + con_richness_log_zscore_plot_mean + con_richness_log_zscore_site_period_mean + (1|plot_new) + (1|site_period))
 summary(mod_con)
 plot(DHARMa::simulateResiduals(mod_con))
-# use a linear model
+
+# use a linear model (using fixed effects to address confounding effects)
 summary(lm(data=agg_ds_ecosystem, con_stability_log_zscore ~ prod_richness_log_zscore + con_richness_log_zscore + plot_new + site_period))
 
 #-------------------For herbivore stability
-# use a simple linear mixed model
+# use a linear mixed model (a variation on the Two-way Mundlak model design; Box 2 in Byrnes and Dee, 2025)
 mod_herb <- lmer(data=agg_ds_ecosystem, herb_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi + prod_richness_log_zscore_plot_mean + prod_richness_log_zscore_site_period_mean + herb_richness_log_zscore_plot_mean_devi + herb_richness_log_zscore_plot_mean + herb_richness_log_zscore_site_period_mean + (1|plot_new) + (1|site_period))
 summary(mod_herb)
 plot(DHARMa::simulateResiduals(mod_herb))
-# use a linear model by adding fixed effects. 
+
+# use a linear model (using fixed effects to address confounding effects)
 summary(lm(data=agg_ds_ecosystem, herb_stability_log_zscore ~ prod_richness_log_zscore + herb_richness_log_zscore + plot_new + site_period))
 
 
-```
 
 
-
-```{r overlapping temporal models}
-
+#--------------------------------Overlapping moving window: NEED TO ADDRESS AUTOCORRELATION----------------------------------
 library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms, nlme)
@@ -269,12 +252,12 @@ agg_ds_ecosystem <- agg_ds_aquatic
 # 1) Two-way Mundlak model design and ignore autocorrelation. 
 fit_prod_glmm_noar <- glmmTMB(
   prod_stability_log_zscore ~ prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean + 
-      (1 | plot_new) + (1 | site_period),
+    con_richness_log_zscore_site_period_mean_devi +
+    prod_richness_log_zscore_plot_mean +
+    prod_richness_log_zscore_site_period_mean +
+    con_richness_log_zscore_plot_mean +
+    con_richness_log_zscore_site_period_mean + 
+    (1 | plot_new) + (1 | site_period),
   data = agg_ds_ecosystem,
   family = gaussian()
 )
@@ -287,11 +270,11 @@ summary(fit_prod_glmm_noar)
 # 2) Two-way Mundlak model design and adding autocorrelation using glmmTMB (Frequentist option)
 fit_prod_glmm_ar <- glmmTMB(
   prod_stability_log_zscore ~ prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean + 
+    con_richness_log_zscore_site_period_mean_devi +
+    prod_richness_log_zscore_plot_mean +
+    prod_richness_log_zscore_site_period_mean +
+    con_richness_log_zscore_plot_mean +
+    con_richness_log_zscore_site_period_mean + 
     (1 | plot_new) + (1 | site_period) +
     ar1(site_period + 0 | plot_new),
   data = agg_ds_ecosystem,
@@ -322,7 +305,7 @@ fit_prod_brm_ar <- brm(
       con_richness_log_zscore_site_period_mean +
       (1 | plot_new) +
       (1 | site_period) ,
-   autocor = cor_ar(~ period | plot_new, p = 1)
+    autocor = cor_ar(~ period | plot_new, p = 1)
   ),
   data = agg_ds_ecosystem,
   family = gaussian(),
@@ -345,12 +328,12 @@ summary(fit_prod_brm_ar)
 # 1) Two-way Mundlak model design and ignore autocorrelation. 
 fit_con_glmm_noar <- glmmTMB(
   con_stability_log_zscore ~ prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean + 
-      (1 | plot_new) + (1 | site_period),
+    con_richness_log_zscore_site_period_mean_devi +
+    prod_richness_log_zscore_plot_mean +
+    prod_richness_log_zscore_site_period_mean +
+    con_richness_log_zscore_plot_mean +
+    con_richness_log_zscore_site_period_mean + 
+    (1 | plot_new) + (1 | site_period),
   data = agg_ds_ecosystem,
   family = gaussian()
 )
@@ -363,11 +346,11 @@ summary(fit_con_glmm_noar)
 # 2) Two-way Mundlak model design and adding autocorrelation using glmmTMB (Frequentist option)
 fit_con_glmm_ar <- glmmTMB(
   con_stability_log_zscore ~ prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean + 
+    con_richness_log_zscore_site_period_mean_devi +
+    prod_richness_log_zscore_plot_mean +
+    prod_richness_log_zscore_site_period_mean +
+    con_richness_log_zscore_plot_mean +
+    con_richness_log_zscore_site_period_mean + 
     (1 | plot_new) + (1 | site_period) +
     ar1(site_period + 0 | plot_new),
   data = agg_ds_ecosystem,
@@ -398,7 +381,7 @@ fit_con_brm_ar <- brm(
       con_richness_log_zscore_site_period_mean +
       (1 | plot_new) +
       (1 | site_period) ,
-   autocor = cor_ar(~ period | plot_new, p = 1)
+    autocor = cor_ar(~ period | plot_new, p = 1)
   ),
   data = agg_ds_ecosystem,
   family = gaussian(),
@@ -412,282 +395,7 @@ summary(fit_con_brm_ar)
 # con_richness_log_zscore_site_period_mean_devi     -0.44      0.32    -1.07     0.18 1.00     1961     2710
 
 # Based on the comparison among the three methods for both producer and consumer communities, I would recommend using autocorrelation structure added by glmmTMB. 
-# I also suggest to use interval = 2, because of too strong residual autocorrelation (phi = ~0.7), which sometimes affect model convergence. This is open to discussion. 
+# I also suggest to use interval = 2, because of too strong residual autocorrelation when interval = 1 (phi = ~0.7), which sometimes affect model convergence. This is open to our discussion. 
 
-
-
-
-
-
-
-
-
-
-summary(lm(data = agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore + con_richness_log_zscore + plot_new + site_period))
-
-# this one has the singular problem. 
-# gls_prod <- gls(
-#   prod_stability_log_zscore ~ prod_richness_log_zscore + con_richness_log_zscore + plot_new + site_period,
-#   data = agg_ds_ecosystem,
-#   correlation = corARMA(p = 1, q = 0, form = ~ period | plot_new)
-# )
-# summary(gls_prod)
-summary(lmer(data = agg_ds_ecosystem, prod_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi + 
-             con_richness_log_zscore_plot_mean_devi + 
-               prod_richness_log_zscore_plot_mean + con_richness_log_zscore_plot_mean +
-               prod_richness_log_zscore_site_period_mean + con_richness_log_zscore_site_period_mean +
-               + (1|plot_new) + (1|site_period)))
-
-
-#
-summary(lm(data = agg_ds_ecosystem, con_stability_log_zscore_site_period_mean_devi ~ prod_richness_log_zscore_site_period_mean_devi + 
-             con_richness_log_zscore_site_period_mean_devi + plot_new))
-
-#
-gls_con <- gls(
-  con_stability_log_zscore_site_period_mean_devi ~ prod_richness_log_zscore_site_period_mean_devi + con_richness_log_zscore_site_period_mean_devi + plot_new,
-  data = agg_ds_ecosystem,
-  correlation = corARMA(p = 1, q = 0, form = ~ period | plot_new)
-)
-summary(gls_con)
-
-
-res <- resid(gls_prod, type = "normalized")
-agg_ds_ecosystem$resid <- res
-
-acf1_resid <- agg_ds_ecosystem %>%
-  group_by(plot_new) %>%
-  summarise(
-    acf1 = acf(resid, plot = FALSE, lag.max = 1)$acf[2]
-  )
-hist(acf1_ecosystem$acf1)
-
-acf1_con_stab <- agg_ds_ecosystem %>%
-  group_by(plot_new) %>%
-  summarise(
-    acf1 = acf(con_stability_log_zscore, plot = FALSE, lag.max = 1)$acf[2]
-  )
-hist(acf1_con_stab$acf1)
-
-# par(mfrow = c(2, 2))
-# for (p in unique(agg_ds_ecosystem$plot_new)[1:4]) {
-#   r <- agg_ds_ecosystem$resid[agg_ds_ecosystem$plot_new == p]
-#   acf(r, main = paste("Plot", p), lag.max = length(r) - 1)
-# }
-
-# lme only support one random effects. so we can only use brms
-fit_prod <- lmer(
-  # con_stability_log_zscore ~ prod_richness_log_zscore_plot_mean_devi +
-  #     con_richness_log_zscore_plot_mean_devi +
-  con_stability_log_zscore ~ prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean + (1 | plot_new) + (1 | site_period),
-  data = agg_ds_ecosystem
-)
-summary(fit_prod)
-
-# This does not work because autocorrelation eat up variations. 
-mod_prod_brm <- brm(
-  formula = bf(
-    prod_stability_log_zscore ~
-      prod_richness_log_zscore_site_period_mean_devi +
-      con_richness_log_zscore_site_period_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean +
-      (1 | plot_new) +
-      (1 | site_period) ,
-   autocor = cor_ar(~ period | plot_new, p = 1)
-  ),
-  data = agg_ds_ecosystem,
-  family = gaussian(),
-  chains = 4, cores = 4, iter = 2000,
-  control = list(adapt_delta = 0.90)
-)
-summary(mod_prod_brm)
-
-## this does not work. 
-mod_prod_brm <- brm(
-  formula = bf(prod_stability_log_zscore_site_period_mean_devi ~ prod_richness_log_zscore_site_period_mean_devi + 
-             con_richness_log_zscore_site_period_mean_devi + plot_new  ,
-             autocor = cor_ar(~ period | plot_new, p = 1)
-  ),
-  data = agg_ds_ecosystem,
-  family = gaussian(),
-  prior = c(
-    prior(normal(0, 0.1), class = "ar")
-  ), 
-  chains = 4, cores = 4, iter = 2000,
-  control = list(adapt_delta = 0.95)
-)
-summary(mod_prod_brm)
-
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r using overlapping method temporal method to calculate diversity and stability relationship-old ones}
-# need to take account of autocorrelation in models
-# need to try different autocorrelations in models
-
-
-
-library(librarian)
-# Install missing packages and load needed libraries
-shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa, glmmTMB, brms, nlme)
-rm(list=ls())
-
-source(file.path('scripts', '00_functions_minimize.R'))
-source(file.path('scripts', 'wrangling_junna', 'function_confounding.R'))
-
-tmp <- tempfile(fileext = ".csv")
-drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1yT4XdK6V-6GtXYcXzW_V3HllVSumDBnx"), type='csv')
-
-# sites: 
-sites_aquatic <- c("usvi_fish", "sbc_invert", "aims", "mcr_fish", "ntl_trout", "ntl_madison", "adk", "gce")  # 6 sites:  
-sites_terrestrial <- c("cdr_of", "kbs", "knz", "jrn", "bex_he", "bex_ae", "bex_se")                   # 7 sites
-sites <- c(sites_aquatic, sites_terrestrial)
-
-# number of years to aggregate to calculate stability; this can be changed.
-duration = 6
-
-for (isite in 1:length(sites)) {
-  
-  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_producers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
-  producer <- read.csv(tmp)
-  
-  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_consumers_wide_sub.csv"),], path = tmp, overwrite = TRUE)
-  consumer <- read.csv(tmp)
-  
-  drive_download(drive_folder[drive_folder$name == paste0(sites[isite], "_herbivore_wide_sub.csv"),], path = tmp, overwrite = TRUE)
-  herbivore <- read.csv(tmp)
-  
-  years <- sort(unique(producer$year))
-  
-  nyears <- length(years)
-  
-  # need to test the effect of the by value here!
-  period <- data.frame(start = seq(1, nyears - duration + 1, by = 3), end = seq(duration, nyears, by = 3))
-
-  period$start <- years[period$start]
-  period$end <- years[period$end]
-  period$years <- paste(period$start, period$end, sep = "_")
-  #
-  for (i in 1:nrow(period)) {
-    producer_period <- producer %>% filter(between(year, period$start[i], period$end[i]))
-    consumer_period <- consumer %>% filter(between(year, period$start[i], period$end[i]))
-    herbivore_period <- herbivore %>% filter(between(year, period$start[i], period$end[i]))
-    #
-    calculate_agg_stability(producer_data = producer_period, consumer_data = consumer_period, 
-                            herbivore_data = herbivore_period, site_name=sites[isite])
-    # pull the output dataframe
-    agg_ds_site <- get(paste0(sites[isite], "_aggregate_dss"))
-    
-    if (i == 1 & isite == 1) {
-      agg_ds_allsites <- data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite])
-    } else {
-      agg_ds_allsites <- rbind(agg_ds_allsites, data.frame(agg_ds_site, period = period$years[i], site_new = sites[isite]))
-    }
-  }
-}
-#
-agg_ds_allsites$site_period <- paste(agg_ds_allsites$site, agg_ds_allsites$period, sep="_")
-# we have ** site_period in total
-
-# rename plot to ensure every plot is unique across these sites
-agg_ds_allsites$plot_new <- paste(agg_ds_allsites$site_new, agg_ds_allsites$plot, sep="_")
-
-# get period index
-agg_ds_allsites <- agg_ds_allsites %>% group_by(plot_new) %>%
-  arrange(site_period) %>%   # or mid_year
-  mutate(period_index = row_number()) %>%
-  ungroup()
-
-
-# the study site "aims", "GCE" caused the residual problem. use ecosystem to select??
-agg_ds_aquatic <- agg_ds_allsites %>% filter(ecosystem == 'aquatic')
-agg_ds_terrestrial <- agg_ds_allsites %>% filter(ecosystem == 'terrestrial')
-
-agg_ds_aquatic <- control_confounder_temporal(agg_ds_aquatic)
-agg_ds_terrestrial <- control_confounder_temporal(agg_ds_terrestrial)
-
-# ggplot(data=agg_ds_aquatic, aes(x = prod_richness, y = prod_stability_log, col = site)) +
-#   geom_point()
-
-#-------------------------------------------test for different ecosystems------------------------------------------------
-agg_ds_ecosystem <- agg_ds_aquatic
-# agg_ds_ecosystem <- agg_ds_terrestrial
-#-------------------For producer stability
-# use a simple linear mixed model (lme), but lme cannot handle crossed random effects. 
-# use other linear mixed models: brms
-# producer community
-mod_prod_brm <- brm(
-  formula = bf(
-    prod_stability_log_zscore ~
-      prod_richness_log_zscore_plot_mean_devi +
-      con_richness_log_zscore_plot_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean +
-      (1 | plot_new) +
-      (1 | site_period) #,
-#     autocor = cor_ar(~ period_index | plot_new, p = 1)
-  ),
-  data = agg_ds_ecosystem,
-  family = gaussian(),
-  chains = 4, cores = 4, iter = 2000,
-  control = list(adapt_delta = 0.95)
-)
-summary(mod_prod_brm)
-# It make a significant difference whether consider the AR(1) structure or not!
-# 
-#-------------consumer community
-mod_con_brm <- brm(
-  formula = bf(
-    con_stability_log_zscore ~
-      prod_richness_log_zscore_plot_mean_devi +
-      con_richness_log_zscore_plot_mean_devi +
-      prod_richness_log_zscore_plot_mean +
-      prod_richness_log_zscore_site_period_mean +
-      con_richness_log_zscore_plot_mean +
-      con_richness_log_zscore_site_period_mean +
-      (1 | plot_new) +
-      (1 | site_period) #,
-    # autocor = cor_ar(~ period | plot_new, p = 1)
-  ),
-  data = agg_ds_ecosystem,
-  family = gaussian(),
-  chains = 4, cores = 4, iter = 2000,
-  control = list(adapt_delta = 0.95)
-)
-summary(mod_con_brm)
-
-
-# QUESTION: there may be some problems with those sites that have two consumer categories (data are not independent). 
-#######I need to use priors. 
-
-
-
-
-
-```
 
 

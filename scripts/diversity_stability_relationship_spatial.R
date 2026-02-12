@@ -1,11 +1,7 @@
----
-title: "diversity_stability_relationship_spatial"
-output: html_document
-editor_options: 
-  chunk_output_type: console
----
+# We used spatial method to estimate diversity-stability relationship. 
+# Author: Junna Wang, 12/12/2025
 
-```{r use the spatial method to calculate diversity-stability relationships}
+
 library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, googlesheets4, googledrive, readxl, lmerTest, semPlot, ggplot2, codyn, ggpubr, performance, emmeans, lme4, DHARMa)
@@ -17,34 +13,6 @@ tmp <- tempfile(fileext = ".csv")
 drive_folder <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/folders/1xa-ypKd_ovsRov_Ol_uvE7ZI2rCc5SSj"), type='csv')
 drive_download(drive_folder[drive_folder$name == "combined_agg_dss_12082025.csv",], path = tmp, overwrite = TRUE)
 mar_terr <- read.csv(tmp)
-
-# take a look at new sites
-# unique(mar_terr$site)
-# site <- mar_terr %>% filter(site %in% c("GCE"))  # 'adk', 'ntl_trout', "ntl_madison"
-# ggplot(data = site, aes(x = prod_richness, y = prod_stability, col=habitat_fine)) + # prod_richness_total
-#   geom_point() +
-#   geom_smooth(method='lm') +
-#   stat_cor(color='green')
-# 
-# ggplot(data = site, aes(x = con_richness, y = con_stability, col=habitat_fine)) +  # con_richness_total
-#   geom_point() +
-#   geom_smooth(method='lm') +
-#   stat_cor(color='green')
-# 
-# ggplot(data = site, aes(x = herb_richness, y = herb_stability, col=habitat_fine)) +  # con_richness_total
-#   geom_point() +
-#   geom_smooth(method='lm') +
-#   stat_cor(color='green')
-# 
-# ggplot(data = site, aes(x = prod_richness, y = con_richness, col=habitat_fine)) +
-#   geom_point() +
-#   geom_smooth(method='lm') +
-#   stat_cor(color='green')
-# 
-# ggplot(data = site, aes(x = prod_richness, y = herb_richness, col=habitat_fine)) +
-#   geom_point() +
-#   geom_smooth(method='lm') +
-#   stat_cor(color='green')
 
 #-------------------------------
 source(file.path('scripts', 'wrangling_junna', 'function_confounding.R'))
@@ -59,9 +27,8 @@ terr <- control_confounder_spatial(terr)
 # use model D -- group mean centered path model in Byrnes and Dee, 2025
 mod_mar_prod1 <- lmer(data = aqua, prod_stability_log_zscore ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi + prod_richness_log_zscore_site_mean + con_richness_log_zscore_site_mean + (1|site_new))
 summary(mod_mar_prod1)
-isSingular(mod_mar_prod1, tol = 1e-4)
 # 
-plot(DHARMa::simulateResiduals(mod_mar_prod1))  # ks test sig; DHARMa sig; failed ks test; 
+plot(DHARMa::simulateResiduals(mod_mar_prod1))
 plot(residuals(mod_mar_prod1), predict(mod_mar_prod1))
 
 #----
@@ -69,7 +36,7 @@ plot(residuals(mod_mar_prod1), predict(mod_mar_prod1))
 mod_mar_prod2 <- lm(data = aqua, prod_stability_log_zscore_devi ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi)
 summary(mod_mar_prod2)
 
-plot(DHARMa::simulateResiduals(mod_mar_prod2))         # all good
+plot(DHARMa::simulateResiduals(mod_mar_prod2))         
 plot(residuals(mod_mar_prod2), predict(mod_mar_prod2))
 # Models A and D are equivalent. 
 
@@ -77,7 +44,6 @@ plot(residuals(mod_mar_prod2), predict(mod_mar_prod2))
 # use model D
 mod_mar_con1 <- lmer(data = aqua, con_stability_log_zscore ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi + prod_richness_log_zscore_site_mean + con_richness_log_zscore_site_mean + (1|site_new))
 summary(mod_mar_con1)
-isSingular(mod_mar_con1, tol = 1e-4)
 # 
 plot(DHARMa::simulateResiduals(mod_mar_con1)) 
 plot(residuals(mod_mar_con1), predict(mod_mar_con1))
@@ -87,7 +53,7 @@ plot(residuals(mod_mar_con1), predict(mod_mar_con1))
 mod_mar_con2 <- lm(data = aqua, con_stability_log_zscore_devi ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi)  
 summary(mod_mar_con2)
 # 
-plot(DHARMa::simulateResiduals(mod_mar_con2))  # failed ks test; and outlier test. 
+plot(DHARMa::simulateResiduals(mod_mar_con2))  
 plot(residuals(mod_mar_con2), predict(mod_mar_con2))
 # Models A and D are equivalent.
 
@@ -116,7 +82,6 @@ plot(residuals(mod_mar_herb2), predict(mod_mar_herb2))
 # use model D -- group mean centered path model in Byrnes and Dee, 2025
 mod_terr_prod1 <- lmer(data = terr, prod_stability_log_zscore ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi + prod_richness_log_zscore_site_mean + con_richness_log_zscore_site_mean + (1|site_new))
 summary(mod_terr_prod1)
-isSingular(mod_terr_prod1, tol = 1e-4)
 # 
 plot(DHARMa::simulateResiduals(mod_terr_prod1))  # 
 plot(residuals(mod_terr_prod1), predict(mod_terr_prod1))
@@ -125,7 +90,6 @@ plot(residuals(mod_terr_prod1), predict(mod_terr_prod1))
 # consumer stability
 mod_terr_con1 <- lmer(data = terr, con_stability_log_zscore ~ prod_richness_log_zscore_devi + con_richness_log_zscore_devi + prod_richness_log_zscore_site_mean + con_richness_log_zscore_site_mean + (1|site_new))
 summary(mod_terr_con1)
-isSingular(mod_terr_con1, tol = 1e-4)
 # 
 plot(DHARMa::simulateResiduals(mod_terr_con1))  # 
 plot(residuals(mod_terr_con1), predict(mod_terr_con1))
@@ -134,108 +98,9 @@ plot(residuals(mod_terr_con1), predict(mod_terr_con1))
 # use herbivore rather than consumers
 mod_terr_prod3 <- lmer(data = terr, prod_stability_log_zscore ~ prod_richness_log_zscore_devi + herb_richness_log_zscore_devi + prod_richness_log_zscore_site_mean + herb_richness_log_zscore_site_mean + (1|site_new))
 summary(mod_terr_prod3)
-isSingular(mod_terr_prod3, tol = 1e-4)
 
 plot(DHARMa::simulateResiduals(mod_terr_prod3))  # 
 plot(residuals(mod_terr_prod3), predict(mod_terr_prod3))
 #
 mod_terr_herb1 <- lm(data = terr, herb_stability_log_zscore_devi ~ prod_richness_log_zscore_devi + herb_richness_log_zscore_devi)
 summary(mod_terr_herb1)
-
-
-```
-
-
-```{r try causal inference to determine bottom-up or top-down}
-library(librarian)
-shelf(dagitty)
-
-dag_bottom_up <- dagitty("dag{
-                         prod_richness -> con_richness;
-                         prod_richness -> prod_stablity;
-                         prod_richness -> con_stablity;
-                         con_richness -> prod_stablity;
-                         con_richness -> con_stablity
-}")
-
-## direct effect:
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "prod_richness", outcome = "con_richness", 
-  effect = c('direct')
-)
-# {}
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "prod_richness", outcome = "prod_stablity", 
-  effect = c('direct')
-)
-# { con_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "prod_richness", outcome = "con_stablity", 
-  effect = c('direct')
-)
-# { con_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "con_richness", outcome = "prod_stablity", 
-  effect = c('direct')
-)
-# { prod_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "con_richness", outcome = "con_stablity", 
-  effect = c('direct')
-)
-# { prod_richness }
-
-dag_top_down <- dagitty("dag{
-                         con_richness -> prod_richness;
-                         prod_richness -> prod_stablity;
-                         prod_richness -> con_stablity;
-                         con_richness -> prod_stablity;
-                         con_richness -> con_stablity
-}")
-
-## direct effect:
-adjustmentSets(
-  dag_top_down,
-  exposure = "con_richness", outcome = "prod_richness", 
-  effect = c('direct')
-)
-# {}
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "prod_richness", outcome = "prod_stablity", 
-  effect = c('direct')
-)
-# { con_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "prod_richness", outcome = "con_stablity", 
-  effect = c('direct')
-)
-# { con_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "con_richness", outcome = "prod_stablity", 
-  effect = c('direct')
-)
-# { prod_richness }
-
-adjustmentSets(
-  dag_bottom_up,
-  exposure = "con_richness", outcome = "con_stablity", 
-  effect = c('direct')
-)
-# { prod_richness }
-
-```
-
-
